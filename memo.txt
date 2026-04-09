@@ -236,3 +236,34 @@ F [ cb4 cs8.b: | c:s:b8 cs8.b: ]2 bc:s:m:m: mcs:m:sm:sm:
 
 9ABCDEF ]0
 
+
+
+## MileStone 1 Phase 1 – OPLL Voice Table (実装済み)
+
+### 概要
+OPLL(YM2413)の音色情報を「音色テーブル」として管理し、MML出力で `@<voice_id>` を使用するように変更。
+
+### 追加ファイル・変更点
+- `py/vgm_reader.py`:
+  - `_OpllState` に `user_patch[8]` 追加。reg 0x00-0x07 の書き込みを追跡。
+  - `output_voice_csv()` 追加: `*_trace.opll_voice.csv` を生成。
+    - `#type,time,ch,ticks,inst,vol,patch_hex` の7列構成。
+    - type='patch': ユーザーパッチレジスタ更新(ch=-1, global)
+    - type='instVol': チャンネル音色変更 + 現在のパッチスナップショット
+  - `parse_vgm()` の戻り値を7要素に拡張(7番目が `opll_voice_csv` パス)。
+
+- `py/opll_mml.py`:
+  - `_Segment` に `voice_id` フィールド追加。
+  - `_assign_voice_ids(segments, voice_csv_path)` 追加:
+    - inst!=0: voice_key = ('preset', inst)
+    - inst==0: voice_key = ('user', patch_bytes) <- voice CSVのpatch_hexから取得
+    - voice_id は 0..N-1 の連番
+  - `_voice_table_comments(voice_table)` 追加: MMLヘッダに音色定義コメントを出力。
+  - MML出力: `@{inst}` -> `@{voice_id}` に置き換え。
+  - pass0.csv に `voice_id` 列を追加。
+  - `process_opll_csv()` に `voice_csv_path` 引数を追加(省略可、後方互換)。
+
+- `vgm2mml.py`:
+  - `parse_vgm()` の7要素を受け取るよう更新。
+  - `process_opll_csv()` に `voice_csv_path` を渡す。
+  - 非デバッグモードで `opll_voice_csv` もクリーンアップ。

@@ -326,12 +326,13 @@ def _assign_voice_ids(segments: dict,
 
     # ── Assign voice IDs ─────────────────────────────────────────
     voice_table: dict[tuple, int] = {}   # voice_key -> voice_id
-    next_id: list[int] = [0]
+    next_id = 0
 
     def _get_voice_id(key: tuple) -> int:
+        nonlocal next_id
         if key not in voice_table:
-            voice_table[key] = next_id[0]
-            next_id[0] += 1
+            voice_table[key] = next_id
+            next_id += 1
         return voice_table[key]
 
     warned_no_voice_csv = False
