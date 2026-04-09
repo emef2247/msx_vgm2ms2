@@ -1,0 +1,144 @@
+;[name=psg lpf=1]
+#opll_mode 1
+#tempo 75
+#title { "NobunagaNoYabouSengokuGunyudenOP2"}
+
+
+;-----------------------  OPLL part -------------------------------
+#alloc 9=192
+#alloc a=192
+#alloc b=192
+#alloc c=416
+#alloc d=496
+#alloc e=304
+; === OPLL Voice Table ===
+;@voice 00 user patch=6121152076542307
+;@voice 01 preset inst=7 (Trumpet)
+;@voice 02 preset inst=11 (Harpsichord)
+;@voice 03 preset inst=9 (Horn)
+;@voice 04 user patch=a6421020fbb91103
+; =========================
+
+
+
+;ch9 start
+9 @0 v15 o1 r%255
+9 v15 r%255
+9 v15 r%255
+9 v15 r%255
+9 v15 r%255
+9 v15 r%255
+9 v15 r%255
+9 v15 r%255
+9 v15 r%255
+9 v15 r%90
+;ch9 end: tick count: 2385
+
+
+;cha start
+a @0 v15 o1 r%255
+a v15 r%255
+a v15 r%255
+a v15 r%255
+a v15 r%255
+a v15 r%255
+a v15 r%255
+a v15 r%255
+a v15 r%255
+a v15 r%90
+;cha end: tick count: 2385
+
+
+;chb start
+b @0 v15 o1 r%255
+b v15 r%255
+b v15 r%255
+b v15 r%255
+b v15 r%255
+b v15 r%255
+b v15 r%255
+b v15 r%255
+b v15 r%255
+b v15 r%90
+;chb end: tick count: 2385
+
+
+;chc start
+c @0 v14 o2 f%89 d+%88 r%1 c+%38 r%5 >a%41 g%40 r%40
+;tick count: 342
+
+c @1 v14 g%40 f%40 r%20 f%20 a%20 >c%60 r%21 <g%20
+;tick count: 583
+
+c v14 a%40 e%40 g%40 a%40 g%40 r%40 g%40 f%40
+;tick count: 903
+
+c v14 r%20 f%20 a%20 >c%60 r%20 <g%20 a%40 e%40
+;tick count: 1143
+
+c v14 g%40 a%120 r%1 a%40 g%40 r%40 g%40 f%40
+;tick count: 1504
+
+c v14 r%20 f%20 a%20 >c%60 r%20 <g%20 a%40 e%40
+;tick count: 1744
+
+c v14 g%40 a%40 g%40 r%40 g%40 f%40 r%20 f%20
+;tick count: 2024
+
+c v14 r%1 a%19 >c%61 r%20 <g%20 a%40 e%40 g%40
+;tick count: 2265
+
+c v14 a%120
+;chc end: tick count: 2385
+
+
+;chd start
+d @2 v12 o2 f%12 >c%11 f%11 g%11 g+%11 g%11 f%11 c%11
+;tick count: 89
+
+d v12 <d+%11 g%11 >c%11 d%11 d+%11 d%11 c%11 <g%11
+;tick count: 177
+
+d v12 r%1 c+%11 g+%11 >c+%11 d+%5 r%5 ))e%41 d%40
+;tick count: 302
+
+d @1 v14 r%40 d%40 c%40 r%20 c%20 e%20 g%60 r%20
+;tick count: 562
+
+d v14 d%20 e%41 <a%40 >d%40 e%40 d%40 r%40 d%40
+;tick count: 863
+
+d v14 c%40 r%20 c%20 e%20 g%60 r%20 d%20 e%40
+;tick count: 1103
+
+d v14 <a%40 >d%40 e%120 r%1 e%39 r%1 d%40 r%40
+;tick count: 1424
+
+d v14 d%40 c%40 r%20 c%20 e%20 g%60 r%20 d%20
+;tick count: 1664
+
+d v14 e%40 <a%40 >d%40 e%40 d%40 r%40 d%40 c%40
+;tick count: 1984
+
+d v14 r%20 c%20 e%20 g%61 r%20 d%20 e%40 <a%40
+;tick count: 2225
+
+d v14 >d%40 e%120
+;chd end: tick count: 2385
+
+
+;che start
+e @3 v15 o4 f%45 c%22 f%22 g%44 c%22 g%23 g+%38 r%255 r%232
+;tick count: 703
+
+e @4 v14 e%20 d%20 g%80 d%20 c%20 f%80 a%20 >c%40
+;tick count: 1003
+
+e v14 d%40 <g%20 a%40 e%40 d%40 e%120 r%255 r%226 e%20
+;tick count: 1804
+
+e v14 d%20 g%80 d%20 c%20 f%80 a%20 >c%40 d%40
+;tick count: 2124
+
+e v14 <g%20 r%1 a%39 r%1 e%40 d%40 e%120
+;che end: tick count: 2385

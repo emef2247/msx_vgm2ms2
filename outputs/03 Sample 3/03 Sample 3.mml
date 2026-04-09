@@ -1,0 +1,118 @@
+;[name=psg lpf=1]
+#opll_mode 1
+#tempo 75
+#title { "03 Sample 3"}
+
+
+;-----------------------  OPLL part -------------------------------
+#alloc 9=240
+#alloc a=224
+#alloc b=224
+#alloc c=224
+#alloc d=368
+#alloc e=496
+; === OPLL Voice Table ===
+;@voice 00 preset inst=1 (Violin)
+;@voice 01 preset inst=11 (Harpsichord)
+;@voice 02 user patch=02030920cbff3906
+; =========================
+
+
+
+;ch9 start
+9 @0 v12 o1 r%113 >>>e%112 r%112 e%112 r%112 f%112 r%112 f%113
+;tick count: 898
+
+9 v12 r%111 e%112 r%112 e%112 r%112 e%113 r%111 e%112
+;tick count: 1793
+
+9 v12 r%112 e%112 r%112 e%112 r%112 f%112 r%112
+;ch9 end: tick count: 2577
+
+
+;cha start
+a @0 v12 o1 r%85 >>b%140 r%84 b%140 r%84 b%140 r%84 b%141
+;tick count: 898
+
+a v12 r%83 b%140 r%84 b%140 r%84 b%141 r%83 b%140
+;tick count: 1793
+
+a v12 r%84 b%140 r%84 b%140 r%84 b%140 r%84
+;cha end: tick count: 2549
+
+
+;chb start
+b @0 v12 o1 r%57 >>a%168 r%56 a%168 r%56 a%168 r%56 a%169
+;tick count: 898
+
+b v12 r%55 a%168 r%56 a%168 r%56 a%168 r%56 a%168
+;tick count: 1793
+
+b v12 r%56 a%168 r%56 a%168 r%56 a%168 r%56
+;chb end: tick count: 2521
+
+
+;chc start
+c @0 v12 o1 r%29 >>e%196 r%28 e%196 r%28 f%196 r%28 f%197
+;tick count: 898
+
+c v12 r%27 e%196 r%28 e%196 r%28 e%196 r%28 e%196
+;tick count: 1793
+
+c v12 r%28 e%196 r%28 e%196 r%28 f%196 r%28
+;chc end: tick count: 2493
+
+
+;chd start
+d @1 v11 o5 e%29 <e%28 a%28 b%28 >e%140 <e%28 a%28 b%28
+;tick count: 337
+
+d v11 >e%112 f%28 <f%28 a%28 b%28 >f%140 <f%28 a%28
+;tick count: 757
+
+d v11 b%28 >f%113 e%27 <e%28 a%28 b%28 >e%140 <e%28
+;tick count: 1177
+
+d v11 a%28 b%28 >e%140 <e%28 a%28 b%28 >e%140 <e%28
+;tick count: 1625
+
+d v11 a%28 b%28 >e%140 <e%28 a%28 b%28 >e%140 <e%28
+;tick count: 2073
+
+d v11 a%28 b%28 >e%112 f%28 <f%28 a%28 b%28 >f%140
+;tick count: 2493
+
+d v11 <f%28 a%28 b%28
+;chd end: tick count: 2577
+
+
+;che start
+e @1 v12 o1 r%255
+e v12 r%255
+e v12 r%255
+e v12 r%133 >>>((a%13 b%14 >f+%14 <a%14 b%14 >f+%14 <a%14
+;tick count: 995
+
+e @2 v10 b%14 >f+%14 <a%14 b%14 >f+%14 <a%14 b%14 >f+%14
+;tick count: 1107
+
+e v10 <a%14 b%14 >f+%14 <a%14 b%14 >f+%14 <a%14 b%14
+;tick count: 1219
+
+e v10 >f+%14 <a%14 b%14 >f+%14 <a%14 b%14 >f+%14 <a%14
+;tick count: 1331
+
+e v10 b%14 a%14 b%14 >f+%14 <a%14 b%14 >f+%14 <a%14
+;tick count: 1443
+
+e v10 b%14 >f+%14 <a%14 b%14 >f+%14 <a%14 b%14 >f+%14
+;tick count: 1555
+
+e v10 <a%14 b%14 >f+%14 <a%14 b%14 >f+%14 <a%14 b%14
+;tick count: 1667
+
+e v10 >f+%14 <a%14 b%14 >f+%14 <a%14 b%14 >f+%14 <a%14
+;tick count: 1779
+
+e v10 b%14
+;che end: tick count: 1793

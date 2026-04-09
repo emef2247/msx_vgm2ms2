@@ -1,0 +1,122 @@
+;[name=psg lpf=1]
+#opll_mode 1
+#tempo 75
+#title { "NobunagaNoYabouBusyoFuunrokuOp2"}
+
+
+;-----------------------  OPLL part -------------------------------
+#alloc 9=144
+#alloc a=144
+#alloc b=144
+#alloc c=368
+#alloc d=352
+#alloc e=448
+; === OPLL Voice Table ===
+;@voice 00 user patch=0000000000000000
+;@voice 01 preset inst=9 (Horn)
+;@voice 02 user patch=3171162051523624
+;@voice 03 preset inst=7 (Trumpet)
+; =========================
+
+
+
+;ch9 start
+9 @0 v15 o1 r%255
+9 v15 r%255
+9 v15 r%255
+9 v15 r%255
+9 v15 r%15
+;ch9 end: tick count: 1035
+
+
+;cha start
+a @0 v15 o1 r%255
+a v15 r%255
+a v15 r%255
+a v15 r%255
+a v15 r%15
+;cha end: tick count: 1035
+
+
+;chb start
+b @0 v15 o1 r%255
+b v15 r%255
+b v15 r%255
+b v15 r%255
+b v15 r%15
+;chb end: tick count: 1035
+
+
+;chc start
+c @0 v15 o1 r%7 >((a+%115 >c%16 c+%32 <g+%32 >c+%32 r%32 d+%128
+;tick count: 394
+
+c @1 v13 g+%32 d+%32 <g+%33 r%32 >f%48 g%16 g+%64 >c%32
+;tick count: 683
+
+c v13 <g%32 c%64 c+%40 d+%8 f%8 g%8 g+%32 c%32
+;tick count: 907
+
+c v13 f%128 <a+%112 >c%16 c+%32 <g+%32 >c+%33 r%32 d+%128
+;tick count: 1420
+
+c v13 g+%32 d+%32 <g+%32 r%32 >f%48 g%16 g+%64 >c%32
+;tick count: 1708
+
+c v13 <g%32 c%64 c+%40 d+%8 f%8 g%8 g+%32 c%32
+;tick count: 1932
+
+c v13 f%96
+;chc end: tick count: 2028
+
+
+;chd start
+d @0 v15 o1 r%255
+d v15 r%11 >>>(((f%32 d+%32 c+%32 c%24 <a+%8 g+%97 r%32
+;tick count: 523
+
+d @2 v12 >c%96 d%32 d+%48 d%16 c%32 r%32 f%8 r%8
+;tick count: 795
+
+d v12 d+%8 r%8 c+%64 <a+%64 a%16 g%16 a%32 r%255 r%34
+;tick count: 1292
+
+d v12 >f%32 d+%32 c+%32 c%24 <a+%8 g+%96 r%32 >c%96
+;tick count: 1644
+
+d v12 d%32 d+%48 d%16 c%32 r%32 f%8 r%8 d+%8
+;tick count: 1828
+
+d v12 r%8 c+%64 <a+%64 a%16 g%16 a%32
+;chd end: tick count: 2028
+
+
+;che start
+e @0 v15 o1 r%41 >>(f%32 a+%8 r%8 >c%8 r%8 c+%8 r%9
+;tick count: 122
+
+e @3 v14 d+%8 r%8 f%128 g+%32 g%32 f%32 d+%24 c+%8
+;tick count: 394
+
+e v14 c%96 r%1 f%16 g%16 g+%48 a+%16 >c%32 <a+%24
+;tick count: 643
+
+e v14 g+%8 g%48 f%16 d+%32 c%32 g+%8 r%8 g%8
+;tick count: 803
+
+e v14 r%8 f%64 d+%32 f%96 r%64 <f%32 a+%8 r%8
+;tick count: 1115
+
+e v14 >c%8 r%8 c+%8 r%8 d+%8 r%8 f%128 r%1
+;tick count: 1292
+
+e v14 g+%32 g%32 f%32 d+%24 c+%8 c%96 f%16 g%16
+;tick count: 1548
+
+e v14 g+%48 a+%16 >c%32 <a+%24 g+%8 g%48 f%16 d+%32
+;tick count: 1772
+
+e v14 c%32 g+%8 r%8 g%8 r%8 f%64 d+%32 f%96
+;tick count: 2028
+
+;che end: tick count: 2028
