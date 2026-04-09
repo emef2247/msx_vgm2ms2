@@ -302,10 +302,10 @@ def _ym2413_patch_to_mgsdrv(patch_bytes: bytes) -> dict:
     m_kl = (r[1] >> 6) & 0x03
     m_mt =  r[0]       & 0x0F
     m_am = (r[0] >> 7) & 0x01
-    m_vb = (r[0] >> 6) & 0x01   # PM / vibrato
+    m_vb = (r[0] >> 6) & 0x01   # VB (vibrato/PM)
     m_eg = (r[0] >> 5) & 0x01   # EG type (sustain)
     m_kr = (r[0] >> 4) & 0x01   # key-scale rate
-    m_dt = (r[5] >> 3) & 0x01   # DM: waveform for modulator
+    m_dt = (r[5] >> 3) & 0x01   # DT: waveform (0=sine, 1=half-sine); DM in YM2413 R5
 
     # Carrier operator fields
     c_ar = (r[6] >> 4) & 0x0F
@@ -315,10 +315,10 @@ def _ym2413_patch_to_mgsdrv(patch_bytes: bytes) -> dict:
     c_kl = (r[5] >> 6) & 0x03
     c_mt =  r[4]       & 0x0F
     c_am = (r[4] >> 7) & 0x01
-    c_vb = (r[4] >> 6) & 0x01   # PM / vibrato
+    c_vb = (r[4] >> 6) & 0x01   # VB (vibrato/PM)
     c_eg = (r[4] >> 5) & 0x01   # EG type (sustain)
     c_kr = (r[4] >> 4) & 0x01   # key-scale rate
-    c_dt = (r[5] >> 4) & 0x01   # DC: waveform for carrier
+    c_dt = (r[5] >> 4) & 0x01   # DT: waveform (0=sine, 1=half-sine); DC in YM2413 R5
 
     return {
         'tl':  tl,

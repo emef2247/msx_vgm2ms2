@@ -183,7 +183,7 @@ def test_assign_voice_ids_user_patch():
 def test_assign_voice_ids_multiple_patches():
     """Multiple distinct user patches each get a unique @vN token."""
     patch1 = '211bc2f001147411'
-    patch2 = '6601_0c07_82d6_30c7'.replace('_', '')
+    patch2 = '66010c0782d630c7'
     voice_csv = _make_voice_csv([
         f'patch,0.0,-1,0,0,0,{patch1}',
         f'patch,0.001,-1,100,0,0,{patch2}',
