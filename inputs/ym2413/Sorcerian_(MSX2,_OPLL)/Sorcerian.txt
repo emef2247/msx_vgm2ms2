@@ -1,0 +1,133 @@
+***********************************************
+* VGM music package                           *
+* http://vgmrips.net/                         *
+***********************************************
+Game name:           Sorcerian
+System:              MSX2
+Music hardware:      MSX-MUSIC (YM2413),
+                     PSG (AY-3-8910)
+
+Music author:        Falcom Sound Team jdk
+Game developer:      Falcom
+Game publisher:      Falcom
+Game release date:   1991
+
+Package created by:  sdsnatcher73
+Package version:     1.01
+
+Song list, in approximate game order:
+Song name                           Length:
+                                    Total  Loop
+01 Opening                          1:05   -
+02 Castle [Let's Meet Here]         1:52   1:11
+03 Town [Pentawa I]                 0:53   0:52
+04 Town [Pentawa II]                2:03   1:18
+05 Dungeon (Disappearance of the
+   King's Scepter)                  1:16   1:15
+06 Hydra (Disappearance of the
+   King's Scepter)                  0:55   0:55
+07 Survivor (Disappearance of the
+   King's Scepter)                  1:22   1:22
+08 Travelers Inn (Disappearance of
+   the King's Scepter)              0:38   0:37
+09 Forest (The Lost Talisman)       1:51   1:02
+10 Underground Dungeon (The Lost
+   Talisman)                        0:48   0:34
+11 Priest Dehytel (The Lost
+   Talisman)                        0:46   0:27
+12 Sand Marivoux (The Lost
+   Talisman)                        0:37   0:16
+13 Underground Dungeon (Lucifer's
+   Water Gate)                      1:28   1:08
+14 Kraken (Lucifer's Water Gate)    0:55   0:55
+15 Bloody River (Lucifer's Water
+   Gate)                            2:03   1:23
+16 Desert (Cursed Oasis)            1:52   1:04
+17 Sand Castle (Cursed Oasis)       2:03   1:24
+18 Ruwan and the Gold Dragon
+   (Cursed Oasis)                   1:08   0:36
+19 Tower (Thieves Tower)            1:08   1:04
+20 Depths of the Earth (Thieves
+   Tower)                           1:12   0:42
+21 Rooftop (Thieves Tower)          0:22   0:14
+22 Major Demon (Thieves Tower)      1:09   0:33
+23 Shadow Dragon (Thieves Tower)    0:35   0:19
+24 Seal (Thieves Tower)             1:33   1:32
+25 Dark Swamp (The Wizard in the
+   Dark Swamp)                      1:03   1:02
+26 Red Dragon (The Wizard in the
+   Dark Swamp)                      0:35   0:24
+27 Romancia Kingdom (Romancia)      0:35   0:30
+28 Romancia Castle (Romancia)       0:30   0:29
+29 Azorba Kingdom (Romancia)        0:39   0:23
+30 Vaides (Romancia)                0:34   0:26
+31 Forest (Riddle of the Red Coin)  0:48   0:48
+32 Moss Giant (Riddle of the Red
+   Coin)                            0:59   0:56
+33 Peaceful Forest (Riddle of the
+   Red Coin)                        1:15   0:49
+34 Dungeon I (The Black Wizard)     1:17   1:16
+35 Dungeon II (The Black Wizard)    0:44   0:40
+36 Ghedis (The Black Wizard)        0:31   0:28
+37 Blue Dragon (The Black Wizard)   1:27   0:53
+38 Aboard Ship (Cursed Queen Mary)  1:14   1:11
+39 After Disembarking (Cursed Queen
+   Mary)                            2:32   2:08
+40 Arch Demon (Cursed Queen Mary)   1:11   0:32
+41 Village (The Olympians)          0:46   0:45
+42 Combat Scene (The Olympians)     1:35   1:27
+43 The Heavens (The Olympians)      1:08   1:06
+44 Harp (The Olympians)             1:02   0:38
+45 Evil Shaman (The Olympians)      0:38   0:33
+46 Cave I (The Frozen Cave)         1:30   1:22
+47 Cave II (The Frozen Cave)        1:43   1:43
+48 Ekim (The Frozen Cave)           0:33   0:29
+49 Forest (Medusa's Neck)           1:45   1:40
+50 Village (Medusa's Neck)          1:29   1:28
+51 Medusa (Medusa's Neck)           0:49   0:28
+52 Underground Fortress (The
+   Imprisoned Wizard)               2:14   1:29
+53 Fire Element (The Imprisoned
+   Wizard)                          0:20   0:19
+54 The Cave of Life (The Fountain
+   of Youth)                        1:27   1:21
+55 Pounding Heart (The Fountain of
+   Youth)                           1:14   0:59
+56 Double Demons (The Fountain of
+   Youth)                           1:12   1:07
+57 The King Dragon (The Fountain of
+   Youth)                           1:47   1:02
+58 Ending I (The Fountain of Youth) 1:04   0:52
+59 Ending II (The Fountain of
+   Youth)                           2:08   2:06
+60 Scenario Clear                   0:06   -
+61 Destroy                          0:13   -
+
+Total Length                    1:10:12 2:04:42
+
+
+Notes:
+Recorded with kss2vgm 0.10
+
+Japanese track names taken from Project Egg's
+Perfect Collection Sorcerian vol1, 2 and
+3［Disc1]:
+    http://www.amusement-center.com/project/emusic/cgi/eggmusic_catalog-detail.cgi?product_id=9244
+    http://www.amusement-center.com/project/emusic/cgi/eggmusic_catalog-detail.cgi?product_id=9273
+    http://www.amusement-center.com/project/emusic/cgi/eggmusic_catalog-detail.cgi?product_id=9302
+
+English track names are taken from a
+combination of:
+- The .m3u that came with the .kss
+- VGMdb's translated titles of Sorcerian
+  Original Soundtrack Vol.1:
+    https://vgmdb.net/album/27923
+- The vgm pack of Sorcerian for the Sharp X1
+  Turbo:
+    https://vgmrips.net/packs/pack/sorcerian-sharp-x1-turbo-psg-opm
+
+
+Package history:
+1.00 2019-12-02 sdsnatcher73: Initial release
+1.01 2020-05-04 sdsnatcher73: Replaced
+ screenshot

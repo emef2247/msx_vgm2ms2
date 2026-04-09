@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html><head><title>MS² User Manual</title>
+<style type="text/css">
+body {
+  counter-reset: chapter;
+  margin-left: 1.5em;
+  margin-right: 3em;
+
+  color: white;
+  background: #005;
+}
+
+a {
+  text-decoration: none;
+  color: #FE0;
+  font-weight: bold;
+}
+
+div.chapters h1:before {
+  counter-increment: chapter;
+  content: "Chapter " counter(chapter) ": ";
+}
+
+div.chapters h1 {
+  margin-top: 2em;
+  text-decoration: underline;
+  counter-reset: section;
+}
+
+div.chapters h2:before {
+  counter-increment: section;
+  content: counter(chapter) "." counter(section) " ";
+}
+
+div.chapters h2 {
+  margin-top: 2em;
+  counter-reset: subsection;
+}
+
+div.chapters h3:before {
+  counter-increment: subsection;
+  content: counter(chapter) "." counter(section) "." counter(subsection) " ";
+}
+
+div.chapters h3 {
+  margin-top: 2em;
+}
+
+p, .section, pre {
+  margin-left: 1.5em;
+}
+
+pre {
+  display: inline-flex;
+  padding: 1em;
+  color: #FE0;
+  background: #600;
+}
+
+.header {
+  text-align: center;
+}
+
+i {
+  font-style: normal;
+  color: #FE0;
+  background: #600;
+}
+
+i::before {
+  color: white;
+  background: #005;
+  content: "[";
+}
+
+i::after {
+  color: white;
+  background: #005;
+  content: "]";
+}
+
+.register_box {
+  display: grid;
+  grid-template-columns: repeat(5, auto);
+  margin-left: 1.5em;
+}
+
+.register_box div {
+  padding: 0.1em 1em;
+}
+
+.register {
+  display: contents;
+}
+
+.register div {
+  border: solid;
+  border-width: 1px 0 0 1px;
+}
+
+.register div:empty {
+  border-width: 0 0 0 1px;
+}
+
+.register :nth-last-child(-n+4):not(:last-child) {
+  border-bottom-width: 1px;
+}
+</style></head><body>
+	
+<div class="header"><hr>
+<h1>MS² - MoonSound Music Studio<br/>
+(c) 2005-2025 by The New Image</h1>
+<h3>Programmed by Patriek Lesparre</h3>
+<hr></div>
+
+<div class="chapters">
+<h1>Introduction</h1>
+
+<div class="section"><h2>Introduction</h2>
+<p>Congratulations on your purchase of MoonSound Music Studio, the program that makes it possible to use your MoonSound cartridge to its full potential.</p>
+
+<p>MoonSound Music Studio will be referred to as MS² for the rest of this manual.</p>
+</div>
+
+<div class="section"><h2>Getting Started</h2>
+<div class="section"><h3>Requirements</h3>
+
+<p>MS² requires the following minimum configuration:</p>
+
+<ul>
+<li>MSX2 or higher computer with 128kB VRAM</li>
+<!--<li>MSX computer with a MSX2 VDP.<sup>*</sup></li>-->
+<li>256kB memory mapper<sup>*</sup></li>
+<li>MoonSound</li>
+<li>MSX-DOS2</li>
+</ul>
+
+<p><small>* Note that on a Panasonic FS-A1ST memory is quite tight, so MS² will deallocate the R800 DRAM mode segments. After exiting the program, the MSX will remain in ROM mode and DRAM mode cannot be re-enabled without the MSX crashing.</small></p>
+
+<p>The following additional hardware is supported:</p>
+
+<ul>
+<!--<li><strike>64kB or 128kB VRAM, for increased Undo depth.</strike></li>-->
+<li>512kB to 4MB memory mapper, for increased song size.<sup>*</sup></li>
+<li>MoonSound with 4MB Sample RAM, such as Dal-So-Ri R2.</li>
+</ul>
+
+<p><small>* Only the primary Memory Mapper is used, so on MSXturboR this will likely be the internal one.</small></p>
+
+<p>Faster CPUs such as Z80 5.37MHz, Z80 7.16MHz or R800 can be used with this program.</p>
+</div>
+
+<div class="section"><h3>Starting the program</h3>
+
+<p>MS² can run straight from diskette, or be installed to other media supported by MSX-DOS2. Installing is done by simply copying the MS² program files (MS2.*) to the desired location and optionally adding it to your PATH.</p>
+
+<p>You can start MS² by executing MS2.COM and it will automatically look for the data files at the MS2.COM location.</p>
+
+<p>After loading you will enter the <a href="#MusicEditor">Music Editor</a>.</p>
+</div>
+
+<div class="section"><h3>General operation</h3>
+<p>Move around with the <i>CURSOR</i> keys.</p>
+<p><i>ESC</i> exits menus, screens, and input fields. In places where confirmation with [RETURN] is expected, it discards.</p>
+<p><i>RETURN</i> confirms input, and enters deeper levels or edit functions.</p>
+<p><i>SPACE</i> opens lists and selects choices.</p>
+<p>In every menu where settings can be done, you can modify a setting with <i>CTRL</i>+<i>CURSOR</i> or <i>+</i> or <i>-</i>. Generally, <i>UP</i> increments, <i>DOWN</i> decrements, <i>LEFT</i> decrements in coarse steps, and <i>RIGHT</i> increments in coarse steps.</p>
+</div>
+
+<div class="section"><h3>Initial setup for 4MB Sample RAM support</h3>
+
+<p>To prepare your Instrument Libraries for use in Dal-So-Ri R2's 4MB RAM mode, make sure you have more than 2MB free diskspace and perform the following two steps once:</p>
+<ul>
+<li>Set your Dal-So-Ri R2 to 2MB RAM mode (ie. ROM enabled) and start MS²</li>
+<li>Load the Instrument Library file (eg. MBMS.MS2) as a song, and immediately save it again. This will couple all the samples in the Yamaha ROM with the instruments in the Instrument Library.</li>
+</ul>
+<p>Now you can set your Dal-So-Ri R2 to 4MB RAM mode and load existing songs, as well as start composing songs for any MoonSound compatible hardware!</p>
+</div>
+
+</div>
+<h1 id="MusicEditor">Music Editor</h1>
+
+<div class="section"><h2>Introduction</h2>
+<p>When MS² has started you will be greeted with an empty <em>song</em>, which you can start editing right away.</p>
+
+<p>A song consists of some information and settings, but most importantly of <em>patterns</em> of music. Analogous to sheet music, a pattern is like a single bar of a score. A pattern is divided into a grid of rows (called <em>steps</em>) and columns (called <em>channels</em>). Every cell in this grid can hold one or more <em>events</em>, which describe effects and notes. An empty cell is shown as " - ", while one with multiple events will have a fat border on the right. All events on the same step will be played together at the same time.</p>
+</div>
+
+<div class="section"><h2>Navigating</h2>
+<p>The cursor keys are used to move through the pattern grid. If there are more channels available than fit on the screen, the cursor will scroll through all available channels.</p>
+<p>Move through the patterns with <i>CTRL</i>+<i>UP</i>/<i>DOWN</i>, move 4 patterns at once with <i>CTRL</i>+<i>LEFT</i>/<i>RIGHT</i>.</p>
+<p>As you navigate past the end of the song, new empty patterns will be created automatically.</p>
+<p>To return to the start of the song, press <i>HOME</i>.</p>
+</div>
+
+<div class="section"><h2>Playing the song</h2>
+<p>To start playing the song, press <i>F1</i>. The song play from the currently displayed pattern and keeps playing until the song ends. If an error is found the playing will stop and the cursor will be placed at the exact location of the error.</p>
+<p>Playing can be stopped manually with <i>STOP</i> or <i>SPACE</i>. It will stop the music at the current position, to allow you to edit from that point. Alternatively, music can be stopped with <i>ESC</i>, which restores the editing position to where it was before playing.</p>
+
+<div class="section"><h3>Turning channels on and off</h3>
+<p>Each channel can be turned off, so you can remove specific channels from playback. To do this, move the cursor to a channel and press <i>CTRL</i>+<i>O</i>. The header will display "OFF". Repeat the same to turn it back on.</p>
+<p>Note that global events are also ignored if they are on a channel that is turned off.</p>
+</div>
+
+<div class="section"><h3>Solo play</h3>
+<p>When you want hear one specific channel, you can switch a channel to "solo" play. To do this, move the cursor to a channel and press <i>CTRL</i>+<i>S</i>. The header of all other channels will display "OFF". Repeat the same to turn the other channels back on.</p>
+<p>You can combine this with the previous function to turn on additional channels, for example to listen to a small number of channels.</p>
+</div>
+
+</div>
+<div class="section"><h2>Resetting a song</h2>
+<p>The whole current song can be reset by pressing <i>F10</i>. You will be asked for confirmation.</p>
+</div>
+
+<div class="section"><h2>Events</h2>
+
+<div class="section"><h3>Introduction</h3>
+<p>An event is input on a cell by pressing its designated key. <i>ESC</i> cancels the input, With <i>BS</i> you can correct a mistake. To confirm the input, press <i>RETURN</i>. Removing events in a cell is done with <i>DEL</i>.</p>
+<p>The last event can be repeated by pressing <i>CTRL</i>+<i>Y</i> on another cell.</p>
+</div>
+
+<div class="section"><h3>Notes</h3>
+<p>Notes in MS² are specified and presented in scientific pitch notation, meaning an A in octave 3 will be "A 3", a C sharp in octave 5 "C#5", and so on. "C 4" is middle-C and "A 4" is 440Hz in equal temperament. Octaves 1 through 8 are supported.</p>
+
+<p>There are two ways to input notes using the MSX keyboard. You can alternate between them with <i>CAPS</i>. Note that <i>SHIFT</i> has no influence on this.</p>
+
+<p>TYPE (CAPS light off): Notes are input like any other event, using <i>A</i> through <i>G</i>. Then you can add a sharp or flat, respectively with <i>+</i> or <i>#</i> and <i>-</i> or <i>b</i>, or simply toggle by repeating the note key. Finally add the octave using <i>1</i> through <i>8</i>.</p>
+
+<p>1KEY (CAPS light on): The MSX keyboard turns into a two octave piano-like keyboard. The base octave can be set with <i>GRAPH</i>+<i>CURSOR</i>. The following keys are used in this system:</p>
+<pre>
+ 2 3   5 6 7
+Q W E R T Y U	(upper octave)
+
+ S D   G H J
+Z X C V B N M	(lower octave)
+</pre>
+<p>So <i>Q</i> or <i>Z</i> input a C. For a G# you press <i>6</i> or <i>H</i>. Other keyboard keys are unused in this mode, so if you want to enter an event other than a note, switch to TYPE.</p>
+
+<p>If <em>Note Auditioning</em> is turned on, you will hear the note after you input it.</p>
+</div>
+
+<div class="section"><h3>Legato Notes</h3>
+<p>Using legato you can play another note without rearticulation. The new frequency is played without restarting any envelopes. A legato note is indicated by a lower case letter and can be input by keeping <i>SHIFT</i> pressed while inputting the note letter.</p>
+</div>
+
+<div class="section"><h3>Note Off</h3>
+<p>To stop playing a note, a Note Off event must be used. The key for this is <i>O</i> and it will show up as "---" in the pattern.</p>
+</div>
+
+<div class="section"><h3>Instrument Change</h3>
+<p>Changing the instrument during a song requires an instrument change event. This is input with <i>@</i> followed by the number of the instrument as defined in the Instruments Manager. Note that for FM instruments, because it's inherent in the instrument definition, the volume changes too.</p>
+</div>
+
+<div class="section"><h3>Tuning change</h3>
+<p>Tunings defined with the Tuning Editor (<i>F8</i>) can be used to modify the frequency of each note slightly, or by a lot. It allows you to create detuned instruments, classic temperaments, exotic music systems, and more. 
+
+A tuning change is entered with <i>U</i> followed by a number. The tuning change will take effect when a new note is played.</p>
+</div>
+
+<div class="section"><h3>Stereo Panning</h3>
+<p>With <i>S</i> a stereo panning value from -7 to +7 can be entered. For channels that just allow left/center/right panning, -7 to -3 means left, -2 to +2 means center and +3 to +7 means right.</p>
+</div>
+
+<div class="section"><h3>Volume Change</h3>
+<p>The volume of a channel can be changed with <i>V</i>. The value ranges from 0 (minimum) to 63 (maximum). On FM this sets the Total Level of FM operator 2.</p>
+</div>
+
+<div class="section"><h3>Pitch Envelope</h3>
+<p>Pitch envelopes allow you to control the pitch of a channel continuously, based on the music timer. It can be used to implement slides, vibratos, temporary detunes, and more creative possibilities. MS² predefines 18 envelopes for you, which correspond to different levels of up and down slides. These are input with <i>P</i>, then <i>+</i> or <i>-</i>, followed by a number <i>1</i> through <i>9</i>. In addition to these, you can define custom envelopes, which are input with <i>M</i> and then a number.</p>
+<p>These envelopes can be edited by pressing <i>CTRL</i>+<i>P</i>. Add envelops by moving to the right. Use <i>INS</i> and <i>DEL</i> to insert or remove steps. To remove the envelope, simply delete the last step, which will ask you to confirm. The loop point can be changed, or disabled.</p>
+<p>Each timer period, one step is processed and the frequency changes by 0 to 9 units up or down. One unit is 3 cents for WAV channels and 6 cents for FM channels. This distinction is an unfortunate legacy of MoonBlaster.</p>
+</div>
+
+<div class="section"><h3>Envelope Off</h3>
+<p>An envelope can be stopped with the "Envelope Off" event, which is input as <i>P</i> <i>+</i> <i>0</i> or <i>P</i> <i>-</i> <i>0</i>. It is displayed as "-e-". The pitch will stay fixed at the last level.</p>
+</div>
+
+<div class="section"><h3>MoonBlaster FM Legacy Events</h3>
+<p>These events apply only to FM instruments.</p>
+<div class="section"><h4>Brightness Change</h4>
+<p>The Brightness Change event is a relative operation on the Total Level of FM operator 1. Input it by <i>X</i>, then <i>+</i> or <i>-</i> and a number <i>1</i> up to <i>6</i>.</p>
+</div>
+</div>
+
+<div class="section"><h3>MoonBlaster Wave Legacy Events</h3>
+<p>These events apply only to Wave instruments.</p>
+<div class="section"><h4>LFO Settings</h4>
+<p>The LFO settings entered by <i>W</i> and a number from <i>1</i> to <i>9</i>. With this option you can alter the LFO speed, Vibrato depth and Tremolo depth of a wave currently playing on a channel. Note that this overrides the LFO settings of the instrument. The values of these LFO settings can be set as you like by using the LFO Editor <i>CTRL</i>+<i>W</i>.</p>
+</div>
+
+<div class="section"><h4>LFO Toggle</h4>
+<p>The LFO from any wave can be toggled on and off with the LFO event. You enter this by pressing <i>Y</i>.</p>
+</div>
+
+<div class="section"><h4>Reverb on</h4>
+<p>The OPL4 has a built-in pseudo-reverb and this can be enabled with <i>R</i>. The pseudo-reverb will be applied starting from the next note. What this means is that after the Attack phase, when the ADSR envelope reaches -18dB, the OPL4 will stop processing the ADSR envelope and apply Decay/Release rate 5.</p>
+</div>
+
+<div class="section"><h4>Reverb off</h4>
+<p>The pseudo-reverb can be set off by entering <i>Q</i>. </p>
+</div>
+</div>
+
+</div>
+<div class="section"><h2>Global Events</h2>
+
+<div class="section"><h3>Tempo change</h3>
+<p>With <i>T</i> the tempo of the song can be changed. The song tempo display is used to enter this event. A tempo change is displayed as "TMP". You can check the value of a tempo change event by editing the cell and checking the song tempo display.</p>
+</div>
+
+<div class="section"><h3>End of Pattern</h3>
+<p>This option can end a pattern before the 16th step. It is entered with <i>N</i> and displayed as an "END". Usually a pattern has 16 steps, but with an END on step 7 the pattern will end after playing step 7. This function is useful to create for example a 3/4 time.</p>
+</div>
+
+<div class="section"><h3>Transposition</h3>
+<p>You can transpose the entire song by up to 24 semitones up or down. Each note will be shifted by a the same number of semitones (chromatic transposition) This event is entered with <i>L</i>. Next, enter a value from -24 (2 octaves down) till +24 (two octaves up). Note that the transposition is not relative to any previous transposition. A transpose event is displayed for example "+12" or "- 6". Transposition occurs from the next step onwards. Wave instruments that have the Transpose Inhibit flag set, will not transpose. This is useful for percussion instruments for example.</p>
+</div>
+
+</div>
+<div class="section"><h2>Advanced Editing</h2>
+
+<div class="section"><h3>Inserting and deleting patterns</h3>
+<p>Insert and delete patterns with <i>CTRL</i>+<i>INS</i> and <i>CTRL</i>+<i>DEL</i> respectively. Adding patterns at the end of  the song happens automatically when you navigate to them.</p>
+</div>
+
+<div class="section"><h3>Block Selection</h3>
+<p>You can select part of the song as a block and perform edit functions on contents of the block.</p>
+<p>Set the start and end points of the block with <i>CTRL</i>+<i>B</i>. The block selection will be displayed in the highlight colors and can span multiple steps, channels and patterns. You can toggle a block selection on and off with <i>CTRL</i>+<i>D</i>. When a block is toggled off, a new block can be started with <i>CTRL</i>+<i>B</i>.</p>
+</div>
+
+<div class="section"><h3>Copying a Block</h3>
+<p>With <i>CTRL</i>+<i>C</i> the selected block will be copied with to current cursor position.</p>
+</div>
+
+<div class="section"><h3>Clearing Cells, Channels or Patterns</h3>
+<p>To clear the cell that the cursor is on, press <i>DEL</i>. If the cursor is in a block selection, the whole block can be cleared. <i>SHIFT</i>+<i>DEL</i> will clear the channel (in the current pattern). The whole pattern can be cleared with <i>SHIFT</i>+<i>HOME</i>.</p>
+<p>You will be asked for confirmation when clearing a block or a pattern.</p>
+</div>
+
+<div class="section"><h3>Cell Editing</h3>
+<p>You can edit a cell by pressing <i>RETURN</i>. This allows you to add and remove multiple events on the cell. The functions mentioned below can also be used while in the cell editor, applying only to the cell.</p>
+</div>
+
+<div class="section"><h3>Transposing channels</h3>
+<p>Channels can be transposed by semitone or by octave. To transpose up by a semitone use <i>.</i> and to transpose down a semitone use <i>,</i>. To transpose by octave you can use <i>&gt;</i> for up and <i>&lt;</i> for down. The channel with the cursor on it will be transposed. If the cursor is in a block selection, the whole block will be transposed.</p>
+<p>If this operation fails due to a limit being reached, the cursor will move to the first point of failure.</p>
+</div>
+
+<div class="section"><h3>Volume Modification</h3>
+<p>It is also possible to change all the volumes up or down in a channel by use of <i>[</i> for up and <i>]</i> for down. If the cursor is in a block selection, the whole block will be modified.</p>
+<p>If this operation fails due to a limit being reached, the cursor will move to the first point of failure.</p>
+</div>
+
+<div class="section"><h3>Toggling Legato on Notes</h3>
+<p>It is also possible to toggle legato on all the notes in a channel by way of <i>/</i>. If the cursor is in a block selection, the whole block will be modified.</p>
+</div>
+</div>
+
+<h1>Instruments</h1>
+
+<div class="section"><h2>Introduction</h2>
+<p>MS² supports 3 types of instruments, 2-operator FM, 4-operator FM and Wave instruments. Instruments can be managed via the Instruments menu, which is opened with <i>F3</i>.</p>
+<p>The music keyboard is active in the instruments menus, so currently selected instruments can be tried out.</p>
+
+<p>Settings such as volume and, in case of Wave instruments, Level Direct and Transpose Inhibit, can be changed by using the cursor keys and potentially combined with <i>CTRL</i>.</p>
+</div>
+
+<div class="section"><h2>Managing instruments</h2>
+<p> </p>
+
+<div class="section"><h3>Adding instruments</h3>
+<p>Instruments can be added using <i>INS</i>. The maximum amount of instruments you can use is 255.</p>
+</div>
+
+<div class="section"><h3>Deleting instruments</h3>
+<p>Instruments can be deleted using <i>DEL</i>. References to subsequent instruments in the song will be modified to reflect the deletion. If an instrument is in use, you will be asked for confirmation first.</p>
+</div>
+
+<div class="section"><h3>Selecting instruments</h3>
+<p>Instruments can be selected from the current Instrument Library with <i>SPACE</i>. A list of instruments will pop up, and you can use the cursor keys to walk (and scroll) through the columns.</p>
+</div>
+
+<div class="section"><h3>Naming instruments</h3>
+<p>Instruments can be (re)named using <i>F6</i>.</p>
+</div>
+
+<div class="section"><h3>Editing instruments</h3>
+<p>Every instrument can be edited with <i>RETURN</i>. See the chapter <a href="#EditingInstruments">Editing Instruments</a>.</p>
+</div>
+</div>
+
+<div class="section"><h2 id="EditingInstruments">Editing Instruments</h2>
+<div class="section"><h3>Envelope</h3>
+<p>Envelopes used by MS² have 4 phases: Attack, Decay, Sustain and Release. This is also known as an ADSR envelope. Each phase has a speed rate; at rate 0 the level doesn't change and at rate 15 the change is immediate. Additionally, there is the Decay Level that controls the transition between Decay and Sustain phases, and a Rate Scale that can scale the speed rates.</p>
+<div class="section"><h4>Attack</h4>
+<p>The speed at which a sound swells up. When the maximum volume is reached, it automatically transitions into the Decay phase.</p>
+</div>
+<div class="section"><h4>Decay</h4>
+<p>The speed at which a sound fades away until the Decay Level is reached.</p>
+</div>
+<div class="section"><h4>Decay Level</h4>
+<p>The volume Level at which the Decay phase ends. Note that at -0dB it happens immediately (Decay phase is ignored), and at -93dB it doesn't happen (Sustain phase is ignored).</p>
+</div>
+<div class="section"><h4>Sustain</h4>
+<p>The speed at which a sound fades away below the Decay Level. Note that for FM instruments, this value is either 0 or a copy of the Release rate.</p>
+</div>
+<div class="section"><h4>Release</h4>
+<p>The speed at which a sound fades away after the key is released (OFF event).</p>
+</div>
+<div class="section"><h4>Rate Scale</h4>
+<p>The strength of the increase of Attack, Decay, Sustain and Release speeds at higher frequencies. Note that for Wave instruments this effect can be turned off completely.</p>
+</div>
+</div>
+
+<div class="section"><h3>LFO (Low Frequency Oscillator)</h3>
+<p>The LFO allows you to modulate the frequency or volume of a sound.</p>
+<div class="section"><h4>Frequency</h4>
+<p>Sets speed of the oscillation.</p>
+</div>
+<div class="section"><h4>Vibrato</h4>
+<p>Modulates the frequency of the sound.</p>
+</div>
+<div class="section"><h4>Tremolo</h4>
+<p>Modulates the volume of the sound.</p>
+</div>
+</pre>
+</div>
+
+<div class="section"><h3>Wave Instruments</h3>
+
+<p>The MoonSound does sample-based synthesis (often incorrectly referred to as wavetable synthesis), which means sound is generated with pieces of digitized sound. Such a piece is called a <em>sample</em> or a <em>waveform</em>. The MoonSound combines each sample with extra information, such as ADSR and LFO envelopes, which is referred to in MS² as a <em>wave</em>.</p>
+
+<p>Because samples degrade in quality when played at frequencies that lie far from its inherent sampling frequency, Wave instruments in MS² can make use of multiple waves. The definition of which wave is played over which range of notes and at what pitch, is called a <em>split</em>.</p>
+
+<p>Splits are inserted with <i>INS</i> and deleted with <i>DEL</i>. Changing the Note and Cents columns is done with <i>CTRL</i>+<i>UP</i>/<i>DOWN</i> for small steps and <i>CTRL</i>+<i>LEFT</i>/<i>RIGHT</i> for big steps. Press <i>SPACE</i> on the <em>sample</em> columnn to select from currently available samples in OPL4 memory.</p>
+
+<p>The pitch of a wave is defined as the frequency difference from 44.1kHz expressed in musical <em>cents</em>. A note is 100 cents and an octave is 1200 cents.</p>
+
+<p>The following formula will allow you to use arbitrary sampling frequencies:</p>
+<p>cents = 1200 * log2( f / 44100 )</p>
+<p>(f is the sampling frequency of your sample in hertz)</p>
+
+<div class="section"><h4>Samples</h4>
+<p>MS² supports samples in 8, 12 or 16 bit PCM, sampled at any frequency. Because MS² supports arbitrary frequencies, it's possible to use samples that optimally balance quality and size.</p>
+
+<p>Length: The amount of samples of the sample, at the of the length the sample will continue playing at the loop address. Note that when playing the sample at high frequencies, the OPL4 hardware may overshoot the end address and garbage will be played.</p>
+<p>Loop address: The offset in samples from the where sample will loop.</p>
+
+<p>The end and loop address can be changed by 100 with <i>CTRL</i>+<i>UP</i>/<i>DOWN</i>. You can set the loop address to the end address and the end address to the start and sample end with <i>SELECT</i>. The sample name can be changed with <i>F6</i>.</p>
+</div>
+</div>
+</div>
+
+<div class="section"><h2>Tunings</h2>
+<p>Tunings can be used to modify the frequency of each note slightly, or by a lot. It allows you to create detuned instruments, classical temperaments, non-western tone systems, microtonal music, and more.</p>
+<p>Enter the Tuning Editor by pressing <i>F8</i>. The expected keys work here as well. You can change entire octaves or a note on all octaves by moving the cursor to the column header or row header respectively.</p>
+</div>
+
+<div class="section"><h2>Instrument Libraries</h2>
+<p>An Instrument Library is a set of instruments (and tunings) that can be selected for use in your songs. The supplied library "MBMS.MS2" is the complete set of instruments from MoonBlaster for MoonSound FM and WAVE.</p>
+
+<p>The Instrument Library can be (temporarily) swapped with the current Song. This allows you to easily edit it, save your changes, or load a different one. When you're done you can continue working on your song by swapping again. Using this feature you can also pick instruments from other songs, and build your own library!</p>
+
+<p>Note that modifying the "MBMS.MS2" library affects the import of MoonBlaster songs. You are free to edit it to change the results of the MoonBlaster import function though. For example you might want to adjust the Tunings to avoid the emulation of the faulty detune algorithm in MoonBlaster. You could also reorder or replace some instruments. However, be careful not to change the <em>amount of items</em> in the library, because doing so might result in undefined behavior and crashes when importing MoonBlaster songs.</p>
+</div>
+
+<h1>Song Settings</h1>
+
+<div class="section"><h2>General Settings</h2>
+<div class="section"><h3>Description</h3>
+<p>A description for the song, such as its name and author, can be modified with <i>CTRL</i>+<i>N</i>. The cursor will appear in the top screen and the description can be entered. With <i>RETURN</i> the new name will be used, with <i>ESC</i> the operation will be cancelled and the old name is still used.</p>
+</div>
+
+<div class="section"><h3>Tempo</h3>
+<p>With <i>CTRL</i>+<i>T</i> the start tempo can be modified. The tempo is indicated in quarter notes (or beats) per minute and it's assumed that you use a pattern per bar, so four steps is a quarter note. Changing the tempo is done with the cursor keys. Left/right for coarse changes and up/down for fine changes. The tempo is a mathematically based on the timer frequency, so if you change that it will also affect the tempo.</p>
+<p>A delta indicator shows the amount of swing between each step for the given timer frequency. On tempos that approach the timer frequency, the amount of swing can be audible by people who are sensitive to this. The higher the ratio between the tempo and the timer frequency, the smaller the contribution of a high delta becomes in the feel of the tempo.</p>
+</div>
+
+<div class="section"><h3>Timer</h3>
+<p>Use <i>CTRL</i>+<i>F</i> to switch between VDP, 50H and OPL timer. The VDP timer frequency depends on whether a 50Hz or 60Hz display frequency is used. The display frequency can be set in the MS² Configuration. However, 50H timer can be chosen to make sure that the tempo will be nearly identical on 50Hz and 60Hz displays. This timer does add a little bit of extra swing to the tempo. In order to have the most stable tempo, the OPL timer can be used instead of the VDP.</p>
+<p>The OPL timer has a resolution of 80.8 microseconds and is selectable from 1 to 133 times that period, which is respectively 48.5Hz to 100.6Hz.</p>
+<pre>
+To calculate the interrupt frequency use the following equation.
+
+     s = ( 256 - OPL timer value ) * 80.782^10-6
+
+  1	48.545
+  2	48.736
+  3	48.929
+  4	49.123
+  5	49.319
+  6	49.516
+  7	49.715
+  8	49.915
+  9	50.117    * closest to the VDP's 50Hz timer
+ 10	50.321
+...	...
+ 49	59.802
+ 50	60.078    * closest to the VDP's 60Hz timer
+ 51	60.385
+...	...
+129	97.472
+130	98.246
+131	99.032
+132	99.831
+133	100.64
+
+Interrupt frequency = 1 / s
+
+Example: 	OPL timer value = 80
+		s = ( 256 - 80 ) * 80.782^10-6
+		Interrupt frequency = 1 / 0.014217632
+		Interrupt frequency = 70.34Hz
+</pre>
+</div>
+
+<div class="section"><h3>Modulation Depth</h3>
+<p></p>
+</div>
+
+<div class="section"><h3>Loop Pattern</h3>
+<p>A song can play indefinitely when you set a loop pattern. This is the pattern where the song will loop after it has played the last pattern. A loop pattern can be set with <i>CTRL</i>+<i>L</i>. After that the pattern can be altered with the cursor keys. Pressing <i>RETURN</i> will confirm the modification and <i>ESC</i> will cancel it. The music will end after the last pattern when 'OFF' is set as the loop pattern.</p>
+</div>
+
+<div class="section"><h3>Song Settings Menu</h3>
+<p>The Song Settings Menu is accessed with <i>F4</i> and is where you control everything to do with channels. Channels can be inserted with <i>INS</i> and deleted with <i>DEL</i>. Channels that contain notes will require confirmation before they are deleted. The type of each channel, the default instrument, the volume (in case of WAV channels), and the stereo panning can also be set.
+</p>
+</div>
+</div>
+
+<h1>File Management</h1>
+<div class="section"><h2>File menu</h2>
+<p>The file menu is opened with <i>F5</i>. Depending on the current context, you will get different options. For example, in the music editor you will have the option to load, save and import music, while in an instruments manager, you can import instruments and/or samples.</p>
+
+<p>The file selector allows you to change drives (indicated by parenthesis), subdirectories (indicated by square brackets) and select files. Use the cursor keys to select something and press <i>SPACE</i> or <i>RETURN</i> to confirm.</p>
+
+<p>Instead of selecting a file, you can also start typing a filename you want to use. Press <i>RETURN</i> to confirm, or <i>ESC</i> to cancel.</p>
+
+<p>The file selector allows you to delete files with <i>DEL</i>.</p>
+
+<div class="section"><h3>Load</h3>
+<p>Open the file selector to load a MS² file.</p>
+</div>
+
+<div class="section"><h3>Save</h3>
+<p>Open the file selector to save a MS² file.</p>
+</div>
+
+<div class="section"><h3>Import</h3>
+<p>Import a file by file type. Depending on the context you might get additional choices.</p>
+</div>
+
+<div class="section"><h3>Browse</h3>
+<p>Browse files of all types.</p>
+</div>
+
+</div>
+<div class="section"><h2>Supported file formats</h2>
+
+<div class="section"><h3>MoonSound Music Studio</h3>
+<p>The native MS² format contains all data pertaining your song and can be loaded and saved.</p>
+</div>
+
+<div class="section"><h3>MBFM and MBWAVE Song</h3>
+<p>MS² takes special care to import MoonBlaster for MoonSound music (MFM and MWM files) as faithfully as possible.</p>
+
+<p>For songs that require a wavekit (MWK) please note that, contrary to MoonBlaster itself, MS² requires the wavekit filename stored in the MoonBlaster song to be correct and available in the same directory.</p>
+
+<ul>Bugs in MoonBlaster for MoonSound that are simulated by MS²:
+<li>Level Direct only works for Start Voices and then remains fixed at that setting.</li>
+<li>Level Direct bit leaks into the instrument volume.</li>
+<li>For FM channels, linked notes (legato) do key-on when key was off. At song start, the base note is B4. Out of bounds note links are ignored.</li>
+<li>MBFM wrongly assumes an OPL3 at 3.58MHz, making songs played in the MBFM editor detuned down slightly, compared to the MBFM replayer that correctly bases its frequencies on 33.8688MHz OPL4. MS² implements this by applying detune to MBFM EDIT songs and not to MBFM USER songs.</li>
+</ul>
+
+<p>Because MS² goes out of its way to accurately simulate MoonBlaster's many bugs, peculiarities and faulty concepts, it can often be the case that songs can be cleaned up considerably. Please take this into account when updating your MoonBlaster music.</p>
+</div>
+
+<div class="section"><h3>MB 1.4 Song</h3>
+<p>MS² takes special care to import MoonBlaster music (MBM files) as faithfully as possible. There is real support for MSX-MUSIC instruments. MBMs that are set to MSX-MUSIC will therefor import properly and sound the way they're supposed to. Even things like the volume and brightness events are limited appropriately.</p>
+
+<p>Additionally, MB-STEREO songs are converted to 18 channels, with MSX-AUDIO on the right and MSX-MUSIC on the left, according to MB1.4 recommendations, each with its own instruments.</p>
+
+<p>For songs that require a samplekit please note that, contrary to MoonBlaster itself, MS² requires the samplekit filename stored in the MoonBlaster song to be correct and available in the same directory.</p>
+
+<ul>Bugs in MoonBlaster 1.4 that are simulated by MS²:
+<li>Linked notes (legato) do key-on when key was off. At song start, the base note is C2. Out of bounds note links are ignored.</li>
+</ul>
+
+<p>Because MS² goes out of its way to accurately simulate MoonBlaster's many bugs, peculiarities and faulty concepts, it can often be the case that songs can be cleaned up considerably. Please take this into account when updating your MoonBlaster music.</p>
+
+<ul>Issues with MoonBlaster 1.4 import that cannot be solved:
+<li>Due to small hardware differences, like clockspeed, MSX-AUDIO and MSX-MUSIC music might theoretically not sound 100% the same on MoonSound. You would probably need a measuring device to notice this though.</li>
+<li>Modulation Depth (DAM/DVB) also applies to MSX-MUSIC channels in MB-STEREO music, even though MSX-MUSIC did not have this feature.</li>
+</ul>
+</div>
+
+<div class="section"><h3>MoonBlaster Wavekit</h3>
+<p>MoonBlaster Wavekits (MWK files) can be loaded.</p>
+</div>
+
+<div class="section"><h3>MoonBlaster Wave</h3>
+<p>MoonBlaster Waves (MWV files) can be loaded.</p>
+</div>
+
+<div class="section"><h3>MoonBlaster Tone</h3>
+<p>MoonBlaster Tones (MTN files) can be loaded by selecting a split and opening the file menu with <i>F5</i>.</p>
+</div>
+
+<div class="section"><h3>Samples</h3>
+<p>In the Wave Instruments Manager you can load raw samples. Press <i>F5</i> while in the split editor. A selection between 8 and 16-bit, signed and unsigned PCM is possible. Yamaha ADPCM raw samples (MBS files) can also be imported and will be converted to 8-bit PCM.</p>
+</div>
+</div>
+
+<h1>Configuration</h1>
+<p>Enter the Configuration screen with <i>CTRL</i>+<i>U</i>. Configuration is automatically saved on program exit. The filename is MS2.CFG.</p>
+
+<hr>
+
+</div class="chapters">
+<h1>Appendix A: Keyboard Reference</h1>
+<pre>
+Music editor:
+
+[F1] 			Play song from current pattern
+[F3] 			Open instruments menu
+[F4] 			Open song settings screen
+[F5] 			Open disk menu
+[F10] 			New song (Loads NEW.MS2)
+
+[CURSOR] 		Move cursor
+[CTRL]+[CURSOR] 	Change pattern
+[HOME] 			To start of song
+[CAPS] 			Switch edit-modes
+[DEL] 			Clear cell or block
+[SHIFT]+[DEL]		Clear channel
+[SHIFT]+[HOME] 		Clear pattern
+[ESC] 			Cancel event input
+[RETURN] 		Edit cell
+</pre>
+
+<pre>
+Music input:
+
+[A]-[G]			Notes
+[SHIFT]+[A]-[G]		Legato Notes
+[@]			Instrument change
+[J]			OPL timer frequency change
+[L]			Transpose
+[M] 			Pitch Envelope
+[N]			End of pattern
+[O] 			Off
+[P] 			Pitch Slide
+[Q]			Reverb off   
+[R]			Reverb on
+[S] 			Stereo setting
+[T]			Tempo change
+[U] 			Tuning change
+[V] 			Volume
+[W]			LFO setting
+[X]			Brightness
+[Y]			LFO toggle on/off
+[Z]			Damp
+</pre>
+
+<pre>
+Functions that can be used on a channel, in a block or in the cell editor:
+
+[.]			Raise note events by a semitone
+[,]			Lower note events by a semitone
+[&gt;]		 	Raise note events by an octave
+[&lt;]		 	Lower note events by an octave
+[]]			Raise volume events
+[[]			Lower volume events
+[/]			Toggle legato notes
+
+[GRAPH]+[CURSOR] 	Decrease/increase 1KEY octave
+
+CTRL keys:
+
+^B (Block point)	Set start or end point of a block
+^C (Copy) 		Copy block
+^D (Delete block)	Unselect block
+^F (timer Frequency) 	Set the timer frequency
+^I (song Info) 		Information based on the current pattern
+^L (Loop pattern) 	Set loop pattern
+^M (Modulation depth)	Set Modulation Depth
+^N 		 	Set song description
+^O (channel On/Off) 	Switch channel on or off
+^P 			Pitch Envelope editor
+^Q (Quit)		Quit program
+^S (Solo on/off) 	Solo channel on or off
+^T (Tempo) 		Set start tempo
+^U			Configuration settings
+^W 			LFO Editor
+^Y			Repeat last input cell
+</pre>
+
+<pre>
+Instrument Manager:
+
+[INS]			Create instrument
+[DEL]			Delete instrument
+[CTRL]+[UP] 	        Move instrument up
+[CTRL]+[DOWN] 	        Move instrument down
+[F1] 			Keyboard octave up
+[F2] 			Keyboard octave down
+[F3] 			Keyboard select
+[F5]			Disk menu
+[F6]			Change name
+
+[F8]			Pseudo Reverb on/off (Wave Instrument Manager)
+[F9]			Random panning on/off (Wave Instrument Manager)
+
+
+MSX keyboard piano:
+
+(Japanese)
+Upper octave: 2 3   5 6 7   9 0   ^
+	     Q W E R T Y U I O P @ [
+Lower octave: S D   G H J   L ;
+             Z X C V B N M , . /
+
+(International)
+Upper octave: 2 3   5 6 7   9 0   =
+	     Q W E R T Y U I O P [ ]
+Lower octave: S D   G H J   L ;
+             Z X C V B N M , . /
+</pre>
+
+<pre>
+During song play:
+
+[ESC]			Stop song.
+[STOP] or [SPACE]	Stop song and edit at the current position.
+</pre>
+
+<pre>
+Keys used in every other menu:
+
+[CTRL]+[CURSOR] 	Change item value
+[SPACE] 		Select item
+[RETURN] 		Edit item
+[ESC] 			Exit
+</pre>
+
+<h1>Appendix B: Troubleshooting</h1>
+<div class="section"><h3>I've input some notes but don't hear anything when playing.</h3>
+<p>Make sure you've defined instruments for your song.</p>
+</div>
+<div class="section"><h3>I've loaded a sample but don't hear anything when playing.</h3>
+<p>Make sure you define appropriate ADSR envelope parameters.</p>
+</div>
+<div class="section"><h3>I got a message "Uncaught exception!" and MS² stopped.</h3>
+<p>This is a serious error which should be reported. Please contact TNI with a description of what happened.</p>
+</div>
+
+<h1>Appendix C: For MoonBlaster users</h1>
+<p>Although MoonSound Music Studio is originally based on MoonBlaster, it has many differences in usage and concepts. This section is intended to help people migrate from MoonBlaster to MS².</p>
+<p>There is no difference between 'own' instruments and 'built-in' instruments. The principle of "Own Voice" and "Own Wave" is gone.</p>
+<p>Tempo is specified in quarter notes (or beats) per minute. Both VDP and OPL timer are usable.</p>
+<p>Wave volumes are doubled in resolution to 64 steps, so they have the same resolution as FM volumes.</p>
+<p>Wave instruments no longer have an inherent volume, so changing a wave instrument leaves the current volume unchanged. This is why wave instrument changes on MFM/MWM imports take up two events now. Start volumes for wave channels can be set in the Song Settings menu.</p>
+<p>The "OFF" event is displayed as "---". This allows reading of notes with less distraction and results in a much more structured view.</p>
+<p>Stereo events are shared for FM and Wave. For FM channels, -7 to -3 are LEFT, -2 to +2 are CENTER and +3 to +7 are RIGHT.</p>
+<p>In the music editor, CTRL+up/down and CTRL+left/right are swapped.</p>
+<p>Instead of just 64, the full amount of 128 samples can be used. With 4MB Sample RAM even 512 samples can be used!</p>
+<p>Samples larger than 65531 bytes can be loaded and MS² does not add 4 bytes of silence to them, so you can create loops without having to manually modify the sample end points differently for different sample types.</p>
+
+<h1>Appendix D: Using MS² music in your own software</h1>
+<p>The external replayer "MS2PLAY" is a binary library with a flexible interface. It includes the actual player used internally by MS² to ensure music sounds the way the composer intended. You can read its documentation in the MS2PLAY.ASM file, which also includes the source code for a simple stand-alone player program for MSX-DOS2, showing one possible implementation of MS2PLAY. It can be assembled with tniASM.</p>
+
+<div class="section"><h2><strike>Event Callback</strike></h2>
+<p><strike>A callback can be defined for monitoring or modifying the event stream.</strike></p>
+</div>
+
+<h1>Appendix E: The MS2 File Format</h1>
+
+<p>The MS2 file format is a chunk based. After the file signature, the file contains only chunks. Chunks are loaded in order of appearance. Multiple chunks of the same type can exist in a file. In the description below, 'word' refers to 16 bits, 'tribyte' to 24 bits, and 'long' to 32 bits. A 'signed binary cent' is a signed offset in units of the width of a semitone interval in 12-tone equal temperament divided by 128. ASCII fields are padded with spaces.</p>
+
+<div class="section"><h4>File Signature</h4></div>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>8</div><div>"MS", C2h, B2h, 0Dh, 0Ah, 0, 1Ah</div><div>UTF-8 "MS²", CR, LF, NUL, EOF</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>Chunk Header</h4></div>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>1</div><div>Byte</div><div>Chunk Type:<br>
+	0 = sentinel (must appear last, contains no data)<br>
+	1 = Song Settings (must appear first in file)<br>
+	2 = Tunings<br>
+	3 = Instruments 2OP<br>
+	4 = Instruments 4OP<br>
+	5 = Instruments WAV<br>
+	6 = Patterns<br>
+	7 = Samples<br>
+	8 = Pitch Envelopes
+</div><div></div>
++1<div>1</div><div>0</div><div>Version code</div><div></div>
++2<div>2</div><div>Word</div><div>Chunk data size: 0 ~ 16384, -1 means extended header</div><div></div>
+Optional:<div>-</div><div>Extended header</div><div>Currently only chunk type 7 uses extended header</div><div></div>
++4<div>3</div><div>Tribyte</div><div>Chunk data size: 0 ~ 16777214</div><div></div>
++7<div>1</div><div>0</div><div>Size of extended header fields</div><div></div>
++8<div>0</div><div>-</div><div>Extended header fields (Unused)</div><div></div>
++...<div>Chunk data size</div><div>Chunk data</div><div>See chunk data type specifications</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>Chunk data type 1 (Song Settings)</h4></div>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>65</div><div>ASCII</div><div>Song description</div><div></div>
++65<div>1</div><div>Byte</div><div>Song length (number of patterns)</div><div></div>
++66<div>1</div><div>Byte</div><div>The pattern index (0-based) to where the song loops, -1 = no loop</div><div></div>
++67<div>1</div><div>Byte</div><div>OPL4 Timer 1 register data, 0 = VDP timer, 1 = 50Hz timer</div><div></div>
++68<div>2</div><div>Word</div><div>Timer divider in 8.8 fixed point format</div><div></div>
++70<div>1</div><div>Byte</div><div>Modulation Depth: bit 0 = FM DVB bit, bit 1 = FM DAM bit</div><div></div>
++71<div>1</div><div>Byte</div><div>The total amount of channels (The total of +72, +73, +74)</div><div></div>
++72<div>1</div><div>Byte</div><div>The amount of 2OP FM channels</div><div></div>
++73<div>1</div><div>Byte</div><div>The amount of 4OP FM channels</div><div></div>
++74<div>1</div><div>Byte</div><div>The amount of WAV FM channels</div><div></div>
++75<div>42</div><div>Bytes</div><div>
+	Channel type for each channel:<br>
+	0 = Unsupported<br>
+	1 = 2OP FM<br>
+	2 = 4OP FM<br>
+	3 = WAV<br>
+	bit 7 = 0: Enable, 1: Disable
+</div><div></div>
++117<div>42</div><div>Bytes</div><div>For reach channel the starting instrument index (0-based)</div><div></div>
++159<div>42</div><div>Bytes</div><div>For reach channel the stereo panning in 4-bit signed format</div><div></div>
++201<div>42</div><div>Bytes</div><div>For reach (WAV) channel the start volume:<br>bits 7-1 = Total Level, bit 0 = Level Direct</div><div></div>
++243<div>2</div><div>Word</div><div>The total amount of tunings (minimum: 1)</div><div></div>
++245<div>3</div><div>0</div><div>Must be zero</div><div></div>
++248<div>2</div><div>Word</div><div>The total amount of 2OP instruments (minimum: 1)</div><div></div>
++250<div>3</div><div>0</div><div>Must be zero</div><div></div>
++253<div>2</div><div>Word</div><div>The total amount of 4OP instruments (minimum: 1)</div><div></div>
++255<div>3</div><div>0</div><div>Must be zero</div><div></div>
++258<div>2</div><div>Word</div><div>The total amount of WAV instruments (minimum: 1)</div><div></div>
++260<div>3</div><div>0</div><div>Must be zero</div><div></div>
++263<div>2</div><div>Word</div><div>The total amount of Patterns (minimum: 1)</div><div></div>
++265<div>3</div><div>0</div><div>Must be zero</div><div></div>
++268<div>2</div><div>Word</div><div>The total amount of Pitch Envelopes (minimum: 1)</div><div></div>
++270<div>3</div><div>0</div><div>Must be zero</div><div></div>
++273<div>18</div><div>LFO settings</div><div>
+	9 times:<br>
+	1 byte value of OPL4 LFO/VIB register<br>
+	1 byte value of OPL4 AM register<br>
+</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>Chunk data type 2 (Tunings)</h4></div>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>2</div><div>Word</div><div>The amount of tunings in this chunk</div><div></div>
++2<div>208</div><div>Tuning data</div><div>See Tuning data specification, repeated +0 times</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>Tuning data</h4></div>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>192</div><div>Words</div><div>For each of the 96 notes an offset from natural note C1, specified in signed binary cents.</div><div></div>
++192<div>16</div><div>ASCII</div><div>Tuning name</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>Chunk data type 3 (2OP instruments)</h4></div>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>2</div><div>Word</div><div>The amount of instruments in this chunk</div><div></div>
++2<div>30</div><div>2OP instrument data</div><div>See 2OP instrument data specification, repeated +0 times</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>2OP instrument data</h4></div>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>1</div><div>Byte</div><div>Tuning index (0-based)</div><div></div>
++1<div>2</div><div>0</div><div>Must be zero</div><div></div>
++3<div>1</div><div>Byte</div><div>OPL4 FM register 20H</div><div></div>
++4<div>1</div><div>Byte</div><div>OPL4 FM register 21H</div><div></div>
++5<div>1</div><div>Byte</div><div>OPL4 FM register 40H</div><div></div>
++6<div>1</div><div>Byte</div><div>OPL4 FM register 41H</div><div></div>
++7<div>1</div><div>Byte</div><div>OPL4 FM register 60H</div><div></div>
++8<div>1</div><div>Byte</div><div>OPL4 FM register 61H</div><div></div>
++9<div>1</div><div>Byte</div><div>OPL4 FM register 80H</div><div></div>
++10<div>1</div><div>Byte</div><div>OPL4 FM register 81H</div><div></div>
++11<div>1</div><div>Byte</div><div>OPL4 FM register E0H</div><div></div>
++12<div>1</div><div>Byte</div><div>OPL4 FM register E1H</div><div></div>
++13<div>1</div><div>Byte</div><div>OPL4 FM register C0H</div><div></div>
++14<div>16</div><div>ASCII</div><div>Instrument name</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>Chunk data type 4 (4OP instruments)</h4></div>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>2</div><div>Word</div><div>The amount of instruments in this chunk</div><div></div>
++2<div>41</div><div>4OP instrument data</div><div>See 4OP instrument data specification, repeated +0 times</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>4OP instrument data</h4></div>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>1</div><div>Byte</div><div>Tuning index (0-based)</div><div></div>
++1<div>2</div><div>0</div><div>Must be zero</div><div></div>
++3<div>1</div><div>Byte</div><div>OPL4 FM register 20H</div><div></div>
++4<div>1</div><div>Byte</div><div>OPL4 FM register 21H</div><div></div>
++5<div>1</div><div>Byte</div><div>OPL4 FM register 40H</div><div></div>
++6<div>1</div><div>Byte</div><div>OPL4 FM register 41H</div><div></div>
++7<div>1</div><div>Byte</div><div>OPL4 FM register 60H</div><div></div>
++8<div>1</div><div>Byte</div><div>OPL4 FM register 61H</div><div></div>
++9<div>1</div><div>Byte</div><div>OPL4 FM register 80H</div><div></div>
++10<div>1</div><div>Byte</div><div>OPL4 FM register 81H</div><div></div>
++11<div>1</div><div>Byte</div><div>OPL4 FM register E0H</div><div></div>
++12<div>1</div><div>Byte</div><div>OPL4 FM register E1H</div><div></div>
++13<div>1</div><div>Byte</div><div>OPL4 FM register 23H</div><div></div>
++14<div>1</div><div>Byte</div><div>OPL4 FM register 24H</div><div></div>
++15<div>1</div><div>Byte</div><div>OPL4 FM register 43H</div><div></div>
++16<div>1</div><div>Byte</div><div>OPL4 FM register 44H</div><div></div>
++17<div>1</div><div>Byte</div><div>OPL4 FM register 63H</div><div></div>
++18<div>1</div><div>Byte</div><div>OPL4 FM register 64H</div><div></div>
++19<div>1</div><div>Byte</div><div>OPL4 FM register 83H</div><div></div>
++20<div>1</div><div>Byte</div><div>OPL4 FM register 84H</div><div></div>
++21<div>1</div><div>Byte</div><div>OPL4 FM register E3H</div><div></div>
++22<div>1</div><div>Byte</div><div>OPL4 FM register E4H</div><div></div>
++23<div>1</div><div>Byte</div><div>OPL4 FM register C0H</div><div></div>
++24<div>1</div><div>Byte</div><div>OPL4 FM register C3H</div><div></div>
++25<div>16</div><div>ASCII</div><div>Instrument name</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>Chunk data type 5 (WAV instruments)</h4></div>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>2</div><div>Word</div><div>The amount of instruments in this chunk</div><div></div>
++2<div>Data size</div><div>WAV instrument data</div><div>See WAV instrument data specification, repeated +0 times</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>WAV instrument data</h4></div>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>1</div><div>Byte</div><div>Flag</div><div></div>
++1<div>1</div><div>Byte</div><div>Tuning index (0-based)</div><div></div>
++2<div>Wavetable size</div><div>Wavetable data</div><div>See wavetable data specification</div><div></div>
++...<div>16</div><div>ASCII</div><div>Instrument name</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>Wavetable data</h4></div><p>
+	The wavetable consists of a mix of region splits and (compressed) successive splits. The first wavetable byte is the 'Maximum Key'. The lower 7 bits indicate the first note <em>not</em> part of the split. If bit 7 is set, a sequence of at least 3 splits starts. In this case another byte follows with the first note of the sequence. Then, for each split, the following data:
+</p>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>2</div><div>Word</div><div>OPL4 wave header index (0-based)</div><div></div>
++2<div>2</div><div>Word</div><div>Pitch offset (in signed binary cents)</div><div></div>
+</div>
+</div>
+<p>
+	The above repeats until 'Maximum Key' 96 is reached, which indicates the last split. Then, for each split, information about the wave header contents:
+</p>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>4</div><div>Long</div><div>CRC32 of the sample data</div><div></div>
++4<div>9</div><div>Bytes</div><div>OPL4 header data offset 0003H ~ 000Bh</div><div></div>
+</div>
+</div>
+
+
+<div class="section"><h4>Chunk data type 6 (Patterns)</h4></div>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>2</div><div>Word</div><div>The amount of Patterns in this chunk</div><div></div>
++2<div>Data size</div><div>Pattern data</div><div>See Pattern data specification, repeated +0 times</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>Pattern data</h4></div>
+<p>
+	Pattern data is an MML-like array of variable size, consisting of event data and time length codes. The maximum number of events before a time length code is 5. Time length codes have bit 7 set and the value 1 ~ 16 in the lower bits. Time length 1 is considered to be a 16th note, time length 16 is a whole note. For each channel, event data and time length codes alternate until time length 16 is reached.
+</p>
+
+<div class="section"><h4>Event data</h4></div>
+<div class="register_box">
+<div>Event</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
+&nbsp;<div>C 1 ~ B 8</div><div>00h, byte N (0-based)</div><div>Key On note N</div><div></div>
+&nbsp;<div>---</div><div>01h</div><div>Key Off</div><div></div>
+&nbsp;<div>c 1 ~ b 8</div><div>02h, byte N (0-based)</div><div>Legato note N</div><div></div>
+&nbsp;<div>&nbsp;</div><div>03h, byte E</div><div>MoonBlaster CMD channel event E</div><div></div>
+&nbsp;<div>@ 1 ~ @99</div><div>04h, byte N (0-based)</div><div>Instrument change N</div><div></div>
+&nbsp;<div>V 0 ~ V63</div><div>05h, byte N</div><div>Volume change N</div><div></div>
+&nbsp;<div>S-7 ~ S+7</div><div>06h, byte S (signed 4-bit)</div><div>Stereo change S</div><div></div>
+&nbsp;<div>M 1 ~ M 9</div><div>07h, byte N (0-based)</div><div>Pitch Envelope N</div><div></div>
+&nbsp;<div>-e-</div><div>08h</div><div>Pitch Envelope Off</div><div></div>
+&nbsp;<div>TMP</div><div>09h, word T (8.8 fixed point)</div><div>Tempo change T</div><div></div>
+&nbsp;<div>&nbsp;</div><div>0Ah, byte E</div><div>MoonBlaster FM channel event E</div><div></div>
+&nbsp;<div>&nbsp;</div><div>0Bh, byte E</div><div>MoonBlaster WAV channel event E</div><div></div>
+&nbsp;<div>U 1 ~ U99</div><div>0Ch, byte N (0-based)</div><div>Tuning N</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>MoonBlaster CMD channel events</h4></div>
+<div class="register_box">
+<div>Event</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
+&nbsp;<div>END</div><div>18h</div><div>End of Pattern</div><div></div>
+&nbsp;<div>-24 ~ +24</div><div>1Ch ~ 4Ch</div><div>Transpose</div><div></div>
+&nbsp;<div>&nbsp; 1 ~ 133</div><div>3Dh ~ D2h</div><div>OPL Timer</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>MoonBlaster FM channel events</h4></div>
+<div class="register_box">
+<div>Event</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
+&nbsp;<div>X+6 ~ X-6</div><div>E3h ~ EFh</div><div>Brightness change</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>MoonBlaster WAV channel events</h4></div>
+<div class="register_box">
+<div>Event</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
+&nbsp;<div>REV</div><div>F1h</div><div>Pseudo-reverb On</div><div></div>
+&nbsp;<div>DMP</div><div>F2h</div><div>Damp</div><div></div>
+&nbsp;<div>LFO</div><div>F3h</div><div>LFO On/Off</div><div></div>
+&nbsp;<div>REF</div><div>F4h</div><div>Pseudo-reverb Off</div><div></div>
+&nbsp;<div>X 1 ~ X 9</div><div>F6h ~ FEh</div><div>LFO Settings</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>Chunk data type 7 (Samples)</h4></div>
+<p>This chunk type always uses the extended chunk header. Each sample chunk describes one sample.</p>
+<p>The main sample descriptor is this:</p>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>4</div><div>Long</div><div>CRC32</div><div></div>
++4<div>3</div><div>Tribyte</div><div>Sample size (amount of bytes). The top 2 bits are the OPL4 data format</div><div></div>
++7<div>Sample size</div><div>Sample data</div><div>8-bit, 12-bit or 16-bit PCM are supported</div><div></div>
++...<div>16</div><div>ASCII</div><div>Sample name</div><div></div>
++...<div>Amount of header indexes * 2</div><div>Words</div><div>A list of header indexes (0-based) that refer to this sample.<br>The list is terminated by a sentinel value of -1.</div><div></div>
++...<div>Amount of header indexes * 9</div><div>Bytes</div><div>For each header index in the above list:<br>OPL4 header data offset 0003H ~ 000Bh</div><div></div>
+</div><div></div>
+</div>
+</div>
+<p>If the sample size is 0, a subsample is defined. Instead of their own sample data, subsamples refer to the sample data of the previous main sample with an offset. This offset is specified in the amount of samples (8-bit, 12-bit or 16-bit units), not bytes.</p>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>4</div><div>Long</div><div>CRC32</div><div></div>
++4<div>3</div><div>0</div><div>For a subsample this is zero.</div><div></div>
++7<div>3</div><div>Tribyte</div><div>Offset in the previous main sample (in number of samples, not bytes!)</div><div></div>
++10<div>16</div><div>ASCII</div><div>Sample name</div><div></div>
++26<div>Amount of header indexes * 2</div><div>Words</div><div>A list of header indexes (0-based) that refer to this sample.<br>The list is terminated by a sentinel value of -1.</div><div></div>
++...<div>Amount of header indexes * 9</div><div>Bytes</div><div>For each header index in the above list:<br>OPL4 header data offset 0003H ~ 000Bh</div><div></div>
+</div><div></div>
+</div>
+</div>
+<p>If the sample offset is 0, a prerequisite sample is defined. These samples are required to be loaded in the OPL4 memory beforehand.</p>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>4</div><div>Long</div><div>CRC32</div><div></div>
++4<div>3</div><div>0</div><div>For a prerequisite sample this is zero.</div><div></div>
++7<div>3</div><div>0</div><div>For a prerequisite sample this is zero.</div><div></div>
++10<div>Amount of header indexes * 2</div><div>Words</div><div>A list of header indexes (0-based) that refer to this sample.<br>The list is terminated by a sentinel value of -1.</div><div></div>
++...<div>Amount of header indexes * 9</div><div>Bytes</div><div>For each header index in the above list:<br>OPL4 header data offset 0003H ~ 000Bh</div><div></div>
+</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>Chunk data type 8 (Pitch Envelopes)</h4></div>
+<div class="register_box">
+Offset<div>Length</div><div>Contents</div><div>Description</div><div></div>
+<div class="register">
++0<div>2</div><div>Word</div><div>The amount of Pitch Envelopes in this chunk</div><div></div>
++2<div>Data size</div><div>Pitch Envelope data</div><div>See Pitch Envelope data specification, repeated +0 times</div><div></div>
+</div>
+</div>
+
+<div class="section"><h4>Pitch Envelope data</h4></div>
+<p>Pitch Envelopes are arrays of variable length, containing 8-bit integers with values from -9 to 9. The Pitch Envelope is ended by a 10 and then either a 0 or a positive value. A 0 stops the envelope, but another value indicates a loop. The minimum loop value is 2, which loops to the value before the 10.</p>
+
+<hr>
+</body></html>

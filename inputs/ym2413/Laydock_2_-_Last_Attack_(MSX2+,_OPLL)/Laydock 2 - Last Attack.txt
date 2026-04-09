@@ -1,0 +1,44 @@
+***********************************************
+* VGM music package                           *
+* http://vgmrips.net/                         *
+***********************************************
+Game name:           Laydock 2: Last Attack
+System:              MSX2+
+Music hardware:      YM2413
+
+Music author:        Shigeru Tomita
+Game developer:      T&E Soft
+Game publisher:      Panasoft
+Game release date:   1988-11-19
+
+Package created by:  GTheGuardian
+Package version:     1.00
+
+Song list, in approximate game order:
+Song name                           Length:
+                                    Total  Loop
+01 Last Attack                      3:09   1:28
+02 Ice of Death                     1:04   1:04
+03 Cold Amoeba                      0:38   0:38
+04 Interlude                        0:26   0:26
+05 Mad Flame                        0:51   0:51
+06 Beyond the Dimension             0:38   0:38
+07 Get the Luck                     0:59   0:51
+08 Inorganic Beat                   0:38   0:38
+09 Bio-Monster                      0:51   0:51
+10 Return of Peace                  0:58   0:58
+11 Your Rank                        0:32   0:32
+
+Total Length                       10:45  19:42
+
+
+Notes:
+Track names are from
+"PSY-O-BLADE & Laydock ~ T&E Soft Game Music
+Scene 1" (H28X-10002)
+
+This pack was made using openMSX 0.8.0 VGM mod.
+
+
+Package history:
+1.00 2016-05-05 GTheGuardian: Initial release.

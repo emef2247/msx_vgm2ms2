@@ -1,0 +1,59 @@
+***********************************************
+* VGM music package                           *
+* http://vgmrips.net/                         *
+***********************************************
+Game name:           Aleste
+System:              MSX2
+Music hardware:      MSX-MUSIC (YM2413),
+                     PSG (AY-3-8910)
+
+Music author:        Masatomo Miyamoto,
+                     Takeshi Santo,
+                     Shin-Kun
+Game developer:      Compile
+Game publisher:      Compile
+Game release date:   1988
+
+Package created by:  sdsnatcher73
+Package version:     1.01
+
+Song list, in approximate game order:
+Song name                           Length:
+                                    Total  Loop
+01 Compile                          0:02   -
+02 Prologue DIA51                   0:36   0:36
+03 Title                            0:44   0:32
+04 Metropolis (Area 1)              0:32   0:32
+05 Street Fighter (Sub Boss)        0:10   0:10
+06 Rapid Turning (Area Boss)        0:13   0:13
+07 Go Ahead (Area Clear)            0:11   -
+08 The Challenger (Area 2)          0:31   0:30
+09 Tension of Dark Side (Area 3)    0:36   0:35
+10 The Devastation (Area 4)         1:05   1:04
+11 The Solitude (Area 5)            0:31   0:27
+12 Red Zone (Area 6)                0:27   0:27
+13 Don't Cry Hi-Yah (Area 7)        0:26   0:26
+14 Bloody Jewel (Area 8)            0:16   0:13
+15 Dogodaga-Dogodege (Final Boss)   0:16   0:16
+16 Again (Game Over)                0:24   -
+17 Triumph (Ending)                 0:51   0:51
+18 Easy Going (Bonus Area)          0:37   0:36
+
+Total Length                        8:27  15:54
+
+
+Notes:
+Recorded with kss2vgm 0.10
+
+English track names taken from John Hassink's
+OST recording:
+    https://www.youtube.com/watch?v=e6AG19bUPjQ
+
+Japanese track names courtesy of Google
+Translate.
+
+
+Package history:
+1.00 2019-12-07 sdsnatcher73: Initial release
+1.01 2020-05-04 sdsnatcher73: Replaced
+ screenshots

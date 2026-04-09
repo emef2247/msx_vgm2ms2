@@ -1,0 +1,128 @@
+***********************************************
+* VGM music package                           *
+* http://vgmrips.net/                         *
+***********************************************
+Game name:           Ys II Special
+System:              IBM PC/AT
+OS:                  DOS
+Music hardware:      Adlib/OPL2 (YM3812)
+
+Music author:        Goo-Hee Kwon (SoundTeMP),
+                     Dong-Il Kwak (SoundTeMP),
+                     Ki-Sung Park,
+                     Se-Yong Kim (TeMP),
+                     Myung-Jin Ahn (D.A.C.),
+                     Seung-Hwan Ro (D.A.C.),
+                     Falcom Sound Team J.D.K.
+                     (original)
+ in particular:      Yuzo Koshiro,
+                     Mieko Ishikawa,
+                     Hideya Nagata,
+ Music Program:      Seo-Ho Son,
+                     In-Ho Heo
+Game developer:      MANTRA
+Game publisher:      MANTRA
+Game release date:   1994
+
+Package created by:  dj.tuBIG/MaliceX
+Package version:     1.01
+
+Song list, in approximate game order:
+Song name                           Length:
+                                    Total  Loop
+01 The Morning Glow                 1:34   1:34
+02 To Make the End of Battle        2:23   -
+03 Lilia                            0:34   -
+04 Too Full with Love               1:59   1:34
+05 Apathetic Story                  0:18   0:18
+06 House                            0:35   0:35
+07 Blacksmith's Workshop            0:31   0:15
+08 Weapon Shop                      0:29   0:29
+09 May I Help You?                  0:13   0:13
+10 Tears of Sylph                   0:16   0:16
+11 Inn                              0:25   0:25
+12 Adventurer's Anthem              1:22   1:21
+13 Inside of the Ice Wall           0:14   0:14
+14 Mist                             1:36   1:36
+15 Cavern of Rasteenie              1:01   1:01
+16 Termination                      2:10   1:58
+17 Flower Garden of Celceta         0:38   0:34
+18 Ruins of Moondoria               1:36   -
+19 Forest of Roda                   0:43   0:43
+20 Forest of Illusion               0:54   0:53
+21 Protectors                       0:41   0:41
+22 Tower of Hadal                   1:02   1:02
+23 Feel Blue                        0:34   0:34
+24 Village of Elves                 0:53   0:53
+25 Tower of Tovah                   1:31   1:31
+26 New Boss                         2:26   1:46
+27 Ice Ridge of Noltia (Arrange)    2:52   2:49
+28 Walkways in the Snow             1:38   1:38
+29 Ice Ridge of Noltia              1:03   1:03
+30 Village of Thieves               1:11   1:11
+31 Palace of Priests                0:52   0:52
+32 Untitled Wings                   1:36   1:35
+33 Tower of Dabbie                  1:45   1:42
+34 Village of Dwarves               0:51   0:51
+35 Moat of Burnedbless              1:16   1:16
+36 Burnedbless                      1:23   1:23
+37 Pathway of Lava                  1:23   1:23
+38 Tower of Messa                   1:26   1:26
+39 Royal Palace of Goddesses        0:27   0:13
+40 Tower of Gemma                   1:53   1:47
+41 Valley of Wind                   1:16   1:14
+42 Duel Place of Warriors           2:35   2:26
+43 Tower of Fact                    1:37   1:24
+44 Tender People                    2:05   2:05
+45 Palace of Salmon                 0:57   0:57
+46 Subterranean Canal               1:29   1:29
+47 Palace of Salmon (Arrange)       1:41   1:07
+48 Companile of Lane                1:29   1:16
+49 Circular Tower                   1:00   0:56
+50 Room of the Sage                 1:31   1:31
+51 Rest in Peace                    0:29   0:14
+52 Feena                            0:19   0:19
+53 Duel with Dalles                 2:18   2:18
+54 Noble District of Toal           0:46   0:37
+55 Don't Go So Smoothly!            0:40   0:40
+56 A Decisive Battle with Darm      0:53   0:51
+57 A Still Time                     2:14   1:06
+58 Stay with Me Forever             2:31   -
+59 A New Journey                    3:53   -
+60 So Much for Today                0:24   0:24
+61 Tower of Dangun [Secret Area]    1:42   1:42
+62 MANTRA Developer's Room [Secret
+   Area]                            1:58   1:58
+63 Lucky [Item Get SFX]             0:06   -
+64 The Last Moment of the Dark
+   [unused]                         2:15   -
+
+Total Length                    1:22:20 2:26:29
+
+
+Notes:
+Playback in-game using DOSBOX 0.74 mod.
+
+Track titles are a combination of official OST
+titles for songs by Falcom Sound Team J.D.K.:
+   http://vgmdb.net/album/1280
+   http://vgmdb.net/album/1707
+
+Exclusive tracks by soundTeMP (as TeMP),
+Titles adapted from zonx' DOS game recording
+rip found here:
+   http://zonx.egloos.com/5753483
+
+Much of this pack involved some painstakingly
+manual extraction work, and it turns out the
+game music data is also compatible with
+MANTRA's "Legend of Heroes II" DOS port.
+
+Music programmer korean names in Hangul are
+ 손서호 and 허인호
+
+
+Package history:
+1.00 2014-07-03 dj.tuBIG/MaliceX: Initial rel.
+1.01 2015-10-03 dj.tuBIG/MaliceX: Author tag
+ fixes!

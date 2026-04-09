@@ -1,0 +1,43 @@
+***********************************************
+* VGM music package                           *
+* http://vgm.mdscene.net/                     *
+***********************************************
+Game name:           F-1 Spirit 3D Special
+System:              MSX2+
+Music hardware:      MSX-Music (YM2413)
+
+Music author:        Tsutomu Ogura
+Game developer:      Panasoft?
+Game publisher:      Konami
+Game release date:   1990-07
+
+Package created by:  Sonic of 8!
+Package version:     1.05
+
+Song list, in approximate game order:
+Song name                           Length:
+                                    Total  Loop
+01 Is it "Domingo" Today?           0:32   0:30
+02 Constructor                      0:25   0:23
+03 Practice Makes Perfect           1:25   1:15
+04 Turn on The Run                  1:30   1:02
+05 Out of Rap                       1:02   0:56
+06 Hot Road                         0:37   0:30
+07 Make What Haste You Can!         0:28   0:26
+08 Big Don                          0:32   -
+09 Glory                            0:13   -
+10 Light Step                       0:47   0:32
+11 Calm Feeling                     1:08   -
+
+Total Length                        8:37  14:09
+
+
+Notes:
+-
+
+
+Package history:
+1.00 2013-05-29 Sonic of 8!: Initial release.
+1.01 2013-06-24 Valley Bell: Stripped unused
+ AY8910 chip.
+1.05 2013-07-25 dissident93: Added composer's full name.

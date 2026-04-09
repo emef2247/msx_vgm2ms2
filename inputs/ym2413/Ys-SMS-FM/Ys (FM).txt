@@ -1,0 +1,52 @@
+***********************************************
+* VGM music package                           *
+* http://www.smspower.org/music               *
+***********************************************
+Game name:           Ys
+System:              Sega Master System
+Music hardware:      YM2413
+
+Music author:        Yuzo Koshiro;
+                     Mieko Ishikawa;
+                     Takahito Abe;
+                     Sound Team J.D.K.;
+                     Tokuhiko Uwabo;
+                     Izuho Takeuchi;
+                     Neko
+Game developer:      Nihon Falcom
+Game publisher:      Sega
+Game release date:   1988/10/15
+
+Package created by:  Sonic of 8!; Johnnyz
+Package version:     1.01
+
+Song list, in approximate game order:
+Song name                           Length:
+                                    Total  Loop
+Feena                               1:39   1:13
+Fountain of Love                    0:26   0:26
+Tears of Sylph                      0:20   0:20
+The Syonin                          0:20   0:16
+First Step Towards Wars             1:05   1:04
+Palace                              1:28   1:08
+Holders of Power                    0:25   0:19
+Palace of Destruction               1:06   0:55
+Beat of the Terror                  1:21   1:16
+Temple del Sol                      0:29   0:29
+Tower of the Shadow of Death        1:01   1:01
+Devil's Wind                        0:05   0:04
+The Last Moment of the Dark         0:56   0:56
+Final Battle                        0:13   0:13
+Rest In Peace                       0:14   0:12
+The Morning Grow                    1:53   -
+See You Again                       1:25   1:23
+Treasure Box                        0:04   -
+Game Over                           0:09   -
+Theme of Adol                       0:38   0:38
+
+Notes:
+-
+
+Package history:
+1.00  6/8/2011 Sonic of 8!: Initial release.
+1.01 25/8/2011 Maxim: Replaced "Unknown" with "Treasure Box" from Johnnyz.
