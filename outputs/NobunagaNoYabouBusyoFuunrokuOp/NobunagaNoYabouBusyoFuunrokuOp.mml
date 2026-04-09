@@ -1,0 +1,409 @@
+;[name=psg lpf=1]
+#opll_mode 1
+#tempo 75
+#title { "NobunagaNoYabouBusyoFuunrokuOp"}
+
+
+;-----------------------  OPLL part -------------------------------
+#alloc 9=112
+#alloc a=112
+#alloc b=112
+#alloc c=2080
+#alloc d=1296
+#alloc e=1824
+; === OPLL Voice Table ===
+;@voice 00 user patch=0000000000000000
+;@voice 01 preset inst=7 (Trumpet)
+;@voice 02 user patch=f131172023401609
+;@voice 03 user patch=613120206c431825
+;@voice 04 preset inst=1 (Violin)
+;@voice 05 preset inst=4 (Flute)
+;@voice 06 preset inst=9 (Horn)
+;@voice 07 user patch=13110c20fcd24383
+;@voice 08 preset inst=12 (Vibraphone)
+; =========================
+
+
+
+;ch9 start
+9 @0 v15 o1 r%8
+;ch9 end: tick count: 8
+
+
+;cha start
+a @0 v15 o1 r%8
+;cha end: tick count: 8
+
+
+;chb start
+b @0 v15 o1 r%8
+;chb end: tick count: 8
+
+
+;chc start
+c @0 v15 o1 r%9 >(((d%35 c%36 r%1 a+%36 a%36 g%24 f%24
+;tick count: 201
+
+c @1 v12 d+%192 d%12 a%6 r%6 >e%6 r%6 f%24 e%24
+;tick count: 477
+
+c v12 <a%12 d%12 a%6 r%6 >e%6 r%6 f%24 e%24
+;tick count: 573
+
+c v12 <a%12 d%12 a%6 r%6 >e%6 r%6 f%24 e%24
+;tick count: 669
+
+c v12 <a%12 d%12 a%6 r%6 >e%6 r%6 f%24 e%24
+;tick count: 765
+
+c v12 <a%12 g%12 >d%6 r%6 a%6 r%6 a+%24 a%24
+;tick count: 861
+
+c v12 r%1 d%11 r%1 <g%11 >d%6 r%6 a%6 r%7
+;tick count: 910
+
+c v12 a+%24 a%24 d%12 <f%12 >c%6 r%6 g%6 r%6
+;tick count: 1006
+
+c v12 a%24 g%24 c%12 <e%12 a+%6 r%6 >d%6 r%6
+;tick count: 1102
+
+c v12 g%24 d%24 <e%12 a%12 >e%6 r%6 a%6 r%6
+;tick count: 1198
+
+c v12 b%24 a%24 e%12 <a%12 >e%6 r%6 a%6 r%6
+;tick count: 1294
+
+c v12 b%24 >c+%12 [<a%12]2 d%12 a%6 r%6 >e%6
+;tick count: 1384
+
+c v12 r%6 f%24 e%24 <a%12 d%12 a%6 r%6 >e%6
+;tick count: 1480
+
+c v12 r%6 f%24 e%24 <a%12 g%12 >d%6 r%6 a%6
+;tick count: 1576
+
+c v12 r%6 a+%24 a%24 r%1 d%11 r%1 <g%11 >d%6
+;tick count: 1660
+
+c v12 r%6 a%6 r%6 a+%24 r%1 a%24 d%12 <f%12
+;tick count: 1751
+
+c v12 >c%6 r%6 g%6 r%6 a%24 g%24 c%12 <e%12
+;tick count: 1847
+
+c v12 a+%6 r%6 >d%6 r%6 g%24 d%24 <e%12 a%12
+;tick count: 1943
+
+c v12 >e%6 r%6 a%6 r%6 b%24 a%24 e%12 <a%12
+;tick count: 2039
+
+c v12 >e%6 r%6 a%6 r%6 b%24 >c+%12 [<a%12]2
+;tick count: 2123
+
+c v12 >g%12 >d%6 r%6 a%6 r%6 a+%24 a%24 <g%12
+;tick count: 2219
+
+c v12 c%12 g%6 r%6 >e%6 r%6 a+%24 e%24 <g%12
+;tick count: 2315
+
+c v12 f%12 >c%6 r%6 g%6 r%6 a%24 g%24 c%12
+;tick count: 2411
+
+c v12 <a+%12 >f%6 r%7 >c%5 r%6 d%24 r%1 c%24
+;tick count: 2496
+
+c v12 <f%12 <e%12 >d%6 r%6 g%6 r%6 a+%24 g%24
+;tick count: 2592
+
+c v12 d%12 <a%12 >e%6 r%6 g%6 r%6 >c+%24 <e%24
+;tick count: 2688
+
+c v12 <a%12 d%12 a%6 r%6 >e%6 r%6 f%24 e%24
+;tick count: 2784
+
+c v12 <a%12 d%12 a%6 r%6 >e%6 r%6 f+%24 e%24
+;tick count: 2880
+
+c v12 <a%12 g%12 >d%6 r%6 a%6 r%6 a+%24 a%24
+;tick count: 2976
+
+c v12 <g%12 c%12 g%6 r%6 >e%6 r%6 a+%24 e%24
+;tick count: 3072
+
+c v12 <g%12 f%12 >c%6 r%6 g%6 r%6 a%24 g%24
+;tick count: 3168
+
+c v12 r%1 c%11 r%1 <a+%11 >f%6 r%7 >c%5 r%6
+;tick count: 3216
+
+c v12 d%24 r%1 c%24 <f%12 <e%12 >d%6 r%6 g%6
+;tick count: 3307
+
+c v12 r%6 a+%24 g%24 d%12 <a%12 >e%6 r%6 g%6
+;tick count: 3403
+
+c v12 r%6 >c+%24 <e%24 <a%12 <d%36 c%36 a+%36 a%36
+;tick count: 3613
+
+c v12 g%24 f%24 f+%192 f%255 f%34 r%255 r%226 o6a%143 r%1 >c%48
+;tick count: 4815
+
+c @2 v12 <b%96 g%96 d%48 f%96 e%48 d%48 e%48 c%96
+;tick count: 5391
+
+c v12 a%145 >c%48 d%48 <b%96 g%48 a%144 >c%48 <b%192
+;tick count: 6160
+
+c v12 a+%96 >c%49 d%144 e%96 <f%48 g%48 a%144 >d%48
+;tick count: 6833
+
+c v12 <a%96 r%48 <<<g%48 r%1 >d%144 e%48 c%96 <)d%24
+;tick count: 7338
+
+c @1 v13 e%48 f%48 g%48 a%24 b%48 a%48 g%72 f%24
+;tick count: 7698
+
+c v13 g%96 <d%12 a%6 r%6 >e%6 r%6 f%24 r%1
+;tick count: 7855
+
+c v13 e%24 <a%12 d%11 r%1 a%5 r%7 >e%6 r%6
+;tick count: 7927
+
+c v13 f%24 e%24 <a%12 g%12 >d%6 r%6 a%6 r%6
+;tick count: 8023
+
+c v13 a+%24 a%24 d%12 <g%12 >d%6 r%6 a%6 r%6
+;tick count: 8119
+
+c v13 a+%24 a%24 d%12 <f%12 >c%6 r%6 g%6 r%6
+;tick count: 8215
+
+c v13 a%24 g%24 c%12 <e%12 b%6 r%6 >g%12 a%24
+;tick count: 8335
+
+c v13 g%24 <b%12 >a%36 g%36 f%36 e%36 d%48 r%1
+;tick count: 8564
+
+c v13 <a+%255
+c v13 a+%255
+c v13 a+%255
+c v13 a+%3
+;chc end: tick count: 9332
+
+
+;chd start
+d @0 v15 o1 r%117 >>>((d%6 e%6 f%6 g%6 a%12 >d%6 e%6
+;tick count: 165
+
+d @3 v13 f%6 g%6 a%12 r%6 g%78 >c%8 <a+%8 a%8
+;tick count: 297
+
+d v13 a+%8 a%8 g%80 r%144 >a%6 e%6 d%6 <a%12
+;tick count: 567
+
+d v13 e%6 d%6 <a%6 [r%255]2 r%67 >>a%6 e%6 d%6 <a%6
+;tick count: 1186
+
+d v13 r%12 >a%6 e%6 d%6 <a%6 r%36 >a%6 e%6
+;tick count: 1270
+
+d v13 d%6 <a%6 r%12 >a%6 e%6 d%6 <a%6 [r%255]2 r%103
+;tick count: 1931
+
+d v13 >a%6 e%6 d%6 <a%6 r%12 >a%6 e%6 d%6
+;tick count: 1985
+
+d v13 <a%6 r%36 >a%6 e%6 d%6 <a%6 r%12 >a%6
+;tick count: 2069
+
+d v13 e%6 d%6 <a%6 [r%255]3 r%16 <a%24 >a%48 a+%24 >c%24
+;tick count: 2988
+
+d v13 c+%48 d+%48 e%60 f%24 g%12 a%97 r%24 d%24
+;tick count: 3325
+
+d v13 a%24 g%24 a%96 o2))d%6 e%6 f%6 g%6 a%12
+;tick count: 3505
+
+d @4 v15 >d%6 e%6 f%6 g%6 a%12 >d%6 e%6 f%6
+;tick count: 3559
+
+d v15 g%6 a%12 d%6 e%6 f%6 g%6 a%12 >d%6
+;tick count: 3619
+
+d v15 e%6 f%6 g%6 a%24 <e%255 e%105 r%1 a%5 r%1
+;tick count: 4028
+
+d v15 >d%5 r%1 g%5 r%1 a%6 e%96 r%255 r%225 (a%186
+;tick count: 4808
+
+d @5 v14 r%1 >c%6 <b%180 g%4 d%4 e%4 f%186 e%6
+;tick count: 5199
+
+d v14 d%96 e%96 r%84 a%12 >e%4 d%4 e%137 d%48
+;tick count: 5680
+
+d v14 g%84 a%12 f+%6 g%6 f+%6 e%6 d%168 r%84
+;tick count: 6052
+
+d v14 d%6 e%6 <b%96 r%96 <a+%48 r%1 >c%23 d%25
+;tick count: 6353
+
+d v14 g%48 a%48 e%72 c%24 r%84 a%6 >d%6 e%84
+;tick count: 6725
+
+d v14 d%6 <a%6 r%144 g%24 a%24 b%96 >c%48 r%1
+;tick count: 7074
+
+d v14 d%48 <g%48 a%48 e%72 <a%24 >a%192 <b%24 >c%48
+;tick count: 7578
+
+d v14 d%24 <<g%6 >c%6 d%6 g%12 >c%6 d%6 g%12
+;tick count: 7656
+
+d v14 a%6 >d%6 g%12 >c%6 d%6 g%12 d%6 c%6
+;tick count: 7716
+
+d v14 <g%12 d%6 c%6 <g%12 d%6 c%6 <g%12 d%6
+;tick count: 7782
+
+d v14 c%6 <g%6 [r%255]2 r%67 <<)a%6 b%6 >c%6 d%6 e%12
+;tick count: 8407
+
+d @4 v15 a%6 b%6 >c%6 d%6 e%12 a%6 b%6 >c%6
+;tick count: 8461
+
+d v15 d%6 e%12 a%6 b%6 >c%6 d%6 e%12 a%6
+;tick count: 8521
+
+d v15 b%6 >c%6 d%6 e%24 <<(e%96 d%97 e%96 d%96
+;tick count: 8948
+
+d @5 v14 e%96 d%96 e%192
+;chd end: tick count: 9332
+
+
+;che start
+e @0 v15 o1 r%8 >d%6 e%6 f%6 g%6 a%12 >d%6 e%6
+;tick count: 56
+
+e @4 v15 f%6 g%6 a%12 >d%6 e%6 f%6 g%6 a%12
+;tick count: 116
+
+e v15 d%6 e%6 r%1 f%5 r%1 g%5 r%1 a%11
+;tick count: 152
+
+e v15 r%1 >d%5 r%1 e%6 f%6 g%6 a%24 <<a+%48
+;tick count: 249
+
+e v15 >c%48 d%48 c%48 r%192 <a%24 >e%24 d%12 e%12
+;tick count: 657
+
+e @6 v15 f%12 g%12 e%48 d%12 e%12 f%12 g%12 a%48
+;tick count: 825
+
+e v15 g%12 a%12 a+%12 >c%12 <a%73 g%12 f%12 e%48
+;tick count: 1018
+
+e v15 d%12 e%12 f%12 g%12 e%72 d%24 c%12 d%12
+;tick count: 1186
+
+e v15 e%168 <a%24 >e%24 d%12 e%12 f%12 g%12 e%48
+;tick count: 1498
+
+e v15 d%12 e%12 f%12 g%12 a%48 g%12 a%12 a+%12
+;tick count: 1630
+
+e v15 >c%12 <a%73 g%12 f%12 e%48 d%12 e%12 f%12
+;tick count: 1823
+
+e v15 g%12 e%72 d%24 c%12 d%12 e%120 r%24 <a%24
+;tick count: 2123
+
+e v15 >a%60 g%12 a%12 >c%12 <e%72 d%24 c%12 d%12
+;tick count: 2339
+
+e v15 e%96 f%24 r%1 d%36 c%12 d%72 e%12 f%12
+;tick count: 2604
+
+e v15 g%48 a%48 f%12 e%12 d%144 <a%24 >a%60 g%12
+;tick count: 2964
+
+e v15 a%12 >c%12 <g%48 c+%24 <a+%24 a%12 >c%12 e%96
+;tick count: 3204
+
+e v15 f%24 d%36 r%1 c%12 d%48 g%48 e%48 a%216
+;tick count: 3637
+
+e v15 g%24 a%192 r%72 <a%6 >d%6 g%6 a%6 e%97
+;tick count: 4046
+
+e v15 <a%96 r%72 >>(((a%6 g%6 e%6 d%6 <a+%120 a%12
+;tick count: 4370
+
+e @7 v12 a+%12 >d%8 e%8 g%8 a%6 g%6 e%6 d%6
+;tick count: 4430
+
+e v12 <a+%6 >d%6 e%6 g%6 a%6 g%6 e%6 d%6
+;tick count: 4478
+
+e v12 <a+%144 >g%6 >g%42 <d%6 >d%42 <e%6 >e%42 <<a%6
+;tick count: 4772
+
+e @8 v12 >a%42 r%1 g%5 r%1 >g%42 <d%6 >d%42 <e%6
+;tick count: 4917
+
+e v12 >e%42 <a%6 >a%42 <g%6 >g%42 <d%6 >d%42 <e%6
+;tick count: 5109
+
+e v12 >e%42 <<a%6 >a%42 g%6 >g%42 <d%6 >d%42 <e%6
+;tick count: 5301
+
+e v12 >e%42 <a%6 >a%42 <g%6 >g%42 <d%6 >d%42 <e%6
+;tick count: 5493
+
+e v12 >e%42 <<a%6 >a%42 r%1 g%5 r%1 >g%42 <d%6
+;tick count: 5638
+
+e v12 >d%42 <e%6 >e%42 <a%6 >a%42 <g%6 >g%42 <d%6
+;tick count: 5830
+
+e v12 >d%42 <e%6 >e%42 <<a%6 >a%42 g%6 >g%42 <d%6
+;tick count: 6022
+
+e v12 >d%42 <e%6 >e%42 <a%6 >a%42 <g%6 >g%42 <d%6
+;tick count: 6214
+
+e v12 >d%42 <e%6 >e%42 <<a%6 >a%42 r%1 g%5 r%1
+;tick count: 6359
+
+e v12 >g%42 <d%6 >d%42 <e%6 >e%42 <a%6 >a%42 <g%6
+;tick count: 6551
+
+e v12 >g%42 <d%6 >d%42 <e%6 >e%42 <<a%6 >a%42 g%6
+;tick count: 6743
+
+e v12 >g%42 <d%6 >d%42 <e%6 >e%42 <a%6 >a%42 <g%6
+;tick count: 6935
+
+e v12 >g%42 <d%6 >d%42 <e%6 >e%42 <<a%6 >a%42 r%1
+;tick count: 7122
+
+e v12 g%5 r%1 >g%42 <d%6 >d%42 <e%6 >e%42 <a%6
+;tick count: 7272
+
+e v12 >a%42 r%255 r%225 <<<)))a%24 >e%24 d%12 e%12 f%12 g%12
+;tick count: 7890
+
+e @6 v15 r%1 e%48 d%12 e%12 f%12 g%12 a%48 g%12
+;tick count: 8047
+
+e v15 a%12 a+%12 >c%12 <a%72 g%12 f%12 e%48 d%12
+;tick count: 8239
+
+e v15 e%12 f%12 g%12 e%72 d%24 e%72 a%108 >e%6
+;tick count: 8557
+
+e v15 d%6 e%255 e%226 r%96 <<(((e%192
+;che end: tick count: 9332

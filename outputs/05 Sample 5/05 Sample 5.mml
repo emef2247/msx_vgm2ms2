@@ -1,0 +1,202 @@
+;[name=psg lpf=1]
+#opll_mode 1
+#tempo 75
+#title { "05 Sample 5"}
+
+
+;-----------------------  OPLL part -------------------------------
+#alloc 9=160
+#alloc a=160
+#alloc b=768
+#alloc c=352
+#alloc d=416
+#alloc e=784
+; === OPLL Voice Table ===
+;@voice 00 preset inst=11 (Harpsichord)
+;@voice 01 preset inst=15 (Electric Guitar)
+;@voice 02 user patch=e1630a20fcf82829
+;@voice 03 preset inst=6 (Oboe)
+;@voice 04 preset inst=1 (Violin)
+; =========================
+
+
+
+;ch9 start
+9 @0 v12 o1 r%255
+9 v12 r%255
+9 v12 r%255
+9 v12 r%255
+9 v12 r%255
+9 v12 r%71
+;ch9 end: tick count: 1346
+
+
+;cha start
+a @0 v12 o1 r%255
+a v12 r%255
+a v12 r%255
+a v12 r%255
+a v12 r%255
+a v12 r%71
+;cha end: tick count: 1346
+
+
+;chb start
+b @0 v12 o1 r%2 a%7 e%7 a%7 g%7 r%7 f%7 g%7
+;tick count: 51
+
+b @1 v12 a%7 r%7 >c%7 <b%7 g%7 f%7 d%7 g%7
+;tick count: 107
+
+b v12 g+%7 a%7 e%7 a%7 g%7 r%7 f+%7 g%7
+;tick count: 163
+
+b v12 a%7 r%7 >c%7 <b%7 g%7 f%7 d%7 g%7
+;tick count: 219
+
+b v12 g+%7 a%7 e%7 a%7 g%7 r%7 f%7 g%7
+;tick count: 275
+
+b v12 a%7 r%7 >c%7 <b%7 g%7 f%7 d%7 g%7
+;tick count: 331
+
+b v12 g+%7 a%7 e%7 a%7 g%7 r%7 f+%7 g%7
+;tick count: 387
+
+b v12 a%7 r%7 >c%7 <b%7 g%7 f%7 d%7 g%7
+;tick count: 443
+
+b v12 g+%7 >a%7 <f%21 r%7 f%21 >>c%7 <<f%21 >b%7
+;tick count: 541
+
+b v12 <f%7 >>c%7 <<f%7 >>d%7 <<f%21 >>c%7 <<f%21 >b%7
+;tick count: 625
+
+b v12 <f%7 >a%7 <f%21 >>c%7 <<f%7 >a%7 <a%21 >a%7
+;tick count: 709
+
+b v12 <a%21 >a%7 <a%14 >a%7 r%7 <a%7 r%7 a%7
+;tick count: 786
+
+b v12 >a%7 <a%21 >a%7 <a%21 >a%7 <a%14 >a%7 r%7
+;tick count: 877
+
+b v12 <a%7 r%7 a%7 >a%7 <f%21 r%7 f%21 >>c%7
+;tick count: 961
+
+b v12 <<f%21 >b%7 <f%7 >>c%7 <<f%7 >>d%7 <<f%21 >>c%7
+;tick count: 1045
+
+b v12 <<f%21 >b%7 <f%7 >a%7 <f%21 >>c%7 <<f%7 b%7
+;tick count: 1129
+
+b v12 f+%7 a%7 b%7 r%7 b%7 f+%7 a%7 b%7
+;tick count: 1185
+
+b v12 r%7 b%7 r%7 b%77 a%7 g+%7 f%7 e%7
+;tick count: 1311
+
+b v12 d%7 b%7 r%7 e%14
+;chb end: tick count: 1346
+
+
+;chc start
+c @0 v12 o1 r%72 >>>)g%7 a%7 >c%7 <g%7 a%7 >c%7 <g%7
+;tick count: 121
+
+c @2 v13 a%7 >c%7 <g%7 a%7 >c%7 <g%7 a%7 r%7
+;tick count: 177
+
+c v13 g%14 a%35 r%70 g%7 a%7 >c%7 <g%7 a%7
+;tick count: 331
+
+c v13 >c%7 <g%7 a%7 >c%7 <g%7 a%7 >c%7 <g%7
+;tick count: 387
+
+c v13 a%7 r%7 g%14 a%35 <f%56 a%28 f%14 a%70
+;tick count: 618
+
+c v13 f%42 a%42 >c%28 <a%56 r%14 >c%28 <b%14 a%56
+;tick count: 898
+
+c v13 f%56 a%28 f%14 a%70 f%42 a%14
+;chc end: tick count: 1122
+
+
+;chd start
+d @0 v12 o1 r%2 >>>)e%14 a%7 e%7 a%7 e%7 a%70 r%63
+;tick count: 177
+
+d @3 v13 a%7 g%7 a%35 e%14 a%7 e%7 a%7 e%7
+;tick count: 268
+
+d v13 a%70 r%63 a%7 g%7 a%35 <a%56 >c%28 <b%14
+;tick count: 548
+
+d v13 >c%14 d%28 c%28 <b%14 a%28 >c%42 e%28 d%56
+;tick count: 786
+
+d v13 r%14 e%28 d%14 c%56 <a%56 >c%28 <b%14 >c%14
+;tick count: 1010
+
+d v13 d%28 c%28 <b%14 a%28 >c%14 ))b%7 a%7 b%7
+;tick count: 1143
+
+d @4 v15 >c%7 <b%14 a%14 b%7 ((r%49 b%7 a%7 g+%7
+;tick count: 1255
+
+d @2 v13 f%7 e%7 d%7 <b%7 a%7 g+%7 f%7 e%7
+;tick count: 1311
+
+d v13 d%7 b%7 r%7 >e%14
+;chd end: tick count: 1346
+
+
+;che start
+e @0 v12 o1 r%2 >>>))a%14 >c%7 <a%7 >d%7 <a%7 >d+%7 d%63
+;tick count: 114
+
+e @3 v14 r%63 c%7 <b%7 >c%35 <a%14 >c%7 <a%7 >d%7
+;tick count: 261
+
+e v14 <a%7 >d+%7 d%63 r%63 c%7 <b%7 >c%35 )e%7
+;tick count: 457
+
+e @0 v13 <a%7 f%7 >))e%7 <((a%7 f%7 >))e%7 <((a%7 >))d%7
+;tick count: 513
+
+e v13 <a%7 f%7 >))d%7 <((a%7 f%7 >))d%7 <((a%7 >))e%7
+;tick count: 569
+
+e v13 <a%7 f%7 >))e%7 <((a%7 f%7 >))e%7 <((a%7 >))d%7
+;tick count: 625
+
+e v13 <a%7 f%7 >))d%7 <((a%7 f%7 >))d%7 <((a%7 e%28
+;tick count: 702
+
+e @3 v13 g%28 f+%56 r%14 g%28 f+%14 e%28 d%7 e%7
+;tick count: 884
+
+e v13 f%7 e%7 >))e%7 <((a%7 f%7 >))e%7 <((a%7 f%7
+;tick count: 940
+
+e @0 v15 >e%7 <((a%7 >))d%7 <((a%7 f%7 >))d%7 <((a%7 f%7
+;tick count: 996
+
+e v15 >d%7 <((a%7 >))e%7 <((a%7 f%7 >))e%7 <((a%7 f%7
+;tick count: 1052
+
+e v15 >e%7 <((a%7 >))d%7 <((a%7 f%7 >))d%7 <((a%7 f%7
+;tick count: 1108
+
+e v15 >d%7 <((a%7 >))b%7 a%7 b%7 >c%7 <b%14 a%14
+;tick count: 1178
+
+e @4 v15 b%7 (r%7 <f+%7 g%7 a%7 g%7 b%7 a%7
+;tick count: 1234
+
+e @3 v14 b%7 a%7 g+%7 f%7 e%7 d%7 <b%7 a%7
+;tick count: 1290
+
+e v14 g+%7 f%7 e%7 d%7 b%7 r%7 >e%14
+;che end: tick count: 1346
