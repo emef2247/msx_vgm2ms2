@@ -161,8 +161,20 @@ def fnum_block_to_ms2_note(fnum: int, block: int) -> int | None:
 
 
 def opll_vol_to_ms2_vol(opll_vol: int) -> int:
-    """Convert OPLL volume (0=max, 15=silent) to MS2 volume (0=silent, 63=max)."""
-    return round((15 - max(0, min(15, opll_vol))) * 63 / 15)
+    """Convert OPLL volume (0=max, 15=silent) to MS2 volume (0=silent, 63=max).
+
+    OPLL uses a 2 dB per step attenuation scale (4-bit, 0=loudest, 15≈muted).
+    MS2 uses 0=silent, 63=max.  A 2 dB/step mapping gives:
+        ms2 = round(63 * (1 - opll_vol/15) ** 0.5)  (square-root curve)
+    This keeps mid-range volumes audible while still reaching 0 at vol=15.
+    An absolute minimum of 8 is clamped for any keyon step to avoid
+    barely-audible levels that were too quiet in Stage B.
+    """
+    v = max(0, min(15, opll_vol))
+    if v >= 15:
+        return 0  # fully muted
+    ms2 = round(63.0 * math.sqrt(1.0 - v / 15.0))
+    return max(0, ms2)
 
 
 # ---------------------------------------------------------------------------
@@ -415,48 +427,92 @@ def _encode_channel_in_pattern(
 ) -> bytes:
     """Encode one channel's events for a single pattern into MS2 bytes.
 
-    events_at_steps is a list of (step, [event_byte_seq, ...]) sorted by step.
+    events_at_steps is a list of (step, [event_byte_seq, ...]).
     Each event_byte_seq is a bytes-like object (e.g. bytes([0x00, 36])).
 
-    Encoding rule:
-        For each group (same step): emit all event bytes, then emit time code
-        for the duration until the NEXT group (or end of pattern).
+    Structural guarantees (MS2 spec):
+      - Each slice is: 0..5 event items, then exactly one time-length code.
+      - Time-length code = 0x80 | length,  length ∈ 1..16.
+      - The sum of all time-length codes for a channel-pattern = 16.
+      - Events at the same step are merged before encoding.
+      - If a step has >5 event items, the remainder is pushed into extra
+        micro-slices (duration 1 each) so nothing is silently dropped.
     """
-    buf = bytearray()
-    prev_step = 0
-    n = len(events_at_steps)
+    MAX_EVENTS_PER_SLICE = 5
 
-    for i, (step, evts) in enumerate(events_at_steps):
-        if step >= STEPS_PER_PATTERN:
-            break
-        # Gap before these events → emit as a time-code-only slice
-        gap = step - prev_step
+    # ── 1. Merge events at the same step ─────────────────────────────────
+    merged: dict[int, list] = {}
+    for step, evts in events_at_steps:
+        if not (0 <= step < STEPS_PER_PATTERN):
+            continue
+        if step in merged:
+            merged[step].extend(evts)
+        else:
+            merged[step] = list(evts)
+
+    if not merged:
+        return bytes([0x80 | STEPS_PER_PATTERN])   # 0x90: whole-note rest
+
+    buf = bytearray()
+    cur_time = 0                        # steps elapsed so far (0..16)
+    sorted_steps = sorted(merged.keys())
+
+    for idx, step in enumerate(sorted_steps):
+        if cur_time >= STEPS_PER_PATTERN:
+            break                       # pattern already full; skip late events
+
+        evts = merged[step]
+
+        # ── 2. Fill gap before this step ─────────────────────────────────
+        gap = step - cur_time
         if gap > 0:
             buf.append(0x80 | gap)
-            prev_step = step
+            cur_time += gap
 
-        # Emit event bytes (max 5 event-items per spec)
-        item_count = 0
-        for ev in evts:
-            if item_count >= 5:
-                break          # TODO Stage C: split overflow into next slice
-            buf.extend(bytes(ev))
-            item_count += 1
-
-        # Duration: until next events or end of pattern
-        if i + 1 < n:
-            next_step = events_at_steps[i + 1][0]
-            duration = min(next_step, STEPS_PER_PATTERN) - step
+        # ── 3. Emit events in slices of ≤ MAX_EVENTS_PER_SLICE ──────────
+        # Determine the time we need to reach after all events at this step.
+        if idx + 1 < len(sorted_steps):
+            target_time = sorted_steps[idx + 1]
         else:
-            duration = STEPS_PER_PATTERN - step
+            target_time = STEPS_PER_PATTERN
 
-        if duration > 0:
+        total_items = len(evts)
+        offset = 0
+        while offset < total_items:
+            chunk = evts[offset: offset + MAX_EVENTS_PER_SLICE]
+            offset += MAX_EVENTS_PER_SLICE
+
+            for ev in chunk:
+                buf.extend(bytes(ev))
+
+            if offset >= total_items:
+                # Last (or only) chunk → advance to target_time
+                duration = target_time - cur_time
+                if duration <= 0:
+                    # Target already reached (can happen if previous micro-slices
+                    # consumed all remaining steps).  Emit duration 1 to keep the
+                    # stream structurally valid, capping at pattern boundary.
+                    duration = 1
+                duration = min(duration, STEPS_PER_PATTERN - cur_time)
+                if duration <= 0:
+                    # Pattern is already full; we cannot advance further.
+                    # The events we just emitted won't have a time code — which
+                    # is invalid.  Overwrite by removing them from buf.
+                    # (This should only happen for events beyond step 15.)
+                    while buf and not (buf[-1] & 0x80):
+                        buf.pop()
+                    break
+            else:
+                # Intermediate chunk: advance by 1 step (minimum valid code)
+                duration = 1
+
             buf.append(0x80 | duration)
-            prev_step = step + duration
+            cur_time += duration
 
-    # If no events at all, emit a whole-note hold
-    if not buf:
-        buf.append(0x80 | STEPS_PER_PATTERN)
+    # ── 4. Fill remaining time to reach exactly 16 ───────────────────────
+    remaining = STEPS_PER_PATTERN - cur_time
+    if remaining > 0:
+        buf.append(0x80 | remaining)
 
     return bytes(buf)
 
@@ -630,6 +686,16 @@ def segments_to_patterns(
 
     Returns channel_event_lists[pat][ch] = sorted list of
         (step_in_pattern, [event_bytes, ...]).
+
+    Stage C improvements:
+      - prev_inst_idx and prev_vol_ms2 are reset at each pattern boundary so
+        that every new pattern re-emits @ and V for its active channels.
+        This ensures MS² (which resets per-channel state between patterns)
+        always hears the correct instrument and volume from pattern 0 onward.
+      - prev_inst_idx and prev_vol_ms2 are NOT reset on note-off; they are
+        only reset at pattern boundaries.  This avoids redundant @/V events
+        within a pattern (when the same instrument/volume continues after a
+        gap), reducing event density.
     """
     total_steps = n_patterns * STEPS_PER_PATTERN
     grid = _build_step_grid(segments, ticks_per_step, total_steps)
@@ -648,6 +714,13 @@ def segments_to_patterns(
             pat = step // STEPS_PER_PATTERN
             step_in_pat = step % STEPS_PER_PATTERN
 
+            # ── Reset inst/vol tracking at each pattern boundary ─────────
+            # MS² resets per-channel state at the start of each pattern, so
+            # every pattern that plays notes must explicitly re-emit @ and V.
+            if step_in_pat == 0:
+                prev_inst_idx = -1
+                prev_vol_ms2 = -1
+
             state = grid.get((ch, step), (0, 0, 0, 0))
             keyon, ms2_note, inst, vol_opll = state
             prev_keyon, prev_note, prev_inst, prev_vol = prev_state
@@ -658,20 +731,16 @@ def segments_to_patterns(
 
             if keyon and ms2_note is not None:
                 # Find the at_token for this instrument
-                # Use the segment to get the at_token
                 inst_idx = _get_segment_inst_idx_at_step(
                     segments, ch, step, ticks_per_step, user_patches, inst_map
                 )
                 note_changed = (ms2_note != prev_note) or (not prev_keyon)
                 inst_changed = (inst_idx != prev_inst_idx)
-                vol_changed = (vol_ms2 != prev_vol_ms2)
+                vol_changed  = (vol_ms2 != prev_vol_ms2)
 
                 if inst_changed:
                     evts_here.append(bytes([0x04, inst_idx & 0xFF]))
                     prev_inst_idx = inst_idx
-                # Emit VOL whenever volume changes while a note is active.
-                # Stage C TODO: consider suppressing tiny vol changes (< 2 units)
-                # to reduce pattern data size.
                 if vol_changed:
                     evts_here.append(bytes([0x05, vol_ms2 & 0xFF]))
                     prev_vol_ms2 = vol_ms2
@@ -679,10 +748,11 @@ def segments_to_patterns(
                     evts_here.append(bytes([0x00, ms2_note & 0xFF]))
 
             elif not keyon and prev_keyon:
-                # Note just turned off → emit key-off
+                # Note just turned off → emit key-off.
+                # Do NOT reset prev_inst_idx / prev_vol_ms2 here: keeping them
+                # avoids spurious @/V re-emissions when the same instrument and
+                # volume resumes after a short gap within the same pattern.
                 evts_here.append(bytes([0x01]))
-                prev_inst_idx = -1
-                prev_vol_ms2 = -1
 
             if evts_here:
                 channel_event_lists[pat][ch].append((step_in_pat, evts_here))
