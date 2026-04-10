@@ -164,7 +164,8 @@ def _decode_patterns(data: bytes, n_channels: int, show_bytes: bool = True) -> l
                     if b == 0x00 or b == 0x02:      # note on / legato
                         name = 'NOTE_ON' if b == 0x00 else 'LEGATO'
                         if pos < len(data):
-                            note = data[pos]; pos += 1
+                            note = data[pos]
+                            pos += 1
                             events_decoded.append(f"{name}({note})")
                         else:
                             events_decoded.append(f"{name}(?)")
@@ -172,19 +173,22 @@ def _decode_patterns(data: bytes, n_channels: int, show_bytes: bool = True) -> l
                         events_decoded.append("NOTE_OFF")
                     elif b == 0x04:
                         if pos < len(data):
-                            inst = data[pos]; pos += 1
+                            inst = data[pos]
+                            pos += 1
                             events_decoded.append(f"INST({inst})")
                         else:
                             events_decoded.append("INST(?)")
                     elif b == 0x05:
                         if pos < len(data):
-                            vol = data[pos]; pos += 1
+                            vol = data[pos]
+                            pos += 1
                             events_decoded.append(f"VOL({vol})")
                         else:
                             events_decoded.append("VOL(?)")
                     elif b == 0x06:
                         if pos < len(data):
-                            stereo = data[pos]; pos += 1
+                            stereo = data[pos]
+                            pos += 1
                             events_decoded.append(f"STEREO({stereo})")
                         else:
                             events_decoded.append("STEREO(?)")

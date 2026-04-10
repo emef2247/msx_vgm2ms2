@@ -63,12 +63,10 @@ OPLL_PRESET_NAMES: dict[int, str] = {
 }
 
 # Default: 75 BPM at 60 Hz NTSC VDP timer.
-# Timer divider (8.8 fixed-point) = 60 Hz / BPS_per_step_rate.
-# For BPM X at 60 Hz: divider = (60 / (X/60 * 4 / 16)) = 60 / (X/4) ... simplified:
-#   one 16th-note = 60 / (X * 4 / 60) / 60 ...
-# Simpler: 16th-note duration = 60 / BPM / 4 seconds.
-# At VDP 60 Hz: timer_divider = 16th_note_sec * 60 = 60 / BPM / 4 * 60 = 900 / BPM.
-# For 75 BPM: 900 / 75 = 12.0 → 0x0C00 in 8.8 fixed-point.
+# Timer divider formula (8.8 fixed-point, stored as 16-bit integer × 256):
+#   16th-note duration (seconds) = 60 / BPM / 4
+#   At 60 Hz VDP: divider = 16th_note_sec × 60 = 900 / BPM
+#   For 75 BPM: 900 / 75 = 12.0 → 0x0C00 in 8.8 fixed-point (12 << 8 = 0x0C00).
 _BPM_TO_DIVIDER: dict[int, int] = {
     60:  0x0F00,   # 15.0
     75:  0x0C00,   # 12.0
@@ -114,7 +112,7 @@ def opll_patch_to_opl4(patch_bytes: bytes) -> dict:
     Returns a dict: {20: byte, 21: byte, 40: byte, 41: byte, 60: byte, 61: byte,
                      80: byte, 81: byte, E0: byte, E1: byte, C0: byte}
     """
-    r = bytes(patch_bytes) + bytes(max(0, 8 - len(patch_bytes)))  # pad to 8
+    r = (bytes(patch_bytes)[:8] + bytes(max(0, 8 - len(patch_bytes))))[:8]
 
     reg20 = r[0]                                # mod AM/VIB/EGT/KSR/MULT
     reg21 = r[4]                                # car AM/VIB/EGT/KSR/MULT
@@ -293,7 +291,10 @@ def _equal_temperament_tuning() -> bytes:
     """
     buf = bytearray(208)
     for note in range(96):
-        offset_cents = note * 128          # 1 semitone = 128 binary cents
+        # 1 binary cent = 1 semitone / 128 (MS2 spec: signed offset from C1 in
+        # units of semitone/128). For 12-TET, note N above C1 = N semitones,
+        # so offset = N × 128 binary cents.
+        offset_cents = note * 128
         struct.pack_into('<h', buf, note * 2, offset_cents)
     # Name (bytes 192..207, 16 ASCII chars, space-padded)
     name = b'Equal Temp.     '[:16]
@@ -549,8 +550,8 @@ def _build_instrument_table(
 
     def _patch_key(inst: int, user_patches_local: dict) -> tuple:
         if inst == 0:
-            # Use the first user patch encountered (or zeros)
-            pb = next(iter(user_patches_local.values()), bytes(8)) if user_patches_local else bytes(8)
+            # Use the first user patch encountered (or zeros as fallback)
+            pb = next(iter(user_patches_local.values()), bytes(8))
             return ('user', pb)
         return ('preset', inst)
 
