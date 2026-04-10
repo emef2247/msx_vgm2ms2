@@ -71,13 +71,6 @@ def _validate_channel_stream(
     label = f"[pat={pat} ch={ch} @{pos:#x}]"
 
     while pos < end and cum_time < STEPS_PER_PATTERN:
-        if pos >= end:
-            errors.append(
-                f"{label} data exhausted at offset {pos:#x} "
-                f"(cum_time={cum_time})"
-            )
-            break
-
         b = data[pos]
         pos += 1
 

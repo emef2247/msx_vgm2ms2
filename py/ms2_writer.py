@@ -164,11 +164,10 @@ def opll_vol_to_ms2_vol(opll_vol: int) -> int:
     """Convert OPLL volume (0=max, 15=silent) to MS2 volume (0=silent, 63=max).
 
     OPLL uses a 2 dB per step attenuation scale (4-bit, 0=loudest, 15≈muted).
-    MS2 uses 0=silent, 63=max.  A 2 dB/step mapping gives:
-        ms2 = round(63 * (1 - opll_vol/15) ** 0.5)  (square-root curve)
-    This keeps mid-range volumes audible while still reaching 0 at vol=15.
-    An absolute minimum of 8 is clamped for any keyon step to avoid
-    barely-audible levels that were too quiet in Stage B.
+    MS2 uses 0=silent, 63=max.  A square-root mapping gives:
+        ms2 = round(63 * sqrt(1 - opll_vol/15))
+    This keeps mid-range volumes louder than a linear map while still reaching
+    0 at vol=15 (fully muted).
     """
     v = max(0, min(15, opll_vol))
     if v >= 15:
@@ -497,10 +496,21 @@ def _encode_channel_in_pattern(
                 if duration <= 0:
                     # Pattern is already full; we cannot advance further.
                     # The events we just emitted won't have a time code — which
-                    # is invalid.  Overwrite by removing them from buf.
-                    # (This should only happen for events beyond step 15.)
+                    # is invalid.  Remove the event bytes we just added so the
+                    # previous time code remains the final code for this stream.
+                    # This should only happen when events overflow past step 15.
+                    n_removed = 0
                     while buf and not (buf[-1] & 0x80):
                         buf.pop()
+                        n_removed += 1
+                    if n_removed:
+                        import warnings
+                        warnings.warn(
+                            f"_encode_channel_in_pattern: dropped {n_removed} "
+                            f"event byte(s) at step {step} because pattern is "
+                            f"already full (cur_time={cur_time})",
+                            stacklevel=3,
+                        )
                     break
             else:
                 # Intermediate chunk: advance by 1 step (minimum valid code)
