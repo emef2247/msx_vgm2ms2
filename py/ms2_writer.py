@@ -141,39 +141,51 @@ def opll_patch_to_opl4(patch_bytes: bytes) -> dict:
 # ---------------------------------------------------------------------------
 
 def fnum_block_to_ms2_note(fnum: int, block: int) -> int | None:
-    """Convert YM2413 Fnum+Block to an MS2 note index (0=C1, 1=C#1, …, 95=B8).
+    """Convert YM2413 Fnum+Block to an MS2 note index (0=C0, 1=C#0, …, 95=B7).
 
-    Returns None when fnum==0 or frequency is outside the representable range.
+    MS2 note 0 = C0 = MIDI 12.  The valid range is 0..95 (C0 to B7).
+
+    MGSDRV (MSX) octave convention: "o1" corresponds to OPLL block 0 (≈C0 =
+    16 Hz), so octave N in MGSDRV maps to OPLL block N-1.  Subtracting MIDI 12
+    (rather than MIDI 24) gives the correct MS2 note for all test cases:
+        block=0 fnum=172 → 16 Hz ≈ C0  → ms2 note 0  ✓ (blockb "o1 c")
+        block=2 fnum=172 → 65 Hz ≈ C2  → ms2 note 24 ✓ (scalech "o3 c")
+        block=3 fnum=172 → 130 Hz ≈ C3 → ms2 note 36 ✓ (3chtest "o4 c")
+
+    Returns None when fnum==0 or frequency maps outside 0..95.
     """
     if fnum == 0:
         return None
     freq = 49716.0 * fnum * (1 << block) / (1 << 19)
-    if freq < 16.0:
+    if freq < 8.0:
         return None
     # MIDI note: A4=440 Hz=MIDI 69
     midi = 69.0 + 12.0 * math.log2(freq / 440.0)
     midi_int = round(midi)
-    # MS2 note 0 = C1 = MIDI 24
-    ms2_note = midi_int - 24
+    # MS2 note 0 = C0 = MIDI 12
+    ms2_note = midi_int - 12
     if ms2_note < 0 or ms2_note > 95:
         return None
     return ms2_note
 
 
 def opll_vol_to_ms2_vol(opll_vol: int) -> int:
-    """Convert OPLL volume (0=max, 15=silent) to MS2 volume (0=silent, 63=max).
+    """Convert OPLL volume (0=max, 15=silent) to MS2 carrier TL (0=max, 63=min).
 
-    OPLL uses a 2 dB per step attenuation scale (4-bit, 0=loudest, 15≈muted).
-    MS2 uses 0=silent, 63=max.  A square-root mapping gives:
-        ms2 = round(63 * sqrt(1 - opll_vol/15))
-    This keeps mid-range volumes louder than a linear map while still reaching
-    0 at vol=15 (fully muted).
+    OPLL volume is a 4-bit attenuation field: 0=loudest, 15=most attenuated.
+    Each OPLL step = 2 dB.  MS2 volume event directly sets the OPL4 carrier
+    Total Level (TL), where 0=maximum output and 63=minimum output.
+    Each OPL4 TL step ≈ 0.75 dB.
+
+    Empirical calibration from reference MS2 files (ms2_reference/):
+        OPLL vol 1 → MS2 TL 4   (confirmed from SCALECH.MS2 / 3CHTEST.MS2)
+        OPLL vol 2 → MS2 TL 8   (confirmed from BLOCKB.MS2)
+    This gives a ratio of 4 TL steps per OPLL vol step, which approximates the
+    2 dB / 0.75 dB ≈ 2.67 exact ratio while matching the reference hand-authored
+    values.  A factor of 4 per step (2 × nearest even integer) is used.
     """
     v = max(0, min(15, opll_vol))
-    if v >= 15:
-        return 0  # fully muted
-    ms2 = round(63.0 * math.sqrt(1.0 - v / 15.0))
-    return max(0, ms2)
+    return min(63, v * 4)
 
 
 # ---------------------------------------------------------------------------
@@ -240,8 +252,8 @@ def build_song_settings_data(
 
     # +65: song length (number of patterns, 0..255)
     data[65] = min(255, n_patterns)
-    # +66: loop pattern (-1 = 0xFF = no loop)
-    data[66] = 0xFF   # no loop (Stage B; Stage C: support loop point)
+    # +66: loop pattern (0 = loop back to pattern 0)
+    data[66] = 0   # loop to pattern 0
     # +67: timer type (0 = VDP, 1 = 50 Hz)
     data[67] = timer
     # +68: timer divider (16-bit, 8.8 fixed-point)
@@ -557,43 +569,65 @@ def _build_step_grid(
     """Convert per-channel segment lists to a step grid.
 
     Returns a dict keyed by (ch, step) where value is
-    (keyon, ms2_note, inst, vol_opll) representing the state that *starts*
-    at that step.  Keyon=0 means silent.
+    (keyon, ms2_note, inst, vol_opll, retrigger) representing the state that
+    *starts* at that step.  Keyon=0 means silent.  retrigger=True means the
+    note was explicitly re-attacked at this step (the note-on opcode should be
+    emitted even if the pitch has not changed from the previous step).
 
-    The "snapshot at step start" approach: for each step S, the state is
-    taken from the last segment whose tick_start <= S * ticks_per_step.
-    If no segment covers that tick, keyon=0.
+    Uses event-based note-start assignment: each segment is assigned to the
+    step where it begins (tick_start // ticks_per_step).  Steps between note
+    events carry forward the most recent state.  This correctly handles notes
+    that start slightly after a step boundary (e.g. 2 ticks after step 0)
+    which the old snapshot-at-step-start approach would miss.
+
+    When a key-off and a new key-on happen at the same step (adjacent notes
+    with no gap in between), the note-on overrides the key-off AND the
+    retrigger flag is set to True so that a NOTE_ON opcode is always emitted,
+    even if the pitch happens to be identical to the previous note.
     """
     grid: dict[tuple, tuple] = {}
 
     for ch in range(NUM_CH):
         segs = segments.get(ch, [])
-        if not segs:
-            continue
 
-        # For each step, binary-search for the covering segment
-        for step in range(total_steps):
-            tick = step * ticks_per_step
-            # Find last segment with tick_start <= tick
-            lo, hi = 0, len(segs) - 1
-            found = None
-            while lo <= hi:
-                mid = (lo + hi) // 2
-                if segs[mid].tick_start <= tick:
-                    found = segs[mid]
-                    lo = mid + 1
-                else:
-                    hi = mid - 1
+        # ── Collect keyoff steps and build note-on assignments ────────────
+        assignments: dict[int, tuple] = {}   # step → (keyon, ms2_note, inst, vol, retrigger)
+        keyoff_steps: set = set()
 
-            if found is not None and found.tick_end > tick:
-                # A segment actually covers this tick
-                ms2_note = fnum_block_to_ms2_note(found.fnum, found.block)
-                if found.keyon and ms2_note is not None:
-                    grid[(ch, step)] = (1, ms2_note, found.inst, found.vol)
-                else:
-                    grid[(ch, step)] = (0, 0, 0, 0)
+        for seg in segs:
+            start_step = seg.tick_start // ticks_per_step
+            if start_step >= total_steps:
+                continue
+
+            if seg.keyon:
+                ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
+                if ms2_note is not None:
+                    # Retrigger if a key-off also lands on this step (adjacent
+                    # notes with no inter-step gap: note-off and note-on share
+                    # the same step boundary).
+                    retrigger = start_step in keyoff_steps
+                    # Later note-on at same step overrides earlier one.
+                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol,
+                                               retrigger)
             else:
-                grid[(ch, step)] = (0, 0, 0, 0)
+                keyoff_steps.add(start_step)
+                # Only record key-off if no note-on already occupies this step.
+                if start_step not in assignments or assignments[start_step][0] == 0:
+                    assignments[start_step] = (0, 0, seg.inst, seg.vol, False)
+
+        # ── Carry forward state across steps ─────────────────────────────
+        # Steps without explicit events inherit the state of the previous step.
+        # The retrigger flag is cleared on carry-forward so it is only True for
+        # the exact step where the re-attack occurred.
+        cur_state: tuple = (0, 0, 0, 0, False)   # start silent
+        for step in range(total_steps):
+            if step in assignments:
+                cur_state = assignments[step]
+            else:
+                # Clear the retrigger flag when carrying forward
+                if cur_state[4]:
+                    cur_state = cur_state[:4] + (False,)
+            grid[(ch, step)] = cur_state
 
     return grid
 
@@ -716,7 +750,7 @@ def segments_to_patterns(
         channel_event_lists.append([[] for _ in range(n_channels)])
 
     for ch in range(n_channels):
-        prev_state = (0, 0, 0, 0)   # (keyon, ms2_note, inst, vol)
+        prev_state = (0, 0, 0, 0, False)   # (keyon, ms2_note, inst, vol, retrigger)
         prev_inst_idx = -1
         prev_vol_ms2 = -1
 
@@ -731,9 +765,10 @@ def segments_to_patterns(
                 prev_inst_idx = -1
                 prev_vol_ms2 = -1
 
-            state = grid.get((ch, step), (0, 0, 0, 0))
-            keyon, ms2_note, inst, vol_opll = state
-            prev_keyon, prev_note, prev_inst, prev_vol = prev_state
+            state = grid.get((ch, step), (0, 0, 0, 0, False))
+            keyon, ms2_note, inst, vol_opll, retrigger = state
+            prev_keyon = prev_state[0]
+            prev_note  = prev_state[1]
 
             vol_ms2 = opll_vol_to_ms2_vol(vol_opll)
 
@@ -744,7 +779,10 @@ def segments_to_patterns(
                 inst_idx = _get_segment_inst_idx_at_step(
                     segments, ch, step, ticks_per_step, user_patches, inst_map
                 )
-                note_changed = (ms2_note != prev_note) or (not prev_keyon)
+                # Emit NOTE_ON when: pitch changed, first note after silence,
+                # instrument changed, or the note was explicitly re-attacked
+                # (keyoff + keyon at the same step boundary, retrigger=True).
+                note_changed = (ms2_note != prev_note) or (not prev_keyon) or retrigger
                 inst_changed = (inst_idx != prev_inst_idx)
                 vol_changed  = (vol_ms2 != prev_vol_ms2)
 
@@ -780,19 +818,20 @@ def _get_segment_inst_idx_at_step(
     user_patches: dict,
     inst_map: dict,
 ) -> int:
-    """Find the MS2 instrument index for channel ch at the given step."""
-    tick = step * ticks_per_step
+    """Find the MS2 instrument index for channel ch at the given step.
+
+    Uses the same event-based start-step assignment as _build_step_grid:
+    find the last segment whose tick_start // ticks_per_step <= step.
+    """
     segs = segments.get(ch, [])
     found = None
-    lo, hi = 0, len(segs) - 1
-    while lo <= hi:
-        mid = (lo + hi) // 2
-        if segs[mid].tick_start <= tick:
-            found = segs[mid]
-            lo = mid + 1
+    for seg in segs:
+        seg_step = seg.tick_start // ticks_per_step
+        if seg_step <= step:
+            found = seg
         else:
-            hi = mid - 1
-    if found is not None and found.tick_end > tick:
+            break
+    if found is not None and found.keyon:
         return _get_ms2_inst_idx(found.inst, found.at_token, user_patches, inst_map)
     return 0
 
@@ -826,7 +865,7 @@ def build_ms2_file(
     segments: dict,
     voice_csv_path: str | None,
     stem: str,
-    bpm: int = 75,
+    bpm: int = 120,
     timer: int = 0,
 ) -> bytes:
     """Build a complete MS2 binary from OPLL segment data.
@@ -835,7 +874,7 @@ def build_ms2_file(
         segments:       Per-channel segment lists (output of _build_segments).
         voice_csv_path: Path to the OPLL voice/patch CSV (for user patches).
         stem:           Song name (used as description).
-        bpm:            Song tempo in BPM (default 75).
+        bpm:            Song tempo in BPM (default 120).
         timer:          0 = VDP timer (default), 1 = 50 Hz timer.
 
     Returns raw bytes of the complete .MS2 file.
@@ -849,22 +888,46 @@ def build_ms2_file(
     timer_divider  = _BPM_TO_DIVIDER.get(bpm, round(900 / bpm) << 8)
 
     # ── Compute total number of patterns ─────────────────────────────────
-    max_tick = 0
+    # Use the tick of the last NOTE-ON segment end (not key-off) to avoid
+    # adding extra empty patterns for long trailing silences.
+    last_note_end_tick = 0
     for ch in range(NUM_CH):
         for seg in segments.get(ch, []):
-            max_tick = max(max_tick, seg.tick_end)
-    n_patterns = max(1, math.ceil(max_tick / (ticks_per_step * STEPS_PER_PATTERN)))
-    n_channels = NUM_CH
+            if seg.keyon:
+                last_note_end_tick = max(last_note_end_tick, seg.tick_end)
+    if last_note_end_tick == 0:
+        # No notes found: fall back to total key-off tick
+        for ch in range(NUM_CH):
+            for seg in segments.get(ch, []):
+                last_note_end_tick = max(last_note_end_tick, seg.tick_end)
+    n_patterns = max(1, math.ceil(last_note_end_tick / (ticks_per_step * STEPS_PER_PATTERN)))
+
+    # ── Determine active channel count ───────────────────────────────────
+    # Count only OPLL channels that actually have note data (keyon=1 segments).
+    # Unused channels are excluded to keep the MS2 file small and correct.
+    active_channels = []
+    for ch in range(NUM_CH):
+        if any(seg.keyon for seg in segments.get(ch, [])):
+            active_channels.append(ch)
+    n_channels = max(1, len(active_channels))
 
     # ── Build instrument table ────────────────────────────────────────────
-    instruments, inst_map = _build_instrument_table(segments, user_patches)
+    # Only scan active channels to avoid dummy instruments from initialization.
+    active_segs = {ch: segments.get(ch, []) for ch in active_channels}
+    instruments, inst_map = _build_instrument_table(active_segs, user_patches)
     starting_instruments = _get_starting_instruments(
-        segments, user_patches, inst_map, n_channels, ticks_per_step
+        active_segs, user_patches, inst_map, n_channels, ticks_per_step
     )
 
-    # ── Build pattern data ────────────────────────────────────────────────
+    # ── Build pattern data (remapping channel indices) ────────────────────
+    # Remap active channels to contiguous 0-based indices for MS2 output.
+    remapped_segments = {
+        new_ch: segments.get(orig_ch, [])
+        for new_ch, orig_ch in enumerate(active_channels)
+    }
     channel_event_lists = segments_to_patterns(
-        segments, user_patches, inst_map, ticks_per_step, n_patterns, n_channels
+        remapped_segments, user_patches, inst_map, ticks_per_step,
+        n_patterns, n_channels
     )
 
     # ── Assemble chunks ───────────────────────────────────────────────────
