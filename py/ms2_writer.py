@@ -363,7 +363,7 @@ def _load_reference_library() -> tuple[bytes, bytes, int, int]:
     return tunings_data, instruments_data, 1, 1
 
 
-def _opll_inst_to_ms2_idx(inst: int, n_instruments: int = 15) -> int:
+def _opll_inst_to_ms2_idx(inst: int, n_instruments: int) -> int:
     """Map an OPLL preset number (1–15) to a 0-based MS2 instrument index.
 
     The reference instrument library (from YM2413.MS2) stores the 15 OPLL
@@ -374,6 +374,10 @@ def _opll_inst_to_ms2_idx(inst: int, n_instruments: int = 15) -> int:
         index 14 → OPLL preset 15 (Electric Guitar)
 
     User patches (inst == 0) fall back to index 0.
+
+    Args:
+        inst:         OPLL preset number (0 = user patch, 1–15 = ROM preset).
+        n_instruments: Total instruments in the loaded library (clamps the index).
     """
     if inst == 0:
         return 0
@@ -798,21 +802,28 @@ def _get_ms2_inst_idx(
 
 def segments_to_patterns(
     segments: dict,
-    user_patches: dict,
-    inst_map: dict,
     ticks_per_step: int,
     n_patterns: int,
     n_channels: int,
-    n_instruments: int = 15,
+    n_instruments: int,
 ) -> list[list]:
     """Convert OPLL segment data to MS2 pattern event lists.
 
     Returns channel_event_lists[pat][ch] = sorted list of
         (step_in_pattern, [event_bytes, ...]).
 
+    Args:
+        segments:       Per-channel segment dicts (remapped to 0-based channel indices).
+        ticks_per_step: VGM ticks per MS2 step (quantisation resolution).
+        n_patterns:     Total number of MS2 patterns to generate.
+        n_channels:     Number of active channels (= MS2 channel count).
+        n_instruments:  Total number of instruments in the reference library.
+                        Used to clamp OPLL preset indices when mapping to MS2 indices.
+
     Behaviour:
       - Pattern 0 / step 0: INST is always emitted for each channel that plays
-        a note there (even if "redundant"), matching reference safety behaviour.
+        a note there (even if already set), providing a safe state anchor that
+        prevents MS² from using an uninitialised instrument register.
       - Pattern 1+: INST and VOL are only emitted when they change relative to
         the previously emitted value – no forced re-emission at pattern starts.
       - Within each step, events are ordered NOTE → VOL → INST (highest-
@@ -1006,7 +1017,7 @@ def build_ms2_file(
 
     # ── Build pattern data ────────────────────────────────────────────────
     channel_event_lists = segments_to_patterns(
-        remapped_segments, user_patches, {}, ticks_per_step,
+        remapped_segments, ticks_per_step,
         n_patterns, n_channels, n_2op_inst
     )
 
