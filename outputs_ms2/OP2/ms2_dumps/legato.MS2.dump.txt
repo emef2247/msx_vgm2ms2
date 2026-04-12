@@ -3,7 +3,7 @@ Signature: 4d53c2b20d0a001a  (OK)
 
 [0x0008] Chunk type 1 (Song Settings)  version=0  size=291
   Description:     'legato'
-  Song length:      4 patterns
+  Song length:      3 patterns
   Loop pattern:     0
   Timer:            0 (VDP)
   Timer divider:    7.5000 (0x0780)
@@ -54,14 +54,14 @@ Signature: 4d53c2b20d0a001a  (OK)
 [0x09d6] Chunk type 6 (Patterns)  version=0  size=52
   Count: 4 patterns, 1 channels each
   --- Pattern 0 ---
-    CH 0: cum=16  NOTE_ON(48) VOL(0) INST(1) [t9] NOTE_ON(48) VOL(8) INST(5) [t7]
-         raw: 0030050004018900300508040587
+    CH 0: cum=16  NOTE_ON(48) VOL(0) INST(1) [t9] NOTE_ON(48) VOL(5) INST(5) [t7]
+         raw: 0030050004018900300505040587
   --- Pattern 1 ---
-    CH 0: cum=16  [t2] NOTE_ON(48) VOL(16) INST(9) [t9] NOTE_ON(48) VOL(0) INST(1) [t5]
-         raw: 820030051004098900300500040185
+    CH 0: cum=16  [t2] NOTE_ON(48) VOL(11) INST(9) [t9] NOTE_ON(48) VOL(0) INST(1) [t5]
+         raw: 820030050b04098900300500040185
   --- Pattern 2 ---
-    CH 0: cum=16  [t4] NOTE_ON(40) VOL(12) INST(2) [t4] NOTE_ON(40) INST(6) [t5] NOTE_ON(40) INST(1) [t3]
-         raw: 840028050c04028400280406850028040183
+    CH 0: cum=16  [t4] NOTE_ON(40) VOL(8) INST(2) [t4] NOTE_ON(40) INST(6) [t5] NOTE_ON(40) INST(1) [t3]
+         raw: 840028050804028400280406850028040183
   --- Pattern 3 ---
     CH 0: cum=16  [t1] NOTE_OFF [t15]
          raw: 81018f

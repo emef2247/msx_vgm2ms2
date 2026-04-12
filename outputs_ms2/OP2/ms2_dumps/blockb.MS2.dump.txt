@@ -3,7 +3,7 @@ Signature: 4d53c2b20d0a001a  (OK)
 
 [0x0008] Chunk type 1 (Song Settings)  version=0  size=291
   Description:     'blockb'
-  Song length:      3 patterns
+  Song length:      2 patterns
   Loop pattern:     0
   Timer:            0 (VDP)
   Timer divider:    7.5000 (0x0780)
@@ -54,8 +54,8 @@ Signature: 4d53c2b20d0a001a  (OK)
 [0x09d6] Chunk type 6 (Patterns)  version=0  size=92
   Count: 3 patterns, 1 channels each
   --- Pattern 0 ---
-    CH 0: cum=16  NOTE_ON(0) VOL(8) INST(1) [t1] NOTE_ON(4) [t1] NOTE_ON(7) [t1] NOTE_ON(11) [t1] NOTE_ON(12) [t1] NOTE_ON(16) [t1] NOTE_ON(19) [t1] NOTE_ON(23) [t1] NOTE_ON(24) [t2] NOTE_ON(28) [t1] NOTE_ON(31) [t1] NOTE_ON(35) [t1] NOTE_ON(36) [t2] NOTE_ON(40) [t1]
-         raw: 00000508040181000481000781000b81000c81001081001381001781001882001c81001f81002381002482002881
+    CH 0: cum=16  NOTE_ON(0) VOL(5) INST(1) [t1] NOTE_ON(4) [t1] NOTE_ON(7) [t1] NOTE_ON(11) [t1] NOTE_ON(12) [t1] NOTE_ON(16) [t1] NOTE_ON(19) [t1] NOTE_ON(23) [t1] NOTE_ON(24) [t2] NOTE_ON(28) [t1] NOTE_ON(31) [t1] NOTE_ON(35) [t1] NOTE_ON(36) [t2] NOTE_ON(40) [t1]
+         raw: 00000505040181000481000781000b81000c81001081001381001781001882001c81001f81002381002482002881
   --- Pattern 1 ---
     CH 0: cum=16  NOTE_ON(43) [t1] NOTE_ON(47) [t1] NOTE_ON(48) [t2] NOTE_ON(55) [t1] NOTE_ON(59) [t1] NOTE_ON(60) [t2] NOTE_ON(64) [t1] NOTE_ON(67) [t1] NOTE_ON(71) [t1] NOTE_ON(72) [t2] NOTE_ON(76) [t1] NOTE_ON(79) [t1] NOTE_ON(83) [t1]
          raw: 002b81002f81003082003781003b81003c82004081004381004781004882004c81004f81005381

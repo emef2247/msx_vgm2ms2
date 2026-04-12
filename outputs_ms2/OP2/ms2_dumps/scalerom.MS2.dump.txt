@@ -3,7 +3,7 @@ Signature: 4d53c2b20d0a001a  (OK)
 
 [0x0008] Chunk type 1 (Song Settings)  version=0  size=291
   Description:     'scalerom'
-  Song length:      2 patterns
+  Song length:      1 patterns
   Loop pattern:     0
   Timer:            0 (VDP)
   Timer divider:    7.5000 (0x0780)
@@ -54,8 +54,8 @@ Signature: 4d53c2b20d0a001a  (OK)
 [0x09d6] Chunk type 6 (Patterns)  version=0  size=54
   Count: 2 patterns, 1 channels each
   --- Pattern 0 ---
-    CH 0: cum=16  NOTE_ON(36) VOL(4) INST(1) [t2] NOTE_ON(38) [t2] NOTE_ON(40) [t1] NOTE_ON(41) [t2] NOTE_ON(43) [t2] NOTE_ON(45) [t2] NOTE_ON(47) [t2] NOTE_ON(48) [t2] NOTE_ON(47) [t1]
-         raw: 00240504040182002682002881002982002b82002d82002f82003082002f81
+    CH 0: cum=16  NOTE_ON(36) VOL(3) INST(1) [t2] NOTE_ON(38) [t2] NOTE_ON(40) [t1] NOTE_ON(41) [t2] NOTE_ON(43) [t2] NOTE_ON(45) [t2] NOTE_ON(47) [t2] NOTE_ON(48) [t2] NOTE_ON(47) [t1]
+         raw: 00240503040182002682002881002982002b82002d82002f82003082002f81
   --- Pattern 1 ---
     CH 0: cum=16  [t1] NOTE_ON(45) [t2] NOTE_ON(43) [t1] NOTE_ON(41) [t2] NOTE_ON(40) [t2] NOTE_ON(38) [t2] NOTE_ON(36) [t2] NOTE_OFF [t4]
          raw: 81002d82002b810029820028820026820024820184

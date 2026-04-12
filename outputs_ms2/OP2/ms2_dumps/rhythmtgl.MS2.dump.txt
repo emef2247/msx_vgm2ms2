@@ -3,7 +3,7 @@ Signature: 4d53c2b20d0a001a  (OK)
 
 [0x0008] Chunk type 1 (Song Settings)  version=0  size=291
   Description:     'rhythmtgl'
-  Song length:      2 patterns
+  Song length:      1 patterns
   Loop pattern:     0
   Timer:            0 (VDP)
   Timer divider:    7.5000 (0x0780)
@@ -54,11 +54,11 @@ Signature: 4d53c2b20d0a001a  (OK)
 [0x09d6] Chunk type 6 (Patterns)  version=0  size=96
   Count: 2 patterns, 1 channels each
   --- Pattern 0 ---
-    CH 0: cum=16  NOTE_ON(36) VOL(8) INST(3) [t1] NOTE_ON(38) [t1] NOTE_ON(41) [t1] NOTE_ON(43) [t1] NOTE_ON(45) [t1] NOTE_ON(47) [t1] NOTE_ON(48) [t1] NOTE_ON(45) [t1] NOTE_ON(43) [t1] NOTE_ON(41) [t1] NOTE_ON(40) [t1] NOTE_ON(38) [t1] NOTE_ON(36) INST(4) [t1] NOTE_ON(36) [t1] NOTE_OFF [t1] NOTE_ON(36) [t1]
-         raw: 00240508040381002681002981002b81002d81002f81003081002d81002b8100298100288100268100240404810024810181002481
+    CH 0: cum=16  NOTE_ON(36) VOL(5) INST(3) [t1] NOTE_ON(38) [t1] NOTE_ON(41) [t1] NOTE_ON(43) [t1] NOTE_ON(45) [t1] NOTE_ON(47) [t1] NOTE_ON(48) [t1] NOTE_ON(45) [t1] NOTE_ON(43) [t1] NOTE_ON(41) [t1] NOTE_ON(40) [t1] NOTE_ON(38) [t1] NOTE_ON(36) INST(4) [t1] NOTE_ON(36) [t1] NOTE_OFF [t1] NOTE_ON(36) [t1]
+         raw: 00240505040381002681002981002b81002d81002f81003081002d81002b8100298100288100268100240404810024810181002481
   --- Pattern 1 ---
-    CH 0: cum=16  NOTE_OFF [t1] NOTE_ON(36) [t1] NOTE_OFF [t1] NOTE_ON(57) INST(5) [t1] NOTE_ON(59) [t1] NOTE_ON(60) [t1] NOTE_ON(62) [t1] NOTE_ON(64) [t1] NOTE_ON(65) [t1] NOTE_ON(24) VOL(12) INST(2) [t1] NOTE_OFF [t2] NOTE_ON(24) [t2] NOTE_OFF [t2]
-         raw: 018100248101810039040581003b81003c81003e810040810041810018050c04028101820018820182
+    CH 0: cum=16  NOTE_OFF [t1] NOTE_ON(36) [t1] NOTE_OFF [t1] NOTE_ON(57) INST(5) [t1] NOTE_ON(59) [t1] NOTE_ON(60) [t1] NOTE_ON(62) [t1] NOTE_ON(64) [t1] NOTE_ON(65) [t1] NOTE_ON(24) VOL(8) INST(2) [t1] NOTE_OFF [t2] NOTE_ON(24) [t2] NOTE_OFF [t2]
+         raw: 018100248101810039040581003b81003c81003e810040810041810018050804028101820018820182
 
 [0x0a3a] Chunk type 8 (Pitch Envelopes)  version=0  size=5
 

@@ -191,7 +191,8 @@ def opll_vol_to_ms2_vol(opll_vol: int) -> int:
     values.  A factor of 4 per step (2 × nearest even integer) is used.
     """
     v = max(0, min(15, opll_vol))
-    return min(63, v * 4)
+    # OPLL: 2 dB/step, OPL4 TL: ~0.75 dB/step => 2 / 0.75 = 2.666...
+    return min(63, int(round(v * (2.0 / 0.75))))
 
 
 # ---------------------------------------------------------------------------
@@ -256,8 +257,8 @@ def build_song_settings_data(
     desc_b = (desc_b + b' ' * 65)[:65]
     data[0:65] = desc_b
 
-    # +65: song length (number of patterns, 0..255)
-    data[65] = min(255, n_patterns)
+    # +65: song length (MS² expects last pattern index, i.e. n_patterns-1)
+    data[65] = max(0, min(255, n_patterns - 1))
     # +66: loop pattern (0 = loop back to pattern 0)
     data[66] = 0   # loop to pattern 0
     # +67: timer type (0 = VDP, 1 = 50 Hz)

@@ -3,7 +3,7 @@ Signature: 4d53c2b20d0a001a  (OK)
 
 [0x0008] Chunk type 1 (Song Settings)  version=0  size=291
   Description:     'chmix'
-  Song length:      2 patterns
+  Song length:      1 patterns
   Loop pattern:     0
   Timer:            0 (VDP)
   Timer divider:    7.5000 (0x0780)
@@ -54,12 +54,12 @@ Signature: 4d53c2b20d0a001a  (OK)
 [0x09d6] Chunk type 6 (Patterns)  version=0  size=104
   Count: 2 patterns, 3 channels each
   --- Pattern 0 ---
-    CH 0: cum=16  NOTE_ON(36) VOL(8) INST(1) [t2] NOTE_ON(40) [t2] NOTE_ON(43) [t1] NOTE_ON(36) [t2] NOTE_ON(40) [t2] NOTE_ON(43) [t2] NOTE_ON(36) [t2] NOTE_ON(40) [t2] NOTE_ON(36) [t1]
-         raw: 00240508040182002882002b81002482002882002b82002482002882002481
-    CH 1: cum=16  NOTE_ON(24) VOL(12) INST(3) [t2] NOTE_ON(29) [t2] NOTE_ON(33) [t1] NOTE_ON(24) [t2] NOTE_ON(29) [t2] NOTE_ON(33) [t2] NOTE_ON(24) [t2] NOTE_ON(29) [t2] NOTE_ON(24) [t1]
-         raw: 0018050c040382001d82002181001882001d82002182001882001d82001881
-    CH 2: cum=16  NOTE_ON(31) VOL(16) INST(5) [t2] NOTE_ON(35) [t2] NOTE_ON(26) [t1] NOTE_ON(31) [t2] NOTE_ON(35) [t2] NOTE_ON(26) [t2] NOTE_ON(31) [t2] NOTE_ON(35) [t2] NOTE_ON(31) [t1]
-         raw: 001f0510040582002382001a81001f82002382001a82001f82002382001f81
+    CH 0: cum=16  NOTE_ON(36) VOL(5) INST(1) [t2] NOTE_ON(40) [t2] NOTE_ON(43) [t1] NOTE_ON(36) [t2] NOTE_ON(40) [t2] NOTE_ON(43) [t2] NOTE_ON(36) [t2] NOTE_ON(40) [t2] NOTE_ON(36) [t1]
+         raw: 00240505040182002882002b81002482002882002b82002482002882002481
+    CH 1: cum=16  NOTE_ON(24) VOL(8) INST(3) [t2] NOTE_ON(29) [t2] NOTE_ON(33) [t1] NOTE_ON(24) [t2] NOTE_ON(29) [t2] NOTE_ON(33) [t2] NOTE_ON(24) [t2] NOTE_ON(29) [t2] NOTE_ON(24) [t1]
+         raw: 00180508040382001d82002181001882001d82002182001882001d82001881
+    CH 2: cum=16  NOTE_ON(31) VOL(11) INST(5) [t2] NOTE_ON(35) [t2] NOTE_ON(26) [t1] NOTE_ON(31) [t2] NOTE_ON(35) [t2] NOTE_ON(26) [t2] NOTE_ON(31) [t2] NOTE_ON(35) [t2] NOTE_ON(31) [t1]
+         raw: 001f050b040582002382001a81001f82002382001a82001f82002382001f81
   --- Pattern 1 ---
     CH 0: cum=16  [t3] NOTE_OFF [t13]
          raw: 83018d

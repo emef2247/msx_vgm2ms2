@@ -3,7 +3,7 @@ Signature: 4d53c2b20d0a001a  (OK)
 
 [0x0008] Chunk type 1 (Song Settings)  version=0  size=291
   Description:     'volsweep'
-  Song length:      2 patterns
+  Song length:      1 patterns
   Loop pattern:     0
   Timer:            0 (VDP)
   Timer divider:    7.5000 (0x0780)
@@ -54,11 +54,11 @@ Signature: 4d53c2b20d0a001a  (OK)
 [0x09d6] Chunk type 6 (Patterns)  version=0  size=53
   Count: 2 patterns, 1 channels each
   --- Pattern 0 ---
-    CH 0: cum=16  NOTE_ON(43) VOL(0) INST(2) [t2] VOL(8) [t2] VOL(16) [t2] VOL(24) [t2] VOL(32) [t2] VOL(40) [t2] VOL(48) [t2] VOL(56) [t2]
-         raw: 002b0500040282050882051082051882052082052882053082053882
+    CH 0: cum=16  NOTE_ON(43) VOL(0) INST(2) [t2] VOL(5) [t2] VOL(11) [t2] VOL(16) [t2] VOL(21) [t2] VOL(27) [t2] VOL(32) [t2] VOL(37) [t2]
+         raw: 002b0500040282050582050b82051082051582051b82052082052582
   --- Pattern 1 ---
-    CH 0: cum=16  VOL(48) [t2] VOL(40) [t2] VOL(32) [t2] VOL(24) [t2] VOL(16) [t2] VOL(8) [t2] VOL(0) [t2] NOTE_OFF [t2]
-         raw: 0530820528820520820518820510820508820500820182
+    CH 0: cum=16  VOL(32) [t2] VOL(27) [t2] VOL(21) [t2] VOL(16) [t2] VOL(11) [t2] VOL(5) [t2] VOL(0) [t2] NOTE_OFF [t2]
+         raw: 052082051b82051582051082050b820505820500820182
 
 [0x0a0f] Chunk type 8 (Pitch Envelopes)  version=0  size=5
 

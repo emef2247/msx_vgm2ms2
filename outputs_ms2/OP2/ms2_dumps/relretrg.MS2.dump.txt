@@ -3,7 +3,7 @@ Signature: 4d53c2b20d0a001a  (OK)
 
 [0x0008] Chunk type 1 (Song Settings)  version=0  size=291
   Description:     'relretrg'
-  Song length:      2 patterns
+  Song length:      1 patterns
   Loop pattern:     0
   Timer:            0 (VDP)
   Timer divider:    7.5000 (0x0780)
@@ -54,8 +54,8 @@ Signature: 4d53c2b20d0a001a  (OK)
 [0x09d6] Chunk type 6 (Patterns)  version=0  size=39
   Count: 2 patterns, 1 channels each
   --- Pattern 0 ---
-    CH 0: cum=16  NOTE_ON(36) VOL(0) INST(4) [t2] NOTE_OFF [t2] NOTE_ON(36) [t1] NOTE_OFF [t2] NOTE_ON(36) [t2] NOTE_OFF [t2] NOTE_ON(36) [t2] NOTE_ON(55) VOL(4) INST(8) [t3]
-         raw: 0024050004048201820024810182002482018200248200370504040883
+    CH 0: cum=16  NOTE_ON(36) VOL(0) INST(4) [t2] NOTE_OFF [t2] NOTE_ON(36) [t1] NOTE_OFF [t2] NOTE_ON(36) [t2] NOTE_OFF [t2] NOTE_ON(36) [t2] NOTE_ON(55) VOL(3) INST(8) [t3]
+         raw: 0024050004048201820024810182002482018200248200370503040883
   --- Pattern 1 ---
     CH 0: cum=16  [t1] NOTE_OFF [t3] NOTE_ON(55) [t4] NOTE_OFF [t8]
          raw: 8101830037840188
