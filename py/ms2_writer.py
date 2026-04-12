@@ -23,6 +23,12 @@ from opll_mml import _build_segments, _opll_note, NUM_CH
 
 MS2_SIGNATURE = bytes([0x4D, 0x53, 0xC2, 0xB2, 0x0D, 0x0A, 0x00, 0x1A])
 
+# Path to the reference YM2413.MS2 file containing the MoonBlaster v1.4 instrument library.
+_REFERENCE_YM2413_MS2 = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    '..', 'ms2_reference', 'OP2', 'YM2413.MS2',
+)
+
 # YM2413 ROM preset patches (R0..R7), indexed 1..15.
 # Source: well-known YM2413 documentation / Nuked-OPL reference.
 OPLL_ROM_PATCHES: dict[int, bytes] = {
@@ -185,7 +191,8 @@ def opll_vol_to_ms2_vol(opll_vol: int) -> int:
     values.  A factor of 4 per step (2 × nearest even integer) is used.
     """
     v = max(0, min(15, opll_vol))
-    return min(63, v * 4)
+    # OPLL: 2 dB/step, OPL4 TL: ~0.75 dB/step => 2 / 0.75 = 2.666...
+    return min(63, int(round(v * (2.0 / 0.75))))
 
 
 # ---------------------------------------------------------------------------
@@ -250,8 +257,8 @@ def build_song_settings_data(
     desc_b = (desc_b + b' ' * 65)[:65]
     data[0:65] = desc_b
 
-    # +65: song length (number of patterns, 0..255)
-    data[65] = min(255, n_patterns)
+    # +65: song length (MS² expects last pattern index, i.e. n_patterns-1)
+    data[65] = max(0, min(255, n_patterns - 1))
     # +66: loop pattern (0 = loop back to pattern 0)
     data[66] = 0   # loop to pattern 0
     # +67: timer type (0 = VDP, 1 = 50 Hz)
@@ -300,6 +307,82 @@ def build_song_settings_data(
     # already 0.
 
     return bytes(data)
+
+
+# ---------------------------------------------------------------------------
+# Reference instrument library (MoonBlaster v1.4 via YM2413.MS2)
+# ---------------------------------------------------------------------------
+
+def _read_ms2_chunk_data(data: bytes, target_type: int) -> bytes | None:
+    """Extract raw chunk data for a given chunk type from an MS2 binary.
+
+    Skips the 8-byte file signature and walks chunks until the target type is
+    found.  Returns the chunk payload bytes (not including the 4-byte header),
+    or None if not found.
+    """
+    pos = 8  # skip 8-byte MS2 file signature
+    while pos + 4 <= len(data):
+        chunk_type, _version, chunk_size = struct.unpack_from('<BBH', data, pos)
+        if chunk_type == 0:
+            break
+        if chunk_type == target_type:
+            return data[pos + 4: pos + 4 + chunk_size]
+        pos += 4 + chunk_size
+    return None
+
+
+def _load_reference_library() -> tuple[bytes, bytes, int, int]:
+    """Load tunings and 2OP instrument chunk data from the reference YM2413.MS2.
+
+    Reads chunk type 2 (Tunings) and chunk type 3 (2OP Instruments) verbatim
+    from ms2_reference/OP2/YM2413.MS2 (MoonBlaster v1.4 instrument library).
+    These are copied unchanged into every generated MS2 file so that instrument
+    indices align with the reference expectations.
+
+    Returns:
+        (tunings_data, instruments_data, n_tunings, n_2op_inst)
+
+    Falls back to a minimal equal-temperament library if the reference file
+    cannot be read.
+    """
+    try:
+        with open(_REFERENCE_YM2413_MS2, 'rb') as f:
+            ref_bytes = f.read()
+        tunings_data = _read_ms2_chunk_data(ref_bytes, 2)
+        instruments_data = _read_ms2_chunk_data(ref_bytes, 3)
+        if tunings_data and instruments_data and len(tunings_data) >= 2 and len(instruments_data) >= 2:
+            n_tunings = struct.unpack_from('<H', tunings_data, 0)[0]
+            n_2op_inst = struct.unpack_from('<H', instruments_data, 0)[0]
+            return tunings_data, instruments_data, n_tunings, n_2op_inst
+    except (OSError, struct.error):
+        pass
+    # Fallback: minimal single equal-temperament tuning, single Organ preset
+    tunings_data = build_tunings_chunk_data(1)
+    instruments_data = build_2op_instruments_chunk_data(
+        [(OPLL_ROM_PATCHES[8], 'Organ')]
+    )
+    return tunings_data, instruments_data, 1, 1
+
+
+def _opll_inst_to_ms2_idx(inst: int, n_instruments: int) -> int:
+    """Map an OPLL preset number (1–15) to a 0-based MS2 instrument index.
+
+    The reference instrument library (from YM2413.MS2) stores the 15 OPLL
+    preset voices at indices 0–14, ordered as:
+        index 0 → OPLL preset 1 (Violin)
+        index 1 → OPLL preset 2 (Guitar)
+        …
+        index 14 → OPLL preset 15 (Electric Guitar)
+
+    User patches (inst == 0) fall back to index 0.
+
+    Args:
+        inst:         OPLL preset number (0 = user patch, 1–15 = ROM preset).
+        n_instruments: Total instruments in the loaded library (clamps the index).
+    """
+    if inst == 0:
+        return 0
+    return max(0, min(n_instruments - 1, inst - 1))
 
 
 # ---------------------------------------------------------------------------
@@ -720,26 +803,32 @@ def _get_ms2_inst_idx(
 
 def segments_to_patterns(
     segments: dict,
-    user_patches: dict,
-    inst_map: dict,
     ticks_per_step: int,
     n_patterns: int,
     n_channels: int,
+    n_instruments: int,
 ) -> list[list]:
     """Convert OPLL segment data to MS2 pattern event lists.
 
     Returns channel_event_lists[pat][ch] = sorted list of
         (step_in_pattern, [event_bytes, ...]).
 
-    Stage C improvements:
-      - prev_inst_idx and prev_vol_ms2 are reset at each pattern boundary so
-        that every new pattern re-emits @ and V for its active channels.
-        This ensures MS² (which resets per-channel state between patterns)
-        always hears the correct instrument and volume from pattern 0 onward.
-      - prev_inst_idx and prev_vol_ms2 are NOT reset on note-off; they are
-        only reset at pattern boundaries.  This avoids redundant @/V events
-        within a pattern (when the same instrument/volume continues after a
-        gap), reducing event density.
+    Args:
+        segments:       Per-channel segment dicts (remapped to 0-based channel indices).
+        ticks_per_step: VGM ticks per MS2 step (quantisation resolution).
+        n_patterns:     Total number of MS2 patterns to generate.
+        n_channels:     Number of active channels (= MS2 channel count).
+        n_instruments:  Total number of instruments in the reference library.
+                        Used to clamp OPLL preset indices when mapping to MS2 indices.
+
+    Behaviour:
+      - Pattern 0 / step 0: INST is always emitted for each channel that plays
+        a note there (even if already set), providing a safe state anchor that
+        prevents MS² from using an uninitialised instrument register.
+      - Pattern 1+: INST and VOL are only emitted when they change relative to
+        the previously emitted value – no forced re-emission at pattern starts.
+      - Within each step, events are ordered NOTE → VOL → INST (highest-
+        priority musical information first, as per the MS² reference convention).
     """
     total_steps = n_patterns * STEPS_PER_PATTERN
     grid = _build_step_grid(segments, ticks_per_step, total_steps)
@@ -758,13 +847,6 @@ def segments_to_patterns(
             pat = step // STEPS_PER_PATTERN
             step_in_pat = step % STEPS_PER_PATTERN
 
-            # ── Reset inst/vol tracking at each pattern boundary ─────────
-            # MS² resets per-channel state at the start of each pattern, so
-            # every pattern that plays notes must explicitly re-emit @ and V.
-            if step_in_pat == 0:
-                prev_inst_idx = -1
-                prev_vol_ms2 = -1
-
             state = grid.get((ch, step), (0, 0, 0, 0, False))
             keyon, ms2_note, inst, vol_opll, retrigger = state
             prev_keyon = prev_state[0]
@@ -775,10 +857,9 @@ def segments_to_patterns(
             evts_here: list[bytes] = []
 
             if keyon and ms2_note is not None:
-                # Find the at_token for this instrument
-                inst_idx = _get_segment_inst_idx_at_step(
-                    segments, ch, step, ticks_per_step, user_patches, inst_map
-                )
+                # Resolve MS2 instrument index using direct OPLL→reference mapping
+                inst_idx = _opll_inst_to_ms2_idx(inst, n_instruments)
+
                 # Emit NOTE_ON when: pitch changed, first note after silence,
                 # instrument changed, or the note was explicitly re-attacked
                 # (keyoff + keyon at the same step boundary, retrigger=True).
@@ -786,20 +867,28 @@ def segments_to_patterns(
                 inst_changed = (inst_idx != prev_inst_idx)
                 vol_changed  = (vol_ms2 != prev_vol_ms2)
 
-                if inst_changed:
-                    evts_here.append(bytes([0x04, inst_idx & 0xFF]))
-                    prev_inst_idx = inst_idx
-                if vol_changed:
+                # Pat 0 / step 0: always force INST for safety (reference behaviour).
+                force_inst = (pat == 0 and step_in_pat == 0)
+
+                emit_note = note_changed or inst_changed
+                emit_vol  = vol_changed
+                emit_inst = inst_changed or force_inst
+
+                # Event ordering: NOTE first, then VOL, then INST.
+                if emit_note:
+                    evts_here.append(bytes([0x00, ms2_note & 0xFF]))
+                if emit_vol:
                     evts_here.append(bytes([0x05, vol_ms2 & 0xFF]))
                     prev_vol_ms2 = vol_ms2
-                if note_changed or inst_changed:
-                    evts_here.append(bytes([0x00, ms2_note & 0xFF]))
+                if emit_inst:
+                    evts_here.append(bytes([0x04, inst_idx & 0xFF]))
+                    prev_inst_idx = inst_idx
 
             elif not keyon and prev_keyon:
                 # Note just turned off → emit key-off.
                 # Do NOT reset prev_inst_idx / prev_vol_ms2 here: keeping them
                 # avoids spurious @/V re-emissions when the same instrument and
-                # volume resumes after a short gap within the same pattern.
+                # volume resumes after a short gap.
                 evts_here.append(bytes([0x01]))
 
             if evts_here:
@@ -838,21 +927,21 @@ def _get_segment_inst_idx_at_step(
 
 def _get_starting_instruments(
     segments: dict,
-    user_patches: dict,
-    inst_map: dict,
     n_channels: int,
+    n_instruments: int = 15,
     ticks_per_step: int = TICKS_PER_STEP_75BPM,
 ) -> list[int]:
-    """Return the starting instrument index for each channel."""
+    """Return the starting instrument index for each channel.
+
+    Uses the direct OPLL-preset → reference-library index mapping
+    (_opll_inst_to_ms2_idx) to stay consistent with the reference library.
+    """
     result = []
     for ch in range(n_channels):
         segs = segments.get(ch, [])
-        if segs and segs[0].keyon:
-            idx = _get_ms2_inst_idx(
-                segs[0].inst, segs[0].at_token, user_patches, inst_map
-            )
-        else:
-            idx = 0
+        # Find the first keyon segment to determine the channel's opening instrument.
+        first_keyon = next((s for s in segs if s.keyon), None)
+        idx = _opll_inst_to_ms2_idx(first_keyon.inst, n_instruments) if first_keyon else 0
         result.append(idx)
     return result
 
@@ -911,33 +1000,35 @@ def build_ms2_file(
             active_channels.append(ch)
     n_channels = max(1, len(active_channels))
 
-    # ── Build instrument table ────────────────────────────────────────────
-    # Only scan active channels to avoid dummy instruments from initialization.
-    active_segs = {ch: segments.get(ch, []) for ch in active_channels}
-    instruments, inst_map = _build_instrument_table(active_segs, user_patches)
-    starting_instruments = _get_starting_instruments(
-        active_segs, user_patches, inst_map, n_channels, ticks_per_step
-    )
+    # ── Load MoonBlaster v1.4 reference instrument library ────────────────
+    # Copies chunk type 2 (Tunings) and chunk type 3 (2OP Instruments) verbatim
+    # from ms2_reference/OP2/YM2413.MS2.  This ensures instrument indices in
+    # the Patterns chunk align with the reference library expectations.
+    tunings_data, instruments_data, n_tunings, n_2op_inst = _load_reference_library()
 
-    # ── Build pattern data (remapping channel indices) ────────────────────
+    # ── Compute per-channel starting instrument indices ───────────────────
     # Remap active channels to contiguous 0-based indices for MS2 output.
     remapped_segments = {
         new_ch: segments.get(orig_ch, [])
         for new_ch, orig_ch in enumerate(active_channels)
     }
+    starting_instruments = _get_starting_instruments(
+        remapped_segments, n_channels, n_2op_inst, ticks_per_step
+    )
+
+    # ── Build pattern data ────────────────────────────────────────────────
     channel_event_lists = segments_to_patterns(
-        remapped_segments, user_patches, inst_map, ticks_per_step,
-        n_patterns, n_channels
+        remapped_segments, ticks_per_step,
+        n_patterns, n_channels, n_2op_inst
     )
 
     # ── Assemble chunks ───────────────────────────────────────────────────
-    n_2op_inst = max(1, len(instruments))
     description = stem[:65]
 
     song_settings = build_song_settings_data(
         description     = description,
         n_patterns      = n_patterns,
-        n_tunings       = 1,
+        n_tunings       = n_tunings,
         n_2op_inst      = n_2op_inst,
         n_channels      = n_channels,
         timer           = timer,
@@ -945,8 +1036,6 @@ def build_ms2_file(
         starting_instruments = starting_instruments,
     )
 
-    tunings_data    = build_tunings_chunk_data(1)
-    instruments_data = build_2op_instruments_chunk_data(instruments)
     patterns_data   = build_patterns_chunk_data(
         channel_event_lists, n_patterns, n_channels
     )

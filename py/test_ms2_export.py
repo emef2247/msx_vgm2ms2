@@ -87,7 +87,8 @@ _all_vgms = sorted(
 _EXPECTATIONS: dict[str, tuple[int | None, int | None, int | None]] = {
     'blockb':   (3,    4,    1),   # 1-ch arpeggio scale, ~3 patterns
     'scalech':  (2,    5,    1),   # 1-ch chromatic scale, 2–5 patterns
-    '3chtest':  (1,    4,    1),   # OPLL-only output (SCC channels not exported)
+    '3chtest':  (1,    4,    3),   # 3-ch OPLL output (ch0/1/2 all active)
+    'chmix':    (1,    4,    3),   # 3-ch OPLL output (ch0/1/2 all active)
 }
 
 
