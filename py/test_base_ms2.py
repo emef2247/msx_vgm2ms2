@@ -20,6 +20,7 @@ from ms2_writer import (
     build_instrument_library_ms2,
     _read_ms2_chunk_data,
     opll_patch_to_opl4,
+    opll_patch_raw,
 )
 from opll_presets import (
     PRESET_LIBRARY_MAP,
@@ -271,6 +272,171 @@ def test_instrument_library_ms2_has_required_chunks():
         found.add(chunk_type)
         pos += 4 + chunk_size
     assert required.issubset(found), f"Missing chunks: {required - found}"
+
+
+# ---------------------------------------------------------------------------
+# opll_patch_raw tests
+# ---------------------------------------------------------------------------
+
+def test_opll_patch_raw_returns_11_keys():
+    """opll_patch_raw must return a dict with exactly 11 OPL4 register keys."""
+    patch = bytes(YMFM_YM2413_VOICES[0])
+    result = opll_patch_raw(patch)
+    expected_keys = {0x20, 0x21, 0x40, 0x41, 0x60, 0x61, 0x80, 0x81, 0xE0, 0xE1, 0xC0}
+    assert set(result.keys()) == expected_keys
+
+
+def test_opll_patch_raw_direct_field_mapping():
+    """opll_patch_raw maps R0→20H, R4→21H, R1→40H, R5[7:6]→41H, etc."""
+    # Use a distinctive patch so we can verify each field.
+    r = bytes([0xAB, 0x1C, 0x2D, 0x3E, 0x4F, 0b11011010, 0x6C, 0x7D])
+    result = opll_patch_raw(r)
+    assert result[0x20] == r[0]                      # R0 → reg20
+    assert result[0x21] == r[4]                      # R4 → reg21
+    assert result[0x40] == r[1]                      # R1 → reg40 (all 8 bits)
+    assert result[0x41] == (r[5] & 0xC0)             # R5[7:6] → reg41 KSL
+    assert result[0x60] == r[2]                      # R2 → reg60
+    assert result[0x61] == r[6]                      # R6 → reg61
+    assert result[0x80] == r[3]                      # R3 → reg80
+    assert result[0x81] == r[7]                      # R7 → reg81
+    assert result[0xE0] == (r[5] >> 3) & 1           # DM bit → regE0
+    assert result[0xE1] == (r[5] >> 4) & 1           # DC bit → regE1
+    assert result[0xC0] == (r[5] & 0x07) << 1        # FB → regC0
+
+
+def test_opll_patch_raw_handles_short_input():
+    """opll_patch_raw pads short inputs with zeros (no IndexError)."""
+    result = opll_patch_raw(b'\x71')  # only 1 byte
+    assert result[0x20] == 0x71
+    assert result[0x21] == 0x00   # R4 absent → 0
+
+
+def test_opll_patch_raw_all_zeros():
+    """opll_patch_raw on 8 zero bytes produces all-zero output."""
+    result = opll_patch_raw(bytes(8))
+    for v in result.values():
+        assert v == 0
+
+
+# ---------------------------------------------------------------------------
+# build_instrument_library_ms2 raw_mode tests
+# ---------------------------------------------------------------------------
+
+def test_instrument_library_raw_mode_has_correct_signature():
+    """Instrument-only MS2 built in raw_mode starts with the correct signature."""
+    patches = [bytes(YMFM_YM2413_VOICES[i % 18]) for i in range(16)]
+    ms2 = build_instrument_library_ms2(patches, 'Raw Test', n_presets=16, raw_mode=True)
+    assert ms2[:8] == MS2_SIGNATURE
+
+
+def test_instrument_library_raw_mode_chunk3_count():
+    """raw_mode MS2 chunk-3 reports the correct instrument count."""
+    patches = [bytes(YMFM_YM2413_VOICES[i % 18]) for i in range(16)]
+    ms2 = build_instrument_library_ms2(patches, 'Raw Test', n_presets=16, raw_mode=True)
+    assert _count_instruments_in_ms2(ms2) == 16
+
+
+def test_opll_patch_raw_matches_converted_mapping():
+    """opll_patch_raw and opll_patch_to_opl4 produce identical results.
+
+    Both implement the same direct field mapping (Option A): reg20=R0,
+    reg21=R4, reg40=R1, reg41=R5&0xC0, etc.  The raw mode is a separately
+    named code path that makes the "no extra conversion" intent explicit.
+    """
+    patch = bytes(YMFM_YM2413_VOICES[0])
+    raw_regs = opll_patch_raw(patch)
+    conv_regs = opll_patch_to_opl4(patch)
+    # Both should produce the same register values (raw IS the direct field mapping).
+    assert raw_regs == conv_regs, (
+        "opll_patch_raw and opll_patch_to_opl4 should produce identical results "
+        "since raw IS the direct field mapping used by the converted mode."
+    )
+
+
+def test_instrument_library_raw_mode_all_preset_keys_buildable():
+    """All 11 preset tables can produce a valid MS2 in raw_mode."""
+    for key, (table, filename) in PRESET_LIBRARY_MAP.items():
+        patches = [bytes(row) for row in table[:16]]
+        ms2 = build_instrument_library_ms2(
+            patches, key[:65], n_presets=16, raw_mode=True
+        )
+        assert ms2[:8] == MS2_SIGNATURE, f"{key}: bad signature in raw mode"
+        count = _count_instruments_in_ms2(ms2)
+        assert count >= 16, f"{key}: expected >= 16 instruments in raw mode, got {count}"
+
+
+# ---------------------------------------------------------------------------
+# CLI integration: --inst-lib-mode flag
+# ---------------------------------------------------------------------------
+
+def test_export_inst_libraries_raw_mode_cli(tmp_path):
+    """--export-inst-libraries with --inst-lib-mode raw produces 11 valid MS2 files."""
+    import subprocess
+    _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _VGM2MS2 = os.path.join(_REPO_ROOT, 'vgm2ms2.py')
+    out_dir = str(tmp_path / 'raw_libs')
+
+    result = subprocess.run(
+        [sys.executable, _VGM2MS2,
+         '--export-inst-libraries', out_dir,
+         '--inst-lib-mode', 'raw'],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, (
+        f"vgm2ms2.py --export-inst-libraries --inst-lib-mode raw failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    # Expect 11 MS2 files (one per entry in PRESET_LIBRARY_MAP).
+    ms2_files = [f for f in os.listdir(out_dir) if f.upper().endswith('.MS2')]
+    assert len(ms2_files) == 11, f"Expected 11 MS2 files, found {len(ms2_files)}: {ms2_files}"
+    # Each file must start with the correct MS2 signature.
+    for fname in ms2_files:
+        fpath = os.path.join(out_dir, fname)
+        with open(fpath, 'rb') as f:
+            sig = f.read(8)
+        assert sig == MS2_SIGNATURE, f"{fname}: bad signature in raw mode output"
+
+
+def test_export_inst_libraries_converted_mode_cli(tmp_path):
+    """--export-inst-libraries with --inst-lib-mode converted (default) produces 11 valid MS2 files."""
+    import subprocess
+    _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _VGM2MS2 = os.path.join(_REPO_ROOT, 'vgm2ms2.py')
+    out_dir = str(tmp_path / 'conv_libs')
+
+    result = subprocess.run(
+        [sys.executable, _VGM2MS2,
+         '--export-inst-libraries', out_dir,
+         '--inst-lib-mode', 'converted'],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, (
+        f"vgm2ms2.py --export-inst-libraries --inst-lib-mode converted failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    ms2_files = [f for f in os.listdir(out_dir) if f.upper().endswith('.MS2')]
+    assert len(ms2_files) == 11, f"Expected 11 MS2 files, found {len(ms2_files)}"
+
+
+def test_inst_lib_mode_default_is_converted(tmp_path):
+    """--export-inst-libraries without --inst-lib-mode defaults to converted mode."""
+    import subprocess
+    _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _VGM2MS2 = os.path.join(_REPO_ROOT, 'vgm2ms2.py')
+    out_dir = str(tmp_path / 'default_libs')
+
+    result = subprocess.run(
+        [sys.executable, _VGM2MS2, '--export-inst-libraries', out_dir],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, (
+        f"vgm2ms2.py --export-inst-libraries (default mode) failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    # Default mode should print "mode=converted".
+    assert 'mode=converted' in result.stdout, (
+        f"Expected 'mode=converted' in stdout, got:\n{result.stdout}"
+    )
 
 
 if __name__ == '__main__':

@@ -27,11 +27,24 @@ Arguments:
                                 Generate instrument-only MS2 files for all
                                 built-in OPLL preset tables and write them to
                                 <dir>.  Does not require a VGM input file.
+    --inst-lib-mode {converted,raw}
+                                Conversion mode for --export-inst-libraries
+                                (default: converted).
+                                  converted – use opll_patch_to_opl4() which
+                                    maps each OPLL register field to its OPL4
+                                    counterpart (existing behaviour).
+                                  raw – use opll_patch_raw() which packs the
+                                    8-byte OPLL patch bytes directly into the
+                                    OPL4 chunk-3 register fields with no
+                                    additional conversion tables or scaling.
+                                    Useful for experimentation when the
+                                    converted output does not sound as expected.
 
 Example:
     python vgm2ms2.py "inputs/ym2413/Ys-SMS-FM/Ys (FM) - 01 - Feena.vgm" --debug
     python vgm2ms2.py "song.vgm" --base-ms2 ms2_reference/OP2/YMVOPLL.MS2
     python vgm2ms2.py --export-inst-libraries out/inst_libraries/
+    python vgm2ms2.py --export-inst-libraries out/raw/ --inst-lib-mode raw
 """
 
 import sys
@@ -48,24 +61,33 @@ from ms2_dump import dump_ms2, compare_signatures
 from ms2_validate import validate_ms2_bytes
 
 
-def export_inst_libraries(output_dir: str) -> None:
+def export_inst_libraries(output_dir: str, raw_mode: bool = False) -> None:
     """Generate one instrument-only MS2 file per built-in OPLL preset table.
 
     Output filenames follow 8.3 naming as defined in opll_presets.PRESET_LIBRARY_MAP.
+
+    Args:
+        output_dir: Directory in which to write the generated .MS2 files.
+        raw_mode:   When ``True``, use the "raw" packing mode (direct byte
+                    mapping via :func:`ms2_writer.opll_patch_raw`).
+                    When ``False`` (default), use the "converted" mode
+                    (:func:`ms2_writer.opll_patch_to_opl4`).
     """
     from opll_presets import PRESET_LIBRARY_MAP
     os.makedirs(output_dir, exist_ok=True)
+    mode_label = 'raw' if raw_mode else 'converted'
     for preset_key, (table, filename) in PRESET_LIBRARY_MAP.items():
         patches = [bytes(row) for row in table[:16]]
         ms2_bytes = build_instrument_library_ms2(
             patches=patches,
             library_name=preset_key[:65],
             n_presets=16,
+            raw_mode=raw_mode,
         )
         out_path = os.path.join(output_dir, filename)
         with open(out_path, 'wb') as f:
             f.write(ms2_bytes)
-        print(f"  {filename}  ({len(ms2_bytes)} bytes)  [{preset_key}]")
+        print(f"  {filename}  ({len(ms2_bytes)} bytes)  [{preset_key}]  mode={mode_label}")
 
 
 def main():
@@ -111,12 +133,25 @@ def main():
             ' tables and write them to DIR.  No VGM input is required.'
         ),
     )
+    parser.add_argument(
+        '--inst-lib-mode', choices=['converted', 'raw'], default='converted',
+        metavar='{converted,raw}',
+        help=(
+            'Conversion mode for --export-inst-libraries (default: converted). '
+            '"converted" maps OPLL patch bytes to OPL4 registers using '
+            'opll_patch_to_opl4() (existing behaviour). '
+            '"raw" packs bytes directly into the OPL4 chunk-3 register fields '
+            'using opll_patch_raw() with no additional conversion tables or '
+            'scaling — useful for experimentation.'
+        ),
+    )
     args = parser.parse_args()
 
     # ── Instrument-library export mode ────────────────────────────────────
     if args.export_inst_libraries is not None:
-        print(f"Exporting instrument libraries to: {args.export_inst_libraries}")
-        export_inst_libraries(args.export_inst_libraries)
+        raw_mode = (args.inst_lib_mode == 'raw')
+        print(f"Exporting instrument libraries to: {args.export_inst_libraries}  (mode={args.inst_lib_mode})")
+        export_inst_libraries(args.export_inst_libraries, raw_mode=raw_mode)
         print("Done.")
         return
 
