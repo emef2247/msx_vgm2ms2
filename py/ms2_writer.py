@@ -365,6 +365,63 @@ def _load_reference_library() -> tuple[bytes, bytes, int, int]:
     return tunings_data, instruments_data, 1, 1
 
 
+def _load_library_from_ms2(
+    base_ms2_path: str,
+    max_presets: int = 16,
+) -> tuple[bytes, bytes, int, int]:
+    """Load tunings and 2OP instrument chunk data from a user-specified MS2 file.
+
+    Like ``_load_reference_library()`` but reads from *base_ms2_path* and
+    silently truncates the instruments chunk to the first *max_presets* entries
+    (default 16).  If the file has fewer than *max_presets* instruments a
+    warning is printed to stderr but the function succeeds with however many
+    are available.
+
+    Returns:
+        (tunings_data, instruments_data, n_tunings, n_2op_inst)
+    where *n_2op_inst* ≤ *max_presets* and *instruments_data* contains only
+    those entries.
+    """
+    import warnings as _warnings
+    try:
+        with open(base_ms2_path, 'rb') as f:
+            ref_bytes = f.read()
+        tunings_data = _read_ms2_chunk_data(ref_bytes, 2)
+        instruments_data = _read_ms2_chunk_data(ref_bytes, 3)
+        if not (tunings_data and instruments_data
+                and len(tunings_data) >= 2 and len(instruments_data) >= 2):
+            raise ValueError("Missing tunings or instruments chunk")
+        n_tunings = struct.unpack_from('<H', tunings_data, 0)[0]
+        n_2op_inst = struct.unpack_from('<H', instruments_data, 0)[0]
+        if n_2op_inst < max_presets:
+            _warnings.warn(
+                f"--base-ms2 '{base_ms2_path}' contains only {n_2op_inst} "
+                f"instruments (expected >= {max_presets}); "
+                f"OPLL presets beyond {n_2op_inst} will fall back to index 0.",
+                stacklevel=3,
+            )
+            # Keep as-is (fewer instruments than max_presets is acceptable).
+        elif n_2op_inst > max_presets:
+            # Truncate to the first max_presets instruments.
+            # instruments_data layout: 2-byte count + n_2op_inst × 30 bytes
+            _INST_RECORD_SIZE = 30
+            truncated = (
+                struct.pack('<H', max_presets)
+                + instruments_data[2: 2 + max_presets * _INST_RECORD_SIZE]
+            )
+            instruments_data = truncated
+            n_2op_inst = max_presets
+        return tunings_data, instruments_data, n_tunings, n_2op_inst
+    except (OSError, struct.error, ValueError) as exc:
+        import warnings as _w
+        _w.warn(
+            f"Could not load base MS2 from '{base_ms2_path}': {exc}. "
+            "Falling back to built-in reference library.",
+            stacklevel=3,
+        )
+        return _load_reference_library()
+
+
 def _opll_inst_to_ms2_idx(inst: int, n_instruments: int) -> int:
     """Map an OPLL preset number (1–15) to a 0-based MS2 instrument index.
 
@@ -1007,6 +1064,75 @@ def _get_starting_instruments(
             result.append(_opll_inst_to_ms2_idx(first_keyon.inst, n_instruments))
     return result
 
+def build_instrument_library_ms2(
+    patches: list,
+    library_name: str = 'OPLL Library',
+    n_presets: int = 16,
+) -> bytes:
+    """Build a minimal MS2 file that contains only tunings and 2OP instruments.
+
+    This is used to export instrument-only MS2 files (no song data) for use
+    as base preset libraries via ``--base-ms2``.
+
+    Args:
+        patches:      List of at least *n_presets* 8-byte OPLL patch sequences
+                      (each element is bytes-like with 8 bytes, R0..R7).
+        library_name: Up to 65 ASCII chars used as the MS2 description.
+        n_presets:    Number of preset instruments to include (default 16).
+                      Uses the first *n_presets* entries from *patches*.
+
+    Returns raw bytes of a complete, loadable .MS2 file.
+    """
+    # Build the 2OP instruments chunk from the first n_presets patches.
+    preset_count = min(n_presets, len(patches))
+    instruments_bytes = struct.pack('<H', preset_count)
+    for i in range(preset_count):
+        patch = bytes(patches[i])[:8]
+        opl4 = opll_patch_to_opl4(patch)
+        name = f'Preset {i + 1}'
+        instruments_bytes += _build_2op_instrument(opl4, tuning_idx=0, name=name)
+
+    # Use a single equal-temperament tuning.
+    tunings_bytes = build_tunings_chunk_data(1)
+    n_tunings = 1
+
+    # Minimal song settings: 1 pattern, 1 channel (all silent, no notes).
+    song_settings = build_song_settings_data(
+        description        = library_name[:65],
+        n_patterns         = 1,
+        n_tunings          = n_tunings,
+        n_2op_inst         = preset_count,
+        n_4op_inst         = 1,
+        n_wav_inst         = 1,
+        n_pitch_env        = 1,
+        n_channels         = 1,
+        timer              = 0,
+        timer_divider      = 0x0C00,
+    )
+
+    # Minimal patterns chunk: 1 pattern with 1 empty channel (whole-note rest).
+    patterns_data = build_patterns_chunk_data(
+        channel_event_lists=[[[]]],
+        n_patterns=1,
+        n_channels=1,
+    )
+    four_op_data   = build_4op_instruments_chunk_data(1)
+    wav_data       = build_wav_instruments_chunk_data(1)
+    pitch_env_data = build_pitch_envelopes_chunk_data(1)
+
+    ms2_bytes = (
+        MS2_SIGNATURE
+        + _build_chunk(1, song_settings)
+        + _build_chunk(2, tunings_bytes)
+        + _build_chunk(3, instruments_bytes)
+        + _build_chunk(4, four_op_data)
+        + _build_chunk(5, wav_data)
+        + _build_chunk(6, patterns_data)
+        + _build_chunk(8, pitch_env_data)
+        + _sentinel_chunk()
+    )
+    return ms2_bytes
+
 
 # ---------------------------------------------------------------------------
 # Top-level file builder
@@ -1018,6 +1144,7 @@ def build_ms2_file(
     stem: str,
     bpm: int = 120,
     timer: int = 0,
+    base_ms2: str | None = None,
 ) -> bytes:
     """Build a complete MS2 binary from OPLL segment data.
 
@@ -1027,6 +1154,14 @@ def build_ms2_file(
         stem:           Song name (used as description).
         bpm:            Song tempo in BPM (default 120).
         timer:          0 = VDP timer (default), 1 = 50 Hz timer.
+        base_ms2:       Optional path to an MS2 file to use as the base preset
+                        instrument library.  When provided, the first 16
+                        instruments from that file are used as OPLL presets
+                        1..16 (index 0 = inst 1, …, index 15 = inst 16).
+                        Instruments beyond index 15 are ignored; user patches
+                        (inst==0) are still appended after index 15 as usual.
+                        Falls back to the built-in YM2413.MS2 if the file
+                        cannot be loaded.
 
     Returns raw bytes of the complete .MS2 file.
     """
@@ -1062,11 +1197,16 @@ def build_ms2_file(
             active_channels.append(ch)
     n_channels = max(1, len(active_channels))
 
-    # ── Load MoonBlaster v1.4 reference instrument library ────────────────
-    # Copies chunk type 2 (Tunings) and chunk type 3 (2OP Instruments) verbatim
-    # from ms2_reference/OP2/YM2413.MS2.  This ensures instrument indices in
-    # the Patterns chunk align with the reference library expectations.
-    tunings_data, instruments_data, n_tunings, n_2op_inst = _load_reference_library()
+    # ── Load instrument library ───────────────────────────────────────────
+    # When --base-ms2 is provided, load tunings and instruments from that file,
+    # truncating to the first 16 instruments (OPLL presets 1..16 → indices 0..15).
+    # Otherwise fall back to the built-in MoonBlaster v1.4 reference library.
+    if base_ms2 is not None:
+        tunings_data, instruments_data, n_tunings, n_2op_inst = _load_library_from_ms2(
+            base_ms2, max_presets=16
+        )
+    else:
+        tunings_data, instruments_data, n_tunings, n_2op_inst = _load_reference_library()
 
     # ── Append user-patch instruments to the instruments chunk ────────────
     # Reference library instruments are kept at their original indices 0..(N-1).
