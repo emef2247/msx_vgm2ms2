@@ -166,7 +166,7 @@ def test_step_grid_retrigger_set_for_same_step_keyoff_keyon():
     step = 12 // ticks_per_step
     state = grid.get((0, step))
     assert state is not None, f"No grid state at step {step}"
-    keyon, ms2_note, inst, vol, retrigger = state
+    keyon, ms2_note, inst, vol, retrigger = state[:5]
     assert keyon == 1,     f"Expected keyon=1 at retrigger step, got {keyon}"
     assert retrigger,      "Expected retrigger=True at same-tick keyoff+keyon step"
 
@@ -191,7 +191,7 @@ def test_step_grid_no_retrigger_normal_separate_ticks():
     step = 24 // ticks_per_step   # step 2
     state = grid.get((0, step))
     assert state is not None
-    keyon, ms2_note, inst, vol, retrigger = state
+    keyon, ms2_note, inst, vol, retrigger = state[:5]
     assert keyon == 1
     assert not retrigger, "No retrigger expected when keyoff and keyon are on different steps"
 
