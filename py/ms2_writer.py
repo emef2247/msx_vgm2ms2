@@ -677,6 +677,19 @@ def _build_step_grid(
         assignments: dict[int, tuple] = {}   # step → (keyon, ms2_note, inst, vol, retrigger)
         keyoff_steps: set = set()
 
+        # Pass 1: collect all steps that have a keyoff segment.  Doing this
+        # before processing keyon segments makes retrigger detection
+        # order-independent when keyoff and keyon segments share the same
+        # quantised step (e.g. the zero-length keyoff marker inserted by
+        # _build_segments() for hidden retriggers).
+        for seg in segs:
+            if seg.keyon:
+                continue
+            start_step = seg.tick_start // ticks_per_step
+            if start_step < total_steps:
+                keyoff_steps.add(start_step)
+
+        # Pass 2: build per-step assignments.
         for seg in segs:
             start_step = seg.tick_start // ticks_per_step
             if start_step >= total_steps:
@@ -693,7 +706,6 @@ def _build_step_grid(
                     assignments[start_step] = (1, ms2_note, seg.inst, seg.vol,
                                                retrigger)
             else:
-                keyoff_steps.add(start_step)
                 # Only record key-off if no note-on already occupies this step.
                 if start_step not in assignments or assignments[start_step][0] == 0:
                     assignments[start_step] = (0, 0, seg.inst, seg.vol, False)
