@@ -31,7 +31,7 @@ YMFM_* tables:
 
 EXPERIMENT_* tables:
     Derived from YMFM_* tables by per-register tuning adjustments.
-    Adaptation by the eseopl3patcher project (emef2247).
+    Adaptation by the emeopl3patcher project (emef2247).
     Same license as YMFM_* (CC0/Public Domain).
 """
 
@@ -413,7 +413,7 @@ def _mod_ymf281b(ymfm: _Table, exp: list) -> None:
     exp[11][6] = _u8(ymfm[11][6] | 0x08)
     # 13: Acoustic Bass (Chimes in YMF281B)
     exp[12][4] = _u8((ymfm[12][4] & ~0x3A) | 0xC9)
-    exp[12][5] = _u8((ymfm[12][5] | 0x03) & 0x95)
+    exp[12][5] = _u8((ymfm[12][5] | 0x03) & 0x95)  # set bits 1,0; then keep bits 7,4,2,0 (direct port from C)
     exp[12][6] = _u8(ymfm[12][6] & 0x0F)
     exp[12][7] = _u8(ymfm[12][7] & 0x0F)
     # 14: Electric Guitar (Tom Tom II)

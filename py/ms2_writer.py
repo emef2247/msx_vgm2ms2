@@ -413,8 +413,8 @@ def _load_library_from_ms2(
             n_2op_inst = max_presets
         return tunings_data, instruments_data, n_tunings, n_2op_inst
     except (OSError, struct.error, ValueError) as exc:
-        import warnings as _w
-        _w.warn(
+        import warnings as _warnings
+        _warnings.warn(
             f"Could not load base MS2 from '{base_ms2_path}': {exc}. "
             "Falling back to built-in reference library.",
             stacklevel=3,
