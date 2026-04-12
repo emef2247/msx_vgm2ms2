@@ -1,4 +1,4 @@
-File: ./preview1.MS2  (5827 bytes)
+File: ./preview1.MS2  (5147 bytes)
 Signature: 4d53c2b20d0a001a  (OK)
 
 [0x0008] Chunk type 1 (Song Settings)  version=0  size=291
@@ -11,1061 +11,1068 @@ Signature: 4d53c2b20d0a001a  (OK)
   Channels:         4 total  (4 2OP + 0 4OP + 0 WAV)
   Channel types:    [1, 1, 1, 1]  (4 enabled)
   Start instruments:[0, 0, 0, 0]
-  Tunings:          1
+  Tunings:          8
   2OP instruments:  15
   4OP instruments:  1
   WAV instruments:  1
   Patterns:         113
   Pitch envelopes:  1
 
-[0x012f] Chunk type 2 (Tunings)  version=0  size=210
-  Count: 1
-  Tuning 0: 'Equal Temp.'  offsets[0..11]=[0, 128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280, 1408]
+[0x012f] Chunk type 2 (Tunings)  version=0  size=1666
+  Count: 8
+  Tuning 0: 'MB v1.4 T-3'  offsets[0..11]=[-40, 86, 218, 348, 476, 606, 738, 866, 994, 1124, 1254, 1382]
+  Tuning 1: 'MB v1.4 T-2'  offsets[0..11]=[-28, 98, 228, 358, 486, 616, 746, 874, 1002, 1132, 1262, 1390]
+  Tuning 2: 'MB v1.4 T-1'  offsets[0..11]=[-16, 110, 240, 368, 496, 624, 756, 884, 1010, 1140, 1268, 1396]
+  Tuning 3: 'MB v1.4 T+0'  offsets[0..11]=[-2, 124, 252, 380, 506, 634, 764, 892, 1018, 1148, 1276, 1404]
+  Tuning 4: 'MB v1.4 T+1'  offsets[0..11]=[10, 136, 264, 390, 516, 644, 774, 898, 1026, 1154, 1282, 1408]
+  Tuning 5: 'MB v1.4 T+2'  offsets[0..11]=[24, 148, 274, 400, 526, 654, 782, 908, 1034, 1162, 1290, 1416]
+  Tuning 6: 'MB v1.4 T+3'  offsets[0..11]=[36, 160, 286, 412, 536, 664, 792, 916, 1042, 1170, 1298, 1424]
+  Tuning 7: 'MB v1.4 ADPCM'  offsets[0..11]=[6, 124, 249, 378, 512, 637, 765, 896, 1019, 1152, 1285, 1410]
 
-[0x0205] Chunk type 3 (2OP Instruments)  version=0  size=452
+[0x07b5] Chunk type 3 (2OP Instruments)  version=0  size=452
   Count: 15
-  Inst  0: 'Electric Guitar ' tuning=0  regs=21 F5 62 C0 1B 00 07 00 00 01 0C
-  Inst  1: 'Violin          ' tuning=0  regs=71 D3 61 00 1E 99 07 00 00 00 02
-  Inst  2: 'Guitar          ' tuning=0  regs=13 D3 41 80 1A 40 06 00 00 00 06
-  Inst  3: 'Piano           ' tuning=0  regs=11 F5 61 40 0E 00 08 00 00 01 00
-  Inst  4: 'Flute           ' tuning=0  regs=32 E1 21 40 1E 01 06 00 00 01 0C
-  Inst  5: 'Clarinet        ' tuning=0  regs=21 F0 22 40 16 00 05 00 00 01 02
-  Inst  6: 'Oboe            ' tuning=0  regs=31 F0 23 00 16 00 06 00 00 00 00
-  Inst  7: 'Trumpet         ' tuning=0  regs=21 F6 61 40 19 00 07 00 00 00 0A
-  Inst  8: 'Organ           ' tuning=0  regs=22 FF 21 C0 14 00 08 00 01 01 00
-  Inst  9: 'Horn            ' tuning=0  regs=31 F0 22 00 11 00 06 00 00 00 00
-  Inst 10: 'Synthesizer     ' tuning=0  regs=32 E0 21 00 1E 00 08 00 00 00 00
-  Inst 11: 'Harpsichord     ' tuning=0  regs=01 E6 61 40 0F 00 06 00 00 00 0A
-  Inst 12: 'Vibraphone      ' tuning=0  regs=32 F6 21 80 15 00 00 00 01 00 04
-  Inst 13: 'Synth Bass      ' tuning=0  regs=01 F3 02 C0 1D 00 07 00 00 01 0A
-  Inst 14: 'Acoustic Bass   ' tuning=0  regs=21 F6 22 C0 08 00 00 00 00 01 06
+  Inst  0: 'OPLL Violin     ' tuning=3  regs=71 61 1E 00 D0 78 00 17 00 01 0E
+  Inst  1: 'OPLL Guitar     ' tuning=3  regs=13 41 1A 00 D8 F7 23 13 01 00 0A
+  Inst  2: 'OPLL Piano      ' tuning=3  regs=13 01 59 00 F2 C4 11 23 00 00 00
+  Inst  3: 'OPLL Flute      ' tuning=3  regs=31 61 0E 00 A8 64 70 27 00 00 0E
+  Inst  4: 'OPLL Clarinet   ' tuning=3  regs=32 21 1E 00 E0 76 00 28 00 00 0C
+  Inst  5: 'OPLL Oboe       ' tuning=3  regs=31 22 16 00 E0 71 00 18 00 00 0A
+  Inst  6: 'OPLL Trumpet    ' tuning=3  regs=21 61 1D 00 82 81 10 07 00 00 0E
+  Inst  7: 'OPLL Organ      ' tuning=3  regs=23 21 2D 00 A2 72 00 07 00 01 08
+  Inst  8: 'OPLL Horn       ' tuning=3  regs=61 61 1B 00 64 65 10 17 00 00 0C
+  Inst  9: 'OPLL Synthesizer' tuning=3  regs=41 61 0B 00 85 F7 71 07 01 01 00
+  Inst 10: 'OPLL Harpsichord' tuning=3  regs=13 01 43 00 FA E4 10 04 00 01 02
+  Inst 11: 'OPLL Vibraphone ' tuning=3  regs=17 C1 24 00 F8 F8 22 12 00 00 0E
+  Inst 12: 'OPLL Synth. Bass' tuning=3  regs=61 50 0C 00 C2 F5 20 42 00 00 0A
+  Inst 13: 'OPLL Acoust.Bass' tuning=3  regs=01 01 95 00 C9 95 03 02 00 00 06
+  Inst 14: 'OPLL Elec.Guitar' tuning=3  regs=61 41 49 00 F1 E4 40 13 00 00 06
 
-[0x03cd] Chunk type 4 (4OP Instruments)  version=0  size=43
+[0x097d] Chunk type 4 (4OP Instruments)  version=0  size=43
 
-[0x03fc] Chunk type 5 (WAV Instruments)  version=0  size=38
+[0x09ac] Chunk type 5 (WAV Instruments)  version=0  size=38
 
-[0x0426] Chunk type 6 (Patterns)  version=0  size=4748
+[0x09d6] Chunk type 6 (Patterns)  version=0  size=2612
   Count: 113 patterns, 4 channels each
   --- Pattern 0 ---
-    CH 0: cum=16  INST(1) VOL(4) NOTE_ON(66) [t16]
-         raw: 04010504004290
-    CH 1: cum=16  INST(1) VOL(4) NOTE_ON(62) [t16]
-         raw: 04010504003e90
-    CH 2: cum=16  INST(1) VOL(4) NOTE_ON(57) [t16]
-         raw: 04010504003990
-    CH 3: cum=16  INST(1) VOL(4) NOTE_ON(38) [t7] NOTE_ON(50) [t8] NOTE_ON(49) [t1]
-         raw: 04010504002687003288003181
+    CH 0: cum=16  NOTE_ON(66) VOL(4) INST(0) [t16]
+         raw: 00420504040090
+    CH 1: cum=16  NOTE_ON(62) VOL(4) INST(0) [t16]
+         raw: 003e0504040090
+    CH 2: cum=16  NOTE_ON(57) VOL(4) INST(0) [t16]
+         raw: 00390504040090
+    CH 3: cum=16  NOTE_ON(38) VOL(4) INST(0) [t7] NOTE_ON(50) [t8] NOTE_ON(49) [t1]
+         raw: 00260504040087003288003181
   --- Pattern 1 ---
-    CH 0: cum=16  INST(1) VOL(4) NOTE_ON(66) [t16]
-         raw: 04010504004290
-    CH 1: cum=16  INST(1) VOL(4) NOTE_ON(62) [t16]
-         raw: 04010504003e90
-    CH 2: cum=16  INST(1) VOL(4) NOTE_ON(57) [t14] NOTE_ON(59) [t2]
-         raw: 0401050400398e003b82
-    CH 3: cum=16  INST(1) VOL(4) NOTE_ON(49) [t6] NOTE_ON(37) [t8] NOTE_ON(35) [t2]
-         raw: 04010504003186002588002382
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t14] NOTE_ON(59) [t2]
+         raw: 8e003b82
+    CH 3: cum=16  [t6] NOTE_ON(37) [t8] NOTE_ON(35) [t2]
+         raw: 86002588002382
   --- Pattern 2 ---
-    CH 0: cum=16  INST(1) VOL(4) NOTE_ON(66) [t16]
-         raw: 04010504004290
-    CH 1: cum=16  INST(1) VOL(4) NOTE_ON(62) [t16]
-         raw: 04010504003e90
-    CH 2: cum=16  INST(1) VOL(4) NOTE_ON(59) [t16]
-         raw: 04010504003b90
-    CH 3: cum=16  INST(1) VOL(4) NOTE_ON(35) [t5] NOTE_ON(47) [t8] NOTE_ON(45) [t3]
-         raw: 04010504002385002f88002d83
-  --- Pattern 3 ---
-    CH 0: cum=16  INST(1) VOL(4) NOTE_ON(66) [t12] NOTE_OFF [t4]
-         raw: 0401050400428c0184
-    CH 1: cum=16  INST(1) VOL(4) NOTE_ON(62) [t12] NOTE_OFF [t4]
-         raw: 04010504003e8c0184
-    CH 2: cum=16  INST(1) VOL(4) NOTE_ON(59) [t12] NOTE_OFF [t4]
-         raw: 04010504003b8c0184
-    CH 3: cum=16  INST(1) VOL(4) NOTE_ON(45) [t4] NOTE_ON(33) [t8] INST(2) NOTE_ON(31) [t4]
-         raw: 04010504002d840021880402001f84
-  --- Pattern 4 ---
-    CH 0: cum=16  [t3] INST(2) VOL(4) NOTE_ON(71) [t4] NOTE_ON(67) [t4] NOTE_ON(64) [t4] NOTE_ON(62) [t1]
-         raw: 8304020504004784004384004084003e81
+    CH 0: cum=16  [t16]
+         raw: 90
     CH 1: cum=16  [t16]
          raw: 90
-    CH 2: cum=16  [t11] INST(2) VOL(4) NOTE_ON(52) [t5]
-         raw: 8b04020504003485
-    CH 3: cum=16  INST(2) VOL(4) NOTE_ON(31) [t3] NOTE_ON(43) [t8] NOTE_ON(44) [t5]
-         raw: 04020504001f83002b88002c85
-  --- Pattern 5 ---
-    CH 0: cum=16  INST(2) VOL(4) NOTE_ON(62) [t2] NOTE_ON(61) [t4] NOTE_ON(62) [t4] NOTE_ON(61) [t6]
-         raw: 04020504003e82003d84003e84003d86
-    CH 1: cum=16  [t16]
-         raw: 90
-    CH 2: cum=16  INST(2) VOL(4) NOTE_ON(52) [t16]
-         raw: 04020504003490
-    CH 3: cum=16  INST(2) VOL(4) NOTE_ON(44) [t2] NOTE_ON(32) [t8] NOTE_ON(33) [t6]
-         raw: 04020504002c82002088002186
-  --- Pattern 6 ---
-    CH 0: cum=16  INST(2) VOL(4) NOTE_ON(61) [t9] NOTE_ON(57) [t7]
-         raw: 04020504003d89003987
-    CH 1: cum=16  [t16]
-         raw: 90
-    CH 2: cum=16  INST(2) VOL(4) NOTE_ON(52) [t16]
-         raw: 04020504003490
-    CH 3: cum=16  INST(2) VOL(4) NOTE_ON(33) [t1] NOTE_ON(45) [t8] NOTE_ON(43) [t7]
-         raw: 04020504002181002d88002b87
-  --- Pattern 7 ---
-    CH 0: cum=16  INST(2) VOL(4) NOTE_ON(57) [t8] NOTE_OFF [t7] INST(3) NOTE_ON(48) [t1]
-         raw: 0402050400398801870403003081
-    CH 1: cum=16  [t8] INST(3) VOL(4) NOTE_ON(69) [t8]
-         raw: 8804030504004588
-    CH 2: cum=16  INST(2) VOL(4) NOTE_ON(52) [t8] NOTE_OFF [t8]
-         raw: 040205040034880188
-    CH 3: cum=16  INST(2) VOL(4) NOTE_ON(31) [t8] INST(3) NOTE_ON(30) [t7] NOTE_ON(42) [t1]
-         raw: 04020504001f880403001e87002a81
-  --- Pattern 8 ---
-    CH 0: cum=16  INST(3) VOL(4) NOTE_ON(48) [t3] NOTE_ON(47) [t4] NOTE_ON(48) [t7] NOTE_ON(57) [t2]
-         raw: 04030504003083002f84003087003982
-    CH 1: cum=16  INST(3) VOL(4) NOTE_ON(69) [t16]
-         raw: 04030504004590
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(3) VOL(4) NOTE_ON(42) [t7] NOTE_ON(40) [t7] NOTE_ON(28) [t2]
-         raw: 04030504002a87002887001c82
+    CH 3: cum=16  [t5] NOTE_ON(47) [t8] NOTE_ON(45) [t3]
+         raw: 85002f88002d83
+  --- Pattern 3 ---
+    CH 0: cum=16  [t12] NOTE_OFF [t4]
+         raw: 8c0184
+    CH 1: cum=16  [t12] NOTE_OFF [t4]
+         raw: 8c0184
+    CH 2: cum=16  [t12] NOTE_OFF [t4]
+         raw: 8c0184
+    CH 3: cum=16  [t4] NOTE_ON(33) [t8] NOTE_ON(31) INST(1) [t4]
+         raw: 84002188001f040184
+  --- Pattern 4 ---
+    CH 0: cum=16  [t3] NOTE_ON(71) INST(1) [t4] NOTE_ON(67) [t4] NOTE_ON(64) [t4] NOTE_ON(62) [t1]
+         raw: 830047040184004384004084003e81
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t11] NOTE_ON(52) INST(1) [t5]
+         raw: 8b0034040185
+    CH 3: cum=16  [t3] NOTE_ON(43) [t8] NOTE_ON(44) [t5]
+         raw: 83002b88002c85
+  --- Pattern 5 ---
+    CH 0: cum=16  [t2] NOTE_ON(61) [t4] NOTE_ON(62) [t4] NOTE_ON(61) [t6]
+         raw: 82003d84003e84003d86
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t2] NOTE_ON(32) [t8] NOTE_ON(33) [t6]
+         raw: 82002088002186
+  --- Pattern 6 ---
+    CH 0: cum=16  [t9] NOTE_ON(57) [t7]
+         raw: 89003987
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t1] NOTE_ON(45) [t8] NOTE_ON(43) [t7]
+         raw: 81002d88002b87
+  --- Pattern 7 ---
+    CH 0: cum=16  [t8] NOTE_OFF [t7] NOTE_ON(48) INST(2) [t1]
+         raw: 8801870030040281
+    CH 1: cum=16  [t8] NOTE_ON(69) INST(2) [t8]
+         raw: 880045040288
+    CH 2: cum=16  [t8] NOTE_OFF [t8]
+         raw: 880188
+    CH 3: cum=16  NOTE_ON(31) [t8] NOTE_ON(30) INST(2) [t7] NOTE_ON(42) [t1]
+         raw: 001f88001e040287002a81
+  --- Pattern 8 ---
+    CH 0: cum=16  [t3] NOTE_ON(47) [t4] NOTE_ON(48) [t7] NOTE_ON(57) [t2]
+         raw: 83002f84003087003982
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t7] NOTE_ON(40) [t7] NOTE_ON(28) [t2]
+         raw: 87002887001c82
   --- Pattern 9 ---
-    CH 0: cum=16  INST(3) VOL(4) NOTE_ON(57) [t2] NOTE_ON(48) [t4] NOTE_ON(47) [t7] NOTE_OFF [t3]
-         raw: 04030504003982003084002f870183
-    CH 1: cum=16  INST(3) VOL(4) NOTE_ON(69) [t10] NOTE_ON(66) [t3] NOTE_ON(60) [t3]
-         raw: 0403050400458a004283003c83
-    CH 2: cum=16  [t6] INST(3) VOL(4) NOTE_ON(54) [t7] NOTE_OFF [t3]
-         raw: 86040305040036870183
-    CH 3: cum=16  INST(3) VOL(4) NOTE_ON(28) [t6] NOTE_ON(27) [t7] NOTE_ON(39) [t3]
-         raw: 04030504001c86001b87002783
+    CH 0: cum=16  [t2] NOTE_ON(48) [t4] NOTE_ON(47) [t7] NOTE_OFF [t3]
+         raw: 82003084002f870183
+    CH 1: cum=16  [t10] NOTE_ON(66) [t3] NOTE_ON(60) [t3]
+         raw: 8a004283003c83
+    CH 2: cum=16  [t6] NOTE_ON(54) INST(2) [t7] NOTE_OFF [t3]
+         raw: 8600360402870183
+    CH 3: cum=16  [t6] NOTE_ON(27) [t7] NOTE_ON(39) [t3]
+         raw: 86001b87002783
   --- Pattern 10 ---
     CH 0: cum=16  [t16]
          raw: 90
-    CH 1: cum=16  INST(3) VOL(4) NOTE_ON(60) [t1] NOTE_ON(59) [t4] NOTE_ON(64) [t4] NOTE_ON(63) [t3] NOTE_ON(69) [t4]
-         raw: 04030504003c81003b84004084003f83004584
+    CH 1: cum=16  [t1] NOTE_ON(59) [t4] NOTE_ON(64) [t4] NOTE_ON(63) [t3] NOTE_ON(69) [t4]
+         raw: 81003b84004084003f83004584
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(3) VOL(4) NOTE_ON(39) [t5] NOTE_ON(35) [t7] NOTE_ON(47) [t4]
-         raw: 04030504002785002387002f84
+    CH 3: cum=16  [t5] NOTE_ON(35) [t7] NOTE_ON(47) [t4]
+         raw: 85002387002f84
   --- Pattern 11 ---
-    CH 0: cum=16  [t4] INST(4) VOL(4) NOTE_ON(59) [t7] NOTE_ON(52) [t4] NOTE_ON(50) [t1]
-         raw: 8404040504003b87003484003281
-    CH 1: cum=16  INST(3) VOL(4) NOTE_ON(67) [t4] INST(4) NOTE_ON(67) [t12]
-         raw: 04030504004384040400438c
+    CH 0: cum=16  [t4] NOTE_ON(59) INST(3) [t7] NOTE_ON(52) [t4] NOTE_ON(50) [t1]
+         raw: 84003b040387003484003281
+    CH 1: cum=16  NOTE_ON(67) [t4] NOTE_ON(67) INST(3) [t12]
+         raw: 004384004304038c
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(3) VOL(4) NOTE_ON(47) [t4] INST(4) NOTE_ON(28) [t7] NOTE_ON(40) [t5]
-         raw: 04030504002f840404001c87002885
+    CH 3: cum=16  [t4] NOTE_ON(28) INST(3) [t7] NOTE_ON(40) [t5]
+         raw: 84001c040387002885
   --- Pattern 12 ---
-    CH 0: cum=16  INST(4) VOL(4) NOTE_ON(50) [t3] NOTE_ON(52) [t4] NOTE_ON(54) [t3] NOTE_ON(55) [t4] NOTE_ON(52) [t2]
-         raw: 04040504003283003484003683003784003482
-    CH 1: cum=16  INST(4) VOL(4) NOTE_ON(67) [t16]
-         raw: 04040504004390
+    CH 0: cum=16  [t3] NOTE_ON(52) [t4] NOTE_ON(54) [t3] NOTE_ON(55) [t4] NOTE_ON(52) [t2]
+         raw: 83003484003683003784003482
+    CH 1: cum=16  [t16]
+         raw: 90
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(4) VOL(4) NOTE_ON(40) [t3] NOTE_ON(38) [t7] NOTE_ON(26) [t6]
-         raw: 04040504002883002687001a86
+    CH 3: cum=16  [t3] NOTE_ON(38) [t7] NOTE_ON(26) [t6]
+         raw: 83002687001a86
   --- Pattern 13 ---
-    CH 0: cum=16  INST(4) VOL(4) NOTE_ON(52) [t2] NOTE_ON(45) [t7] NOTE_OFF [t7]
-         raw: 04040504003482002d870187
-    CH 1: cum=16  INST(4) VOL(4) NOTE_ON(67) [t6] NOTE_ON(64) [t3] NOTE_ON(59) [t4] NOTE_ON(57) [t3]
-         raw: 04040504004386004083003b84003983
+    CH 0: cum=16  [t2] NOTE_ON(45) [t7] NOTE_OFF [t7]
+         raw: 82002d870187
+    CH 1: cum=16  [t6] NOTE_ON(64) [t3] NOTE_ON(59) [t4] NOTE_ON(57) [t3]
+         raw: 86004083003b84003983
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(4) VOL(4) NOTE_ON(26) [t2] NOTE_ON(25) [t7] NOTE_ON(37) [t7]
-         raw: 04040504001a82001987002587
+    CH 3: cum=16  [t2] NOTE_ON(25) [t7] NOTE_ON(37) [t7]
+         raw: 82001987002587
   --- Pattern 14 ---
     CH 0: cum=16  [t16]
          raw: 90
-    CH 1: cum=16  INST(4) VOL(4) NOTE_ON(57) [t1] NOTE_ON(62) [t4] NOTE_ON(61) [t3] NOTE_ON(67) [t4] NOTE_ON(66) [t4]
-         raw: 04040504003981003e84003d83004384004284
+    CH 1: cum=16  [t1] NOTE_ON(62) [t4] NOTE_ON(61) [t3] NOTE_ON(67) [t4] NOTE_ON(66) [t4]
+         raw: 81003e84003d83004384004284
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(4) VOL(4) NOTE_ON(37) [t1] NOTE_ON(33) [t7] NOTE_ON(45) [t8]
-         raw: 04040504002581002187002d88
+    CH 3: cum=16  [t1] NOTE_ON(33) [t7] NOTE_ON(45) [t8]
+         raw: 81002187002d88
   --- Pattern 15 ---
-    CH 0: cum=16  INST(5) VOL(4) NOTE_ON(57) [t16]
-         raw: 04050504003990
-    CH 1: cum=16  INST(5) VOL(4) NOTE_ON(66) [t16]
-         raw: 04050504004290
+    CH 0: cum=16  NOTE_ON(57) INST(4) [t16]
+         raw: 0039040490
+    CH 1: cum=16  NOTE_ON(66) INST(4) [t16]
+         raw: 0042040490
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(5) VOL(4) NOTE_ON(38) [t8] NOTE_ON(50) [t7] NOTE_ON(49) [t1]
-         raw: 04050504002688003287003181
+    CH 3: cum=16  NOTE_ON(38) INST(4) [t8] NOTE_ON(50) [t7] NOTE_ON(49) [t1]
+         raw: 0026040488003287003181
   --- Pattern 16 ---
-    CH 0: cum=16  INST(5) VOL(4) NOTE_ON(57) [t16]
-         raw: 04050504003990
-    CH 1: cum=16  INST(5) VOL(4) NOTE_ON(66) [t7] NOTE_ON(68) [t3] NOTE_ON(69) [t4] NOTE_ON(62) [t2]
-         raw: 04050504004287004483004584003e82
-    CH 2: cum=16  [t7] INST(5) VOL(4) NOTE_ON(52) [t7] NOTE_ON(42) [t2]
-         raw: 8704050504003487002a82
-    CH 3: cum=16  INST(5) VOL(4) NOTE_ON(49) [t7] NOTE_ON(37) [t7] NOTE_ON(35) [t2]
-         raw: 04050504003187002587002382
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t7] NOTE_ON(68) [t3] NOTE_ON(69) [t4] NOTE_ON(62) [t2]
+         raw: 87004483004584003e82
+    CH 2: cum=16  [t7] NOTE_ON(52) INST(4) [t7] NOTE_ON(42) [t2]
+         raw: 870034040487002a82
+    CH 3: cum=16  [t7] NOTE_ON(37) [t7] NOTE_ON(35) [t2]
+         raw: 87002587002382
   --- Pattern 17 ---
-    CH 0: cum=16  INST(5) VOL(4) NOTE_ON(57) [t6] NOTE_ON(56) [t3] NOTE_ON(57) [t4] NOTE_ON(59) [t3]
-         raw: 04050504003986003883003984003b83
-    CH 1: cum=16  INST(5) VOL(4) NOTE_ON(62) [t7] NOTE_ON(64) [t2] NOTE_ON(66) [t7]
-         raw: 04050504003e87004082004287
-    CH 2: cum=16  INST(5) VOL(4) NOTE_ON(42) [t6] NOTE_ON(50) [t7] NOTE_ON(47) [t3]
-         raw: 04050504002a86003287002f83
-    CH 3: cum=16  INST(5) VOL(4) NOTE_ON(35) [t6] NOTE_ON(47) [t7] NOTE_ON(44) [t3]
-         raw: 04050504002386002f87002c83
+    CH 0: cum=16  [t6] NOTE_ON(56) [t3] NOTE_ON(57) [t4] NOTE_ON(59) [t3]
+         raw: 86003883003984003b83
+    CH 1: cum=16  [t7] NOTE_ON(64) [t2] NOTE_ON(66) [t7]
+         raw: 87004082004287
+    CH 2: cum=16  [t6] NOTE_ON(50) [t7] NOTE_ON(47) [t3]
+         raw: 86003287002f83
+    CH 3: cum=16  [t6] NOTE_ON(47) [t7] NOTE_ON(44) [t3]
+         raw: 86002f87002c83
   --- Pattern 18 ---
-    CH 0: cum=16  INST(5) VOL(4) NOTE_ON(59) [t5] NOTE_ON(56) [t7] INST(6) NOTE_ON(57) [t4]
-         raw: 04050504003b850038870406003984
-    CH 1: cum=16  INST(5) VOL(4) NOTE_ON(66) [t1] NOTE_ON(64) [t7] NOTE_ON(62) [t4] INST(6) NOTE_ON(61) [t4]
-         raw: 04050504004281004087003e840406003d84
-    CH 2: cum=16  INST(5) VOL(4) NOTE_ON(47) [t5] NOTE_ON(52) [t7] INST(6) NOTE_ON(52) [t4]
-         raw: 04050504002f850034870406003484
-    CH 3: cum=16  INST(5) VOL(4) NOTE_ON(44) [t5] NOTE_ON(40) [t7] INST(6) NOTE_ON(45) [t4]
-         raw: 04050504002c850028870406002d84
+    CH 0: cum=16  [t5] NOTE_ON(56) [t7] NOTE_ON(57) INST(5) [t4]
+         raw: 850038870039040584
+    CH 1: cum=16  [t1] NOTE_ON(64) [t7] NOTE_ON(62) [t4] NOTE_ON(61) INST(5) [t4]
+         raw: 81004087003e84003d040584
+    CH 2: cum=16  [t5] NOTE_ON(52) [t7] NOTE_ON(52) INST(5) [t4]
+         raw: 850034870034040584
+    CH 3: cum=16  [t5] NOTE_ON(40) [t7] NOTE_ON(45) INST(5) [t4]
+         raw: 85002887002d040584
   --- Pattern 19 ---
-    CH 0: cum=16  INST(6) VOL(4) NOTE_ON(57) [t16]
-         raw: 04060504003990
-    CH 1: cum=16  INST(6) VOL(4) NOTE_ON(59) [t5] NOTE_ON(61) [t2] NOTE_ON(62) [t9]
-         raw: 04060504003b85003d82003e89
-    CH 2: cum=16  INST(6) VOL(4) NOTE_ON(52) [t4] NOTE_ON(54) [t12]
-         raw: 0406050400348400368c
-    CH 3: cum=16  INST(6) VOL(4) NOTE_ON(45) [t4] NOTE_ON(38) [t7] NOTE_ON(40) [t5]
-         raw: 04060504002d84002687002885
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  NOTE_ON(59) [t5] NOTE_ON(61) [t2] NOTE_ON(62) [t9]
+         raw: 003b85003d82003e89
+    CH 2: cum=16  [t4] NOTE_ON(54) [t12]
+         raw: 8400368c
+    CH 3: cum=16  [t4] NOTE_ON(38) [t7] NOTE_ON(40) [t5]
+         raw: 84002687002885
   --- Pattern 20 ---
-    CH 0: cum=16  INST(6) VOL(4) NOTE_ON(57) [t3] NOTE_ON(56) [t7] NOTE_ON(52) [t6]
-         raw: 04060504003983003887003486
-    CH 1: cum=16  INST(6) VOL(4) NOTE_ON(62) [t3] NOTE_ON(61) [t3] NOTE_ON(59) [t4] NOTE_ON(57) [t6]
-         raw: 04060504003e83003d83003b84003986
-    CH 2: cum=16  INST(6) VOL(4) NOTE_ON(54) [t3] NOTE_ON(50) [t7] NOTE_ON(49) [t6]
-         raw: 04060504003683003287003186
-    CH 3: cum=16  INST(6) VOL(4) NOTE_ON(40) [t3] NOTE_ON(28) [t7] NOTE_ON(33) [t4] NOTE_ON(35) [t2]
-         raw: 04060504002883001c87002184002382
+    CH 0: cum=16  [t3] NOTE_ON(56) [t7] NOTE_ON(52) [t6]
+         raw: 83003887003486
+    CH 1: cum=16  [t3] NOTE_ON(61) [t3] NOTE_ON(59) [t4] NOTE_ON(57) [t6]
+         raw: 83003d83003b84003986
+    CH 2: cum=16  [t3] NOTE_ON(50) [t7] NOTE_ON(49) [t6]
+         raw: 83003287003186
+    CH 3: cum=16  [t3] NOTE_ON(28) [t7] NOTE_ON(33) [t4] NOTE_ON(35) [t2]
+         raw: 83001c87002184002382
   --- Pattern 21 ---
-    CH 0: cum=16  INST(6) VOL(4) NOTE_ON(52) [t16]
-         raw: 04060504003490
-    CH 1: cum=16  INST(6) VOL(4) NOTE_ON(57) [t16]
-         raw: 04060504003990
-    CH 2: cum=16  INST(6) VOL(4) NOTE_ON(49) [t16]
-         raw: 04060504003190
-    CH 3: cum=16  INST(6) VOL(4) NOTE_ON(35) [t2] NOTE_ON(37) [t3] NOTE_ON(38) [t4] NOTE_ON(40) [t4] NOTE_ON(43) [t3]
-         raw: 04060504002382002583002684002884002b83
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t2] NOTE_ON(37) [t3] NOTE_ON(38) [t4] NOTE_ON(40) [t4] NOTE_ON(43) [t3]
+         raw: 82002583002684002884002b83
   --- Pattern 22 ---
-    CH 0: cum=16  INST(6) VOL(4) NOTE_ON(52) [t8] INST(7) NOTE_ON(66) [t8]
-         raw: 040605040034880407004288
-    CH 1: cum=16  INST(6) VOL(4) NOTE_ON(57) [t8] INST(7) NOTE_ON(62) [t8]
-         raw: 040605040039880407003e88
-    CH 2: cum=16  INST(6) VOL(4) NOTE_ON(49) [t8] INST(7) NOTE_ON(57) [t8]
-         raw: 040605040031880407003988
-    CH 3: cum=16  INST(6) VOL(4) NOTE_ON(43) [t1] NOTE_ON(42) [t3] NOTE_ON(40) [t4] INST(7) NOTE_ON(38) [t8]
-         raw: 04060504002b81002a830028840407002688
+    CH 0: cum=16  [t8] NOTE_ON(66) INST(6) [t8]
+         raw: 880042040688
+    CH 1: cum=16  [t8] NOTE_ON(62) INST(6) [t8]
+         raw: 88003e040688
+    CH 2: cum=16  [t8] NOTE_ON(57) INST(6) [t8]
+         raw: 880039040688
+    CH 3: cum=16  [t1] NOTE_ON(42) [t3] NOTE_ON(40) [t4] NOTE_ON(38) INST(6) [t8]
+         raw: 81002a830028840026040688
   --- Pattern 23 ---
-    CH 0: cum=16  INST(7) VOL(4) NOTE_ON(66) [t16]
-         raw: 04070504004290
-    CH 1: cum=16  INST(7) VOL(4) NOTE_ON(62) [t16]
-         raw: 04070504003e90
-    CH 2: cum=16  INST(7) VOL(4) NOTE_ON(57) [t16]
-         raw: 04070504003990
-    CH 3: cum=16  INST(7) VOL(4) NOTE_ON(50) [t7] NOTE_ON(49) [t8] NOTE_ON(37) [t1]
-         raw: 04070504003287003188002581
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  NOTE_ON(50) [t7] NOTE_ON(49) [t8] NOTE_ON(37) [t1]
+         raw: 003287003188002581
   --- Pattern 24 ---
-    CH 0: cum=16  INST(7) VOL(4) NOTE_ON(66) [t16]
-         raw: 04070504004290
-    CH 1: cum=16  INST(7) VOL(4) NOTE_ON(62) [t16]
-         raw: 04070504003e90
-    CH 2: cum=16  INST(7) VOL(4) NOTE_ON(57) [t6] NOTE_ON(59) [t10]
-         raw: 04070504003986003b8a
-    CH 3: cum=16  INST(7) VOL(4) NOTE_ON(37) [t6] NOTE_ON(35) [t8] NOTE_ON(47) [t2]
-         raw: 04070504002586002388002f82
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t6] NOTE_ON(59) [t10]
+         raw: 86003b8a
+    CH 3: cum=16  [t6] NOTE_ON(35) [t8] NOTE_ON(47) [t2]
+         raw: 86002388002f82
   --- Pattern 25 ---
-    CH 0: cum=16  INST(7) VOL(4) NOTE_ON(66) [t16]
-         raw: 04070504004290
-    CH 1: cum=16  INST(7) VOL(4) NOTE_ON(62) [t16]
-         raw: 04070504003e90
-    CH 2: cum=16  INST(7) VOL(4) NOTE_ON(59) [t16]
-         raw: 04070504003b90
-    CH 3: cum=16  INST(7) VOL(4) NOTE_ON(47) [t5] NOTE_ON(45) [t8] NOTE_ON(33) [t3]
-         raw: 04070504002f85002d88002183
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t5] NOTE_ON(45) [t8] NOTE_ON(33) [t3]
+         raw: 85002d88002183
   --- Pattern 26 ---
-    CH 0: cum=16  INST(7) VOL(4) NOTE_ON(66) [t4] NOTE_OFF [t8] INST(8) NOTE_ON(71) [t3] NOTE_ON(67) [t1]
-         raw: 0407050400428401880408004783004381
-    CH 1: cum=16  INST(7) VOL(4) NOTE_ON(62) [t4] NOTE_OFF [t12]
-         raw: 04070504003e84018c
-    CH 2: cum=16  INST(7) VOL(4) NOTE_ON(59) [t4] NOTE_OFF [t12]
-         raw: 04070504003b84018c
-    CH 3: cum=16  INST(7) VOL(4) NOTE_ON(33) [t4] INST(8) NOTE_ON(31) [t8] NOTE_ON(43) [t4]
-         raw: 040705040021840408001f88002b84
+    CH 0: cum=16  [t4] NOTE_OFF [t8] NOTE_ON(71) INST(7) [t3] NOTE_ON(67) [t1]
+         raw: 8401880047040783004381
+    CH 1: cum=16  [t4] NOTE_OFF [t12]
+         raw: 84018c
+    CH 2: cum=16  [t4] NOTE_OFF [t12]
+         raw: 84018c
+    CH 3: cum=16  [t4] NOTE_ON(31) INST(7) [t8] NOTE_ON(43) [t4]
+         raw: 84001f040788002b84
   --- Pattern 27 ---
-    CH 0: cum=16  INST(8) VOL(4) NOTE_ON(67) [t3] NOTE_ON(64) [t4] NOTE_ON(62) [t4] NOTE_ON(61) [t3] NOTE_ON(62) [t2]
-         raw: 04080504004383004084003e84003d83003e82
+    CH 0: cum=16  [t3] NOTE_ON(64) [t4] NOTE_ON(62) [t4] NOTE_ON(61) [t3] NOTE_ON(62) [t2]
+         raw: 83004084003e84003d83003e82
     CH 1: cum=16  [t16]
          raw: 90
-    CH 2: cum=16  [t3] INST(8) VOL(4) NOTE_ON(52) [t13]
-         raw: 830408050400348d
-    CH 3: cum=16  INST(8) VOL(4) NOTE_ON(43) [t3] NOTE_ON(44) [t8] NOTE_ON(32) [t5]
-         raw: 04080504002b83002c88002085
+    CH 2: cum=16  [t3] NOTE_ON(52) INST(7) [t13]
+         raw: 83003404078d
+    CH 3: cum=16  [t3] NOTE_ON(44) [t8] NOTE_ON(32) [t5]
+         raw: 83002c88002085
   --- Pattern 28 ---
-    CH 0: cum=16  INST(8) VOL(4) NOTE_ON(62) [t2] NOTE_ON(61) [t14]
-         raw: 04080504003e82003d8e
+    CH 0: cum=16  [t2] NOTE_ON(61) [t14]
+         raw: 82003d8e
     CH 1: cum=16  [t16]
          raw: 90
-    CH 2: cum=16  INST(8) VOL(4) NOTE_ON(52) [t16]
-         raw: 04080504003490
-    CH 3: cum=16  INST(8) VOL(4) NOTE_ON(32) [t2] NOTE_ON(33) [t8] NOTE_ON(45) [t6]
-         raw: 04080504002082002188002d86
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t2] NOTE_ON(33) [t8] NOTE_ON(45) [t6]
+         raw: 82002188002d86
   --- Pattern 29 ---
-    CH 0: cum=16  INST(8) VOL(4) NOTE_ON(61) [t1] NOTE_ON(59) [t1] NOTE_ON(57) [t14]
-         raw: 04080504003d81003b8100398e
+    CH 0: cum=16  [t1] NOTE_ON(59) [t1] NOTE_ON(57) [t14]
+         raw: 81003b8100398e
     CH 1: cum=16  [t16]
          raw: 90
-    CH 2: cum=16  INST(8) VOL(4) NOTE_ON(52) [t16]
-         raw: 04080504003490
-    CH 3: cum=16  INST(8) VOL(4) NOTE_ON(45) [t1] NOTE_ON(43) [t8] NOTE_ON(31) [t7]
-         raw: 04080504002d81002b88001f87
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t1] NOTE_ON(43) [t8] NOTE_ON(31) [t7]
+         raw: 81002b88001f87
   --- Pattern 30 ---
-    CH 0: cum=16  NOTE_OFF [t8] INST(9) VOL(4) NOTE_ON(48) [t4] NOTE_ON(47) [t3] NOTE_ON(48) [t1]
-         raw: 018804090504003084002f83003081
-    CH 1: cum=16  INST(9) VOL(4) NOTE_ON(69) [t16]
-         raw: 04090504004590
+    CH 0: cum=16  NOTE_OFF [t8] NOTE_ON(48) INST(8) [t4] NOTE_ON(47) [t3] NOTE_ON(48) [t1]
+         raw: 01880030040884002f83003081
+    CH 1: cum=16  NOTE_ON(69) INST(8) [t16]
+         raw: 0045040890
     CH 2: cum=16  NOTE_OFF [t16]
          raw: 0190
-    CH 3: cum=16  INST(9) VOL(4) NOTE_ON(30) [t8] NOTE_ON(42) [t7] NOTE_ON(40) [t1]
-         raw: 04090504001e88002a87002881
+    CH 3: cum=16  NOTE_ON(30) INST(8) [t8] NOTE_ON(42) [t7] NOTE_ON(40) [t1]
+         raw: 001e040888002a87002881
   --- Pattern 31 ---
-    CH 0: cum=16  INST(9) VOL(4) NOTE_ON(48) [t7] NOTE_ON(57) [t4] NOTE_ON(48) [t3] NOTE_ON(47) [t2]
-         raw: 04090504003087003984003083002f82
-    CH 1: cum=16  INST(9) VOL(4) NOTE_ON(69) [t16]
-         raw: 04090504004590
-    CH 2: cum=16  [t14] INST(9) VOL(4) NOTE_ON(54) [t2]
-         raw: 8e04090504003682
-    CH 3: cum=16  INST(9) VOL(4) NOTE_ON(40) [t7] NOTE_ON(28) [t7] NOTE_ON(27) [t2]
-         raw: 04090504002887001c87001b82
+    CH 0: cum=16  [t7] NOTE_ON(57) [t4] NOTE_ON(48) [t3] NOTE_ON(47) [t2]
+         raw: 87003984003083002f82
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t14] NOTE_ON(54) INST(8) [t2]
+         raw: 8e0036040882
+    CH 3: cum=16  [t7] NOTE_ON(28) [t7] NOTE_ON(27) [t2]
+         raw: 87001c87001b82
   --- Pattern 32 ---
-    CH 0: cum=16  INST(9) VOL(4) NOTE_ON(47) [t6] NOTE_OFF [t10]
-         raw: 04090504002f86018a
-    CH 1: cum=16  INST(9) VOL(4) NOTE_ON(69) [t2] NOTE_ON(66) [t4] NOTE_ON(60) [t4] NOTE_ON(59) [t3] NOTE_ON(64) [t3]
-         raw: 04090504004582004284003c84003b83004083
-    CH 2: cum=16  INST(9) VOL(4) NOTE_ON(54) [t6] NOTE_OFF [t10]
-         raw: 04090504003686018a
-    CH 3: cum=16  INST(9) VOL(4) NOTE_ON(27) [t6] NOTE_ON(39) [t7] NOTE_ON(35) [t3]
-         raw: 04090504001b86002787002383
+    CH 0: cum=16  [t6] NOTE_OFF [t10]
+         raw: 86018a
+    CH 1: cum=16  [t2] NOTE_ON(66) [t4] NOTE_ON(60) [t4] NOTE_ON(59) [t3] NOTE_ON(64) [t3]
+         raw: 82004284003c84003b83004083
+    CH 2: cum=16  [t6] NOTE_OFF [t10]
+         raw: 86018a
+    CH 3: cum=16  [t6] NOTE_ON(39) [t7] NOTE_ON(35) [t3]
+         raw: 86002787002383
   --- Pattern 33 ---
-    CH 0: cum=16  [t12] INST(10) VOL(4) NOTE_ON(59) [t4]
-         raw: 8c040a0504003b84
-    CH 1: cum=16  INST(9) VOL(4) NOTE_ON(64) [t1] NOTE_ON(63) [t4] NOTE_ON(69) [t4] NOTE_ON(67) [t3] INST(10) NOTE_ON(67) [t4]
-         raw: 04090504004081003f84004584004383040a004384
+    CH 0: cum=16  [t12] NOTE_ON(59) INST(9) [t4]
+         raw: 8c003b040984
+    CH 1: cum=16  [t1] NOTE_ON(63) [t4] NOTE_ON(69) [t4] NOTE_ON(67) [t3] NOTE_ON(67) INST(9) [t4]
+         raw: 81003f840045840043830043040984
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(9) VOL(4) NOTE_ON(35) [t5] NOTE_ON(47) [t7] INST(10) NOTE_ON(28) [t4]
-         raw: 04090504002385002f87040a001c84
+    CH 3: cum=16  [t5] NOTE_ON(47) [t7] NOTE_ON(28) INST(9) [t4]
+         raw: 85002f87001c040984
   --- Pattern 34 ---
-    CH 0: cum=16  INST(10) VOL(4) NOTE_ON(59) [t4] NOTE_ON(52) [t4] NOTE_ON(50) [t3] NOTE_ON(52) [t4] NOTE_ON(54) [t1]
-         raw: 040a0504003b84003484003283003484003681
-    CH 1: cum=16  INST(10) VOL(4) NOTE_ON(67) [t16]
-         raw: 040a0504004390
+    CH 0: cum=16  [t4] NOTE_ON(52) [t4] NOTE_ON(50) [t3] NOTE_ON(52) [t4] NOTE_ON(54) [t1]
+         raw: 84003484003283003484003681
+    CH 1: cum=16  [t16]
+         raw: 90
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(10) VOL(4) NOTE_ON(28) [t4] NOTE_ON(40) [t7] NOTE_ON(38) [t5]
-         raw: 040a0504001c84002887002685
+    CH 3: cum=16  [t4] NOTE_ON(40) [t7] NOTE_ON(38) [t5]
+         raw: 84002887002685
   --- Pattern 35 ---
-    CH 0: cum=16  INST(10) VOL(4) NOTE_ON(54) [t3] NOTE_ON(55) [t4] NOTE_ON(52) [t3] NOTE_ON(45) [t6]
-         raw: 040a0504003683003784003483002d86
-    CH 1: cum=16  INST(10) VOL(4) NOTE_ON(67) [t14] NOTE_ON(64) [t2]
-         raw: 040a050400438e004082
+    CH 0: cum=16  [t3] NOTE_ON(55) [t4] NOTE_ON(52) [t3] NOTE_ON(45) [t6]
+         raw: 83003784003483002d86
+    CH 1: cum=16  [t14] NOTE_ON(64) [t2]
+         raw: 8e004082
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(10) VOL(4) NOTE_ON(38) [t3] NOTE_ON(26) [t7] NOTE_ON(25) [t6]
-         raw: 040a0504002683001a87001986
+    CH 3: cum=16  [t3] NOTE_ON(26) [t7] NOTE_ON(25) [t6]
+         raw: 83001a87001986
   --- Pattern 36 ---
-    CH 0: cum=16  INST(10) VOL(4) NOTE_ON(45) [t2] NOTE_OFF [t14]
-         raw: 040a0504002d82018e
-    CH 1: cum=16  INST(10) VOL(4) NOTE_ON(64) [t2] NOTE_ON(59) [t4] NOTE_ON(57) [t3] NOTE_ON(62) [t4] NOTE_ON(61) [t3]
-         raw: 040a0504004082003b84003983003e84003d83
+    CH 0: cum=16  [t2] NOTE_OFF [t14]
+         raw: 82018e
+    CH 1: cum=16  [t2] NOTE_ON(59) [t4] NOTE_ON(57) [t3] NOTE_ON(62) [t4] NOTE_ON(61) [t3]
+         raw: 82003b84003983003e84003d83
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(10) VOL(4) NOTE_ON(25) [t2] NOTE_ON(37) [t7] NOTE_ON(33) [t7]
-         raw: 040a0504001982002587002187
+    CH 3: cum=16  [t2] NOTE_ON(37) [t7] NOTE_ON(33) [t7]
+         raw: 82002587002187
   --- Pattern 37 ---
-    CH 0: cum=16  [t8] INST(11) VOL(4) NOTE_ON(57) [t8]
-         raw: 88040b0504003988
-    CH 1: cum=16  INST(10) VOL(4) NOTE_ON(61) [t1] NOTE_ON(67) [t4] NOTE_ON(66) [t3] INST(11) NOTE_ON(66) [t8]
-         raw: 040a0504003d81004384004283040b004288
+    CH 0: cum=16  [t8] NOTE_ON(57) INST(10) [t8]
+         raw: 880039040a88
+    CH 1: cum=16  [t1] NOTE_ON(67) [t4] NOTE_ON(66) [t3] NOTE_ON(66) INST(10) [t8]
+         raw: 810043840042830042040a88
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(10) VOL(4) NOTE_ON(33) [t1] NOTE_ON(45) [t7] INST(11) NOTE_ON(38) [t8]
-         raw: 040a0504002181002d87040b002688
+    CH 3: cum=16  [t1] NOTE_ON(45) [t7] NOTE_ON(38) INST(10) [t8]
+         raw: 81002d870026040a88
   --- Pattern 38 ---
-    CH 0: cum=16  INST(11) VOL(4) NOTE_ON(57) [t16]
-         raw: 040b0504003990
-    CH 1: cum=16  INST(11) VOL(4) NOTE_ON(66) [t15] NOTE_ON(68) [t1]
-         raw: 040b050400428f004481
-    CH 2: cum=16  [t15] INST(11) VOL(4) NOTE_ON(52) [t1]
-         raw: 8f040b0504003481
-    CH 3: cum=16  INST(11) VOL(4) NOTE_ON(50) [t7] NOTE_ON(49) [t8] NOTE_ON(37) [t1]
-         raw: 040b0504003287003188002581
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t15] NOTE_ON(68) [t1]
+         raw: 8f004481
+    CH 2: cum=16  [t15] NOTE_ON(52) INST(10) [t1]
+         raw: 8f0034040a81
+    CH 3: cum=16  NOTE_ON(50) [t7] NOTE_ON(49) [t8] NOTE_ON(37) [t1]
+         raw: 003287003188002581
   --- Pattern 39 ---
-    CH 0: cum=16  INST(11) VOL(4) NOTE_ON(57) [t14] NOTE_ON(56) [t2]
-         raw: 040b050400398e003882
-    CH 1: cum=16  INST(11) VOL(4) NOTE_ON(68) [t3] NOTE_ON(69) [t3] NOTE_ON(62) [t10]
-         raw: 040b0504004483004583003e8a
-    CH 2: cum=16  INST(11) VOL(4) NOTE_ON(52) [t6] NOTE_ON(42) [t8] NOTE_ON(50) [t2]
-         raw: 040b0504003486002a88003282
-    CH 3: cum=16  INST(11) VOL(4) NOTE_ON(37) [t6] NOTE_ON(35) [t8] NOTE_ON(47) [t2]
-         raw: 040b0504002586002388002f82
+    CH 0: cum=16  [t14] NOTE_ON(56) [t2]
+         raw: 8e003882
+    CH 1: cum=16  [t3] NOTE_ON(69) [t3] NOTE_ON(62) [t10]
+         raw: 83004583003e8a
+    CH 2: cum=16  [t6] NOTE_ON(42) [t8] NOTE_ON(50) [t2]
+         raw: 86002a88003282
+    CH 3: cum=16  [t6] NOTE_ON(35) [t8] NOTE_ON(47) [t2]
+         raw: 86002388002f82
   --- Pattern 40 ---
-    CH 0: cum=16  INST(11) VOL(4) NOTE_ON(56) [t2] NOTE_ON(57) [t3] NOTE_ON(59) [t8] NOTE_ON(56) [t3]
-         raw: 040b0504003882003983003b88003883
-    CH 1: cum=16  INST(11) VOL(4) NOTE_ON(64) [t2] NOTE_ON(66) [t7] NOTE_ON(64) [t7]
-         raw: 040b0504004082004287004087
-    CH 2: cum=16  INST(11) VOL(4) NOTE_ON(50) [t5] NOTE_ON(47) [t8] NOTE_ON(52) [t3]
-         raw: 040b0504003285002f88003483
-    CH 3: cum=16  INST(11) VOL(4) NOTE_ON(47) [t5] NOTE_ON(44) [t8] NOTE_ON(40) [t3]
-         raw: 040b0504002f85002c88002883
+    CH 0: cum=16  [t2] NOTE_ON(57) [t3] NOTE_ON(59) [t8] NOTE_ON(56) [t3]
+         raw: 82003983003b88003883
+    CH 1: cum=16  NOTE_ON(64) [t2] NOTE_ON(66) [t7] NOTE_ON(64) [t7]
+         raw: 004082004287004087
+    CH 2: cum=16  [t5] NOTE_ON(47) [t8] NOTE_ON(52) [t3]
+         raw: 85002f88003483
+    CH 3: cum=16  [t5] NOTE_ON(44) [t8] NOTE_ON(40) [t3]
+         raw: 85002c88002883
   --- Pattern 41 ---
-    CH 0: cum=16  INST(11) VOL(4) NOTE_ON(56) [t4] INST(12) NOTE_ON(57) [t12]
-         raw: 040b0504003884040c00398c
-    CH 1: cum=16  INST(11) VOL(4) NOTE_ON(64) [t1] NOTE_ON(62) [t3] INST(12) NOTE_ON(61) [t4] NOTE_ON(59) [t6] NOTE_ON(61) [t2]
-         raw: 040b0504004081003e83040c003d84003b86003d82
-    CH 2: cum=16  INST(11) VOL(4) NOTE_ON(52) [t4] INST(12) NOTE_ON(52) [t8] NOTE_ON(54) [t4]
-         raw: 040b0504003484040c003488003684
-    CH 3: cum=16  INST(11) VOL(4) NOTE_ON(40) [t4] INST(12) NOTE_ON(45) [t8] NOTE_ON(38) [t4]
-         raw: 040b0504002884040c002d88002684
+    CH 0: cum=16  [t4] NOTE_ON(57) INST(11) [t12]
+         raw: 840039040b8c
+    CH 1: cum=16  [t1] NOTE_ON(62) [t3] NOTE_ON(61) INST(11) [t4] NOTE_ON(59) [t6] NOTE_ON(61) [t2]
+         raw: 81003e83003d040b84003b86003d82
+    CH 2: cum=16  [t4] NOTE_ON(52) INST(11) [t8] NOTE_ON(54) [t4]
+         raw: 840034040b88003684
+    CH 3: cum=16  [t4] NOTE_ON(45) INST(11) [t8] NOTE_ON(38) [t4]
+         raw: 84002d040b88002684
   --- Pattern 42 ---
-    CH 0: cum=16  INST(12) VOL(4) NOTE_ON(57) [t11] NOTE_ON(56) [t5]
-         raw: 040c050400398b003885
-    CH 1: cum=16  INST(12) VOL(4) NOTE_ON(62) [t11] NOTE_ON(61) [t4] NOTE_ON(59) [t1]
-         raw: 040c0504003e8b003d84003b81
-    CH 2: cum=16  INST(12) VOL(4) NOTE_ON(54) [t11] NOTE_ON(50) [t5]
-         raw: 040c050400368b003285
-    CH 3: cum=16  INST(12) VOL(4) NOTE_ON(38) [t3] NOTE_ON(40) [t8] NOTE_ON(28) [t5]
-         raw: 040c0504002683002888001c85
+    CH 0: cum=16  [t11] NOTE_ON(56) [t5]
+         raw: 8b003885
+    CH 1: cum=16  NOTE_ON(62) [t11] NOTE_ON(61) [t4] NOTE_ON(59) [t1]
+         raw: 003e8b003d84003b81
+    CH 2: cum=16  [t11] NOTE_ON(50) [t5]
+         raw: 8b003285
+    CH 3: cum=16  [t3] NOTE_ON(40) [t8] NOTE_ON(28) [t5]
+         raw: 83002888001c85
   --- Pattern 43 ---
-    CH 0: cum=16  INST(12) VOL(4) NOTE_ON(56) [t2] NOTE_ON(52) [t14]
-         raw: 040c050400388200348e
-    CH 1: cum=16  INST(12) VOL(4) NOTE_ON(59) [t2] NOTE_ON(57) [t14]
-         raw: 040c0504003b8200398e
-    CH 2: cum=16  INST(12) VOL(4) NOTE_ON(50) [t2] NOTE_ON(49) [t14]
-         raw: 040c050400328200318e
-    CH 3: cum=16  INST(12) VOL(4) NOTE_ON(28) [t2] NOTE_ON(33) [t14]
-         raw: 040c0504001c8200218e
+    CH 0: cum=16  [t2] NOTE_ON(52) [t14]
+         raw: 8200348e
+    CH 1: cum=16  [t2] NOTE_ON(57) [t14]
+         raw: 8200398e
+    CH 2: cum=16  [t2] NOTE_ON(49) [t14]
+         raw: 8200318e
+    CH 3: cum=16  [t2] NOTE_ON(33) [t14]
+         raw: 8200218e
   --- Pattern 44 ---
-    CH 0: cum=16  INST(12) VOL(4) NOTE_ON(52) [t16]
-         raw: 040c0504003490
-    CH 1: cum=16  INST(12) VOL(4) NOTE_ON(57) [t16]
-         raw: 040c0504003990
-    CH 2: cum=16  INST(12) VOL(4) NOTE_ON(49) [t16]
-         raw: 040c0504003190
-    CH 3: cum=16  INST(12) VOL(4) NOTE_ON(33) [t16]
-         raw: 040c0504002190
-  --- Pattern 45 ---
-    CH 0: cum=16  INST(13) VOL(4) NOTE_ON(66) [t16]
-         raw: 040d0504004290
-    CH 1: cum=16  INST(13) VOL(4) NOTE_ON(62) [t16]
-         raw: 040d0504003e90
-    CH 2: cum=16  NOTE_OFF [t1] INST(13) VOL(4) NOTE_ON(57) [t15]
-         raw: 0181040d050400398f
-    CH 3: cum=16  INST(12) VOL(4) NOTE_ON(33) [t1] INST(13) NOTE_ON(38) [t7] NOTE_ON(50) [t8]
-         raw: 040c0504002181040d002687003288
-  --- Pattern 46 ---
-    CH 0: cum=16  INST(13) VOL(4) NOTE_ON(66) [t16]
-         raw: 040d0504004290
-    CH 1: cum=16  INST(13) VOL(4) NOTE_ON(62) [t16]
-         raw: 040d0504003e90
-    CH 2: cum=16  INST(13) VOL(4) NOTE_ON(57) [t15] NOTE_ON(59) [t1]
-         raw: 040d050400398f003b81
-    CH 3: cum=16  INST(13) VOL(4) NOTE_ON(49) [t7] NOTE_ON(37) [t8] NOTE_ON(35) [t1]
-         raw: 040d0504003187002588002381
-  --- Pattern 47 ---
-    CH 0: cum=16  INST(13) VOL(4) NOTE_ON(66) [t16]
-         raw: 040d0504004290
-    CH 1: cum=16  INST(13) VOL(4) NOTE_ON(62) [t16]
-         raw: 040d0504003e90
-    CH 2: cum=16  INST(13) VOL(4) NOTE_ON(59) [t16]
-         raw: 040d0504003b90
-    CH 3: cum=16  INST(13) VOL(4) NOTE_ON(35) [t6] NOTE_ON(47) [t8] NOTE_ON(45) [t2]
-         raw: 040d0504002386002f88002d82
-  --- Pattern 48 ---
-    CH 0: cum=16  INST(13) VOL(4) NOTE_ON(66) [t13] NOTE_OFF [t3]
-         raw: 040d050400428d0183
-    CH 1: cum=16  INST(13) VOL(4) NOTE_ON(62) [t13] NOTE_OFF [t3]
-         raw: 040d0504003e8d0183
-    CH 2: cum=16  INST(13) VOL(4) NOTE_ON(59) [t13] NOTE_OFF [t3]
-         raw: 040d0504003b8d0183
-    CH 3: cum=16  INST(13) VOL(4) NOTE_ON(45) [t5] NOTE_ON(33) [t8] INST(14) NOTE_ON(31) [t3]
-         raw: 040d0504002d85002188040e001f83
-  --- Pattern 49 ---
-    CH 0: cum=16  [t4] INST(14) VOL(4) NOTE_ON(71) [t4] NOTE_ON(67) [t4] NOTE_ON(64) [t3] NOTE_ON(62) [t1]
-         raw: 84040e0504004784004384004083003e81
+    CH 0: cum=16  [t16]
+         raw: 90
     CH 1: cum=16  [t16]
          raw: 90
-    CH 2: cum=16  [t12] INST(14) VOL(4) NOTE_ON(52) [t4]
-         raw: 8c040e0504003484
-    CH 3: cum=16  INST(14) VOL(4) NOTE_ON(31) [t4] NOTE_ON(43) [t8] NOTE_ON(44) [t4]
-         raw: 040e0504001f84002b88002c84
-  --- Pattern 50 ---
-    CH 0: cum=16  INST(14) VOL(4) NOTE_ON(62) [t3] NOTE_ON(61) [t4] NOTE_ON(62) [t4] NOTE_ON(61) [t5]
-         raw: 040e0504003e83003d84003e84003d85
-    CH 1: cum=16  [t16]
-         raw: 90
-    CH 2: cum=16  INST(14) VOL(4) NOTE_ON(52) [t16]
-         raw: 040e0504003490
-    CH 3: cum=16  INST(14) VOL(4) NOTE_ON(44) [t3] NOTE_ON(32) [t8] NOTE_ON(33) [t5]
-         raw: 040e0504002c83002088002185
-  --- Pattern 51 ---
-    CH 0: cum=16  INST(14) VOL(4) NOTE_ON(61) [t10] NOTE_ON(57) [t6]
-         raw: 040e0504003d8a003986
-    CH 1: cum=16  [t16]
-         raw: 90
-    CH 2: cum=16  INST(14) VOL(4) NOTE_ON(52) [t16]
-         raw: 040e0504003490
-    CH 3: cum=16  INST(14) VOL(4) NOTE_ON(33) [t2] NOTE_ON(45) [t8] NOTE_ON(43) [t6]
-         raw: 040e0504002182002d88002b86
-  --- Pattern 52 ---
-    CH 0: cum=16  INST(14) VOL(4) NOTE_ON(57) [t9] NOTE_OFF [t7]
-         raw: 040e05040039890187
-    CH 1: cum=16  [t9] INST(0) VOL(4) NOTE_ON(69) [t7]
-         raw: 8904000504004587
-    CH 2: cum=16  INST(14) VOL(4) NOTE_ON(52) [t9] NOTE_OFF [t7]
-         raw: 040e05040034890187
-    CH 3: cum=16  INST(14) VOL(4) NOTE_ON(43) [t1] NOTE_ON(31) [t8] INST(0) NOTE_ON(30) [t7]
-         raw: 040e0504002b81001f880400001e87
-  --- Pattern 53 ---
-    CH 0: cum=16  INST(0) VOL(4) NOTE_ON(48) [t4] NOTE_ON(47) [t4] NOTE_ON(48) [t7] NOTE_ON(57) [t1]
-         raw: 04000504003084002f84003087003981
-    CH 1: cum=16  INST(0) VOL(4) NOTE_ON(69) [t16]
-         raw: 04000504004590
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(0) VOL(4) NOTE_ON(42) [t8] NOTE_ON(40) [t7] NOTE_ON(28) [t1]
-         raw: 04000504002a88002887001c81
+    CH 3: cum=16  [t16]
+         raw: 90
+  --- Pattern 45 ---
+    CH 0: cum=16  NOTE_ON(66) INST(12) [t16]
+         raw: 0042040c90
+    CH 1: cum=16  NOTE_ON(62) INST(12) [t16]
+         raw: 003e040c90
+    CH 2: cum=16  NOTE_OFF [t1] NOTE_ON(57) INST(12) [t15]
+         raw: 01810039040c8f
+    CH 3: cum=16  [t1] NOTE_ON(38) INST(12) [t7] NOTE_ON(50) [t8]
+         raw: 810026040c87003288
+  --- Pattern 46 ---
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t15] NOTE_ON(59) [t1]
+         raw: 8f003b81
+    CH 3: cum=16  NOTE_ON(49) [t7] NOTE_ON(37) [t8] NOTE_ON(35) [t1]
+         raw: 003187002588002381
+  --- Pattern 47 ---
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t6] NOTE_ON(47) [t8] NOTE_ON(45) [t2]
+         raw: 86002f88002d82
+  --- Pattern 48 ---
+    CH 0: cum=16  [t13] NOTE_OFF [t3]
+         raw: 8d0183
+    CH 1: cum=16  [t13] NOTE_OFF [t3]
+         raw: 8d0183
+    CH 2: cum=16  [t13] NOTE_OFF [t3]
+         raw: 8d0183
+    CH 3: cum=16  [t5] NOTE_ON(33) [t8] NOTE_ON(31) INST(13) [t3]
+         raw: 85002188001f040d83
+  --- Pattern 49 ---
+    CH 0: cum=16  [t4] NOTE_ON(71) INST(13) [t4] NOTE_ON(67) [t4] NOTE_ON(64) [t3] NOTE_ON(62) [t1]
+         raw: 840047040d84004384004083003e81
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t12] NOTE_ON(52) INST(13) [t4]
+         raw: 8c0034040d84
+    CH 3: cum=16  [t4] NOTE_ON(43) [t8] NOTE_ON(44) [t4]
+         raw: 84002b88002c84
+  --- Pattern 50 ---
+    CH 0: cum=16  [t3] NOTE_ON(61) [t4] NOTE_ON(62) [t4] NOTE_ON(61) [t5]
+         raw: 83003d84003e84003d85
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t3] NOTE_ON(32) [t8] NOTE_ON(33) [t5]
+         raw: 83002088002185
+  --- Pattern 51 ---
+    CH 0: cum=16  [t10] NOTE_ON(57) [t6]
+         raw: 8a003986
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t2] NOTE_ON(45) [t8] NOTE_ON(43) [t6]
+         raw: 82002d88002b86
+  --- Pattern 52 ---
+    CH 0: cum=16  [t9] NOTE_OFF [t7]
+         raw: 890187
+    CH 1: cum=16  [t9] NOTE_ON(69) INST(14) [t7]
+         raw: 890045040e87
+    CH 2: cum=16  [t9] NOTE_OFF [t7]
+         raw: 890187
+    CH 3: cum=16  [t1] NOTE_ON(31) [t8] NOTE_ON(30) INST(14) [t7]
+         raw: 81001f88001e040e87
+  --- Pattern 53 ---
+    CH 0: cum=16  NOTE_ON(48) INST(14) [t4] NOTE_ON(47) [t4] NOTE_ON(48) [t7] NOTE_ON(57) [t1]
+         raw: 0030040e84002f84003087003981
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  NOTE_ON(42) [t8] NOTE_ON(40) [t7] NOTE_ON(28) [t1]
+         raw: 002a88002887001c81
   --- Pattern 54 ---
-    CH 0: cum=16  INST(0) VOL(4) NOTE_ON(57) [t3] NOTE_ON(48) [t4] NOTE_ON(47) [t7] NOTE_OFF [t2]
-         raw: 04000504003983003084002f870182
-    CH 1: cum=16  INST(0) VOL(4) NOTE_ON(69) [t10] NOTE_ON(66) [t4] NOTE_ON(60) [t2]
-         raw: 0400050400458a004284003c82
-    CH 2: cum=16  [t7] INST(0) VOL(4) NOTE_ON(54) [t7] NOTE_OFF [t2]
-         raw: 87040005040036870182
-    CH 3: cum=16  INST(0) VOL(4) NOTE_ON(28) [t7] NOTE_ON(27) [t7] NOTE_ON(39) [t2]
-         raw: 04000504001c87001b87002782
+    CH 0: cum=16  [t3] NOTE_ON(48) [t4] NOTE_ON(47) [t7] NOTE_OFF [t2]
+         raw: 83003084002f870182
+    CH 1: cum=16  [t10] NOTE_ON(66) [t4] NOTE_ON(60) [t2]
+         raw: 8a004284003c82
+    CH 2: cum=16  [t7] NOTE_ON(54) INST(14) [t7] NOTE_OFF [t2]
+         raw: 870036040e870182
+    CH 3: cum=16  [t7] NOTE_ON(27) [t7] NOTE_ON(39) [t2]
+         raw: 87001b87002782
   --- Pattern 55 ---
     CH 0: cum=16  [t16]
          raw: 90
-    CH 1: cum=16  INST(0) VOL(4) NOTE_ON(60) [t2] NOTE_ON(59) [t4] NOTE_ON(64) [t3] NOTE_ON(63) [t4] NOTE_ON(69) [t3]
-         raw: 04000504003c82003b84004083003f84004583
+    CH 1: cum=16  [t2] NOTE_ON(59) [t4] NOTE_ON(64) [t3] NOTE_ON(63) [t4] NOTE_ON(69) [t3]
+         raw: 82003b84004083003f84004583
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(0) VOL(4) NOTE_ON(39) [t6] NOTE_ON(35) [t7] NOTE_ON(47) [t3]
-         raw: 04000504002786002387002f83
+    CH 3: cum=16  [t6] NOTE_ON(35) [t7] NOTE_ON(47) [t3]
+         raw: 86002387002f83
   --- Pattern 56 ---
-    CH 0: cum=16  [t5] INST(1) VOL(4) NOTE_ON(59) [t7] NOTE_ON(52) [t4]
-         raw: 8504010504003b87003484
-    CH 1: cum=16  INST(0) VOL(4) NOTE_ON(69) [t1] NOTE_ON(67) [t4] INST(1) NOTE_ON(67) [t11]
-         raw: 04000504004581004384040100438b
+    CH 0: cum=16  [t5] NOTE_ON(59) INST(0) [t7] NOTE_ON(52) [t4]
+         raw: 85003b040087003484
+    CH 1: cum=16  [t1] NOTE_ON(67) [t4] NOTE_ON(67) INST(0) [t11]
+         raw: 81004384004304008b
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(0) VOL(4) NOTE_ON(47) [t5] INST(1) NOTE_ON(28) [t7] NOTE_ON(40) [t4]
-         raw: 04000504002f850401001c87002884
+    CH 3: cum=16  [t5] NOTE_ON(28) INST(0) [t7] NOTE_ON(40) [t4]
+         raw: 85001c040087002884
   --- Pattern 57 ---
-    CH 0: cum=16  INST(1) VOL(4) NOTE_ON(50) [t4] NOTE_ON(52) [t3] NOTE_ON(54) [t4] NOTE_ON(55) [t4] NOTE_ON(52) [t1]
-         raw: 04010504003284003483003684003784003481
-    CH 1: cum=16  INST(1) VOL(4) NOTE_ON(67) [t16]
-         raw: 04010504004390
+    CH 0: cum=16  NOTE_ON(50) [t4] NOTE_ON(52) [t3] NOTE_ON(54) [t4] NOTE_ON(55) [t4] NOTE_ON(52) [t1]
+         raw: 003284003483003684003784003481
+    CH 1: cum=16  [t16]
+         raw: 90
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(1) VOL(4) NOTE_ON(40) [t4] NOTE_ON(38) [t7] NOTE_ON(26) [t5]
-         raw: 04010504002884002687001a85
+    CH 3: cum=16  [t4] NOTE_ON(38) [t7] NOTE_ON(26) [t5]
+         raw: 84002687001a85
   --- Pattern 58 ---
-    CH 0: cum=16  INST(1) VOL(4) NOTE_ON(52) [t3] NOTE_ON(45) [t7] NOTE_OFF [t6]
-         raw: 04010504003483002d870186
-    CH 1: cum=16  INST(1) VOL(4) NOTE_ON(67) [t6] NOTE_ON(64) [t4] NOTE_ON(59) [t4] NOTE_ON(57) [t2]
-         raw: 04010504004386004084003b84003982
+    CH 0: cum=16  [t3] NOTE_ON(45) [t7] NOTE_OFF [t6]
+         raw: 83002d870186
+    CH 1: cum=16  [t6] NOTE_ON(64) [t4] NOTE_ON(59) [t4] NOTE_ON(57) [t2]
+         raw: 86004084003b84003982
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(1) VOL(4) NOTE_ON(26) [t3] NOTE_ON(25) [t7] NOTE_ON(37) [t6]
-         raw: 04010504001a83001987002586
+    CH 3: cum=16  [t3] NOTE_ON(25) [t7] NOTE_ON(37) [t6]
+         raw: 83001987002586
   --- Pattern 59 ---
     CH 0: cum=16  [t16]
          raw: 90
-    CH 1: cum=16  INST(1) VOL(4) NOTE_ON(57) [t2] NOTE_ON(62) [t3] NOTE_ON(61) [t4] NOTE_ON(67) [t4] NOTE_ON(66) [t3]
-         raw: 04010504003982003e83003d84004384004283
+    CH 1: cum=16  [t2] NOTE_ON(62) [t3] NOTE_ON(61) [t4] NOTE_ON(67) [t4] NOTE_ON(66) [t3]
+         raw: 82003e83003d84004384004283
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(1) VOL(4) NOTE_ON(37) [t2] NOTE_ON(33) [t7] NOTE_ON(45) [t7]
-         raw: 04010504002582002187002d87
+    CH 3: cum=16  [t2] NOTE_ON(33) [t7] NOTE_ON(45) [t7]
+         raw: 82002187002d87
   --- Pattern 60 ---
-    CH 0: cum=16  [t1] INST(2) VOL(4) NOTE_ON(57) [t15]
-         raw: 810402050400398f
-    CH 1: cum=16  INST(1) VOL(4) NOTE_ON(66) [t1] INST(2) NOTE_ON(66) [t15]
-         raw: 04010504004281040200428f
+    CH 0: cum=16  [t1] NOTE_ON(57) INST(1) [t15]
+         raw: 81003904018f
+    CH 1: cum=16  [t1] NOTE_ON(66) INST(1) [t15]
+         raw: 81004204018f
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(1) VOL(4) NOTE_ON(45) [t1] INST(2) NOTE_ON(38) [t7] NOTE_ON(50) [t8]
-         raw: 04010504002d810402002687003288
+    CH 3: cum=16  [t1] NOTE_ON(38) INST(1) [t7] NOTE_ON(50) [t8]
+         raw: 810026040187003288
   --- Pattern 61 ---
-    CH 0: cum=16  INST(2) VOL(4) NOTE_ON(57) [t16]
-         raw: 04020504003990
-    CH 1: cum=16  INST(2) VOL(4) NOTE_ON(66) [t7] NOTE_ON(68) [t4] NOTE_ON(69) [t4] NOTE_ON(62) [t1]
-         raw: 04020504004287004484004584003e81
-    CH 2: cum=16  [t7] INST(2) VOL(4) NOTE_ON(52) [t8] NOTE_ON(42) [t1]
-         raw: 8704020504003488002a81
-    CH 3: cum=16  INST(2) VOL(4) NOTE_ON(49) [t7] NOTE_ON(37) [t8] NOTE_ON(35) [t1]
-         raw: 04020504003187002588002381
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t7] NOTE_ON(68) [t4] NOTE_ON(69) [t4] NOTE_ON(62) [t1]
+         raw: 87004484004584003e81
+    CH 2: cum=16  [t7] NOTE_ON(52) INST(1) [t8] NOTE_ON(42) [t1]
+         raw: 870034040188002a81
+    CH 3: cum=16  NOTE_ON(49) [t7] NOTE_ON(37) [t8] NOTE_ON(35) [t1]
+         raw: 003187002588002381
   --- Pattern 62 ---
-    CH 0: cum=16  INST(2) VOL(4) NOTE_ON(57) [t6] NOTE_ON(56) [t4] NOTE_ON(57) [t4] NOTE_ON(59) [t2]
-         raw: 04020504003986003884003984003b82
-    CH 1: cum=16  INST(2) VOL(4) NOTE_ON(62) [t8] NOTE_ON(64) [t2] NOTE_ON(66) [t6]
-         raw: 04020504003e88004082004286
-    CH 2: cum=16  INST(2) VOL(4) NOTE_ON(42) [t6] NOTE_ON(50) [t8] NOTE_ON(47) [t2]
-         raw: 04020504002a86003288002f82
-    CH 3: cum=16  INST(2) VOL(4) NOTE_ON(35) [t6] NOTE_ON(47) [t8] NOTE_ON(44) [t2]
-         raw: 04020504002386002f88002c82
+    CH 0: cum=16  [t6] NOTE_ON(56) [t4] NOTE_ON(57) [t4] NOTE_ON(59) [t2]
+         raw: 86003884003984003b82
+    CH 1: cum=16  [t8] NOTE_ON(64) [t2] NOTE_ON(66) [t6]
+         raw: 88004082004286
+    CH 2: cum=16  [t6] NOTE_ON(50) [t8] NOTE_ON(47) [t2]
+         raw: 86003288002f82
+    CH 3: cum=16  [t6] NOTE_ON(47) [t8] NOTE_ON(44) [t2]
+         raw: 86002f88002c82
   --- Pattern 63 ---
-    CH 0: cum=16  INST(2) VOL(4) NOTE_ON(59) [t5] NOTE_ON(56) [t8] INST(3) NOTE_ON(57) [t3]
-         raw: 04020504003b850038880403003983
-    CH 1: cum=16  INST(2) VOL(4) NOTE_ON(66) [t2] NOTE_ON(64) [t7] NOTE_ON(62) [t4] INST(3) NOTE_ON(61) [t3]
-         raw: 04020504004282004087003e840403003d83
-    CH 2: cum=16  INST(2) VOL(4) NOTE_ON(47) [t5] NOTE_ON(52) [t8] INST(3) NOTE_ON(52) [t3]
-         raw: 04020504002f850034880403003483
-    CH 3: cum=16  INST(2) VOL(4) NOTE_ON(44) [t5] NOTE_ON(40) [t8] INST(3) NOTE_ON(45) [t3]
-         raw: 04020504002c850028880403002d83
+    CH 0: cum=16  [t5] NOTE_ON(56) [t8] NOTE_ON(57) INST(2) [t3]
+         raw: 850038880039040283
+    CH 1: cum=16  [t2] NOTE_ON(64) [t7] NOTE_ON(62) [t4] NOTE_ON(61) INST(2) [t3]
+         raw: 82004087003e84003d040283
+    CH 2: cum=16  [t5] NOTE_ON(52) [t8] NOTE_ON(52) INST(2) [t3]
+         raw: 850034880034040283
+    CH 3: cum=16  [t5] NOTE_ON(40) [t8] NOTE_ON(45) INST(2) [t3]
+         raw: 85002888002d040283
   --- Pattern 64 ---
-    CH 0: cum=16  INST(3) VOL(4) NOTE_ON(57) [t16]
-         raw: 04030504003990
-    CH 1: cum=16  INST(3) VOL(4) NOTE_ON(61) [t1] NOTE_ON(59) [t5] NOTE_ON(61) [t2] NOTE_ON(62) [t8]
-         raw: 04030504003d81003b85003d82003e88
-    CH 2: cum=16  INST(3) VOL(4) NOTE_ON(52) [t4] NOTE_ON(54) [t12]
-         raw: 0403050400348400368c
-    CH 3: cum=16  INST(3) VOL(4) NOTE_ON(45) [t4] NOTE_ON(38) [t8] NOTE_ON(40) [t4]
-         raw: 04030504002d84002688002884
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t1] NOTE_ON(59) [t5] NOTE_ON(61) [t2] NOTE_ON(62) [t8]
+         raw: 81003b85003d82003e88
+    CH 2: cum=16  [t4] NOTE_ON(54) [t12]
+         raw: 8400368c
+    CH 3: cum=16  [t4] NOTE_ON(38) [t8] NOTE_ON(40) [t4]
+         raw: 84002688002884
   --- Pattern 65 ---
-    CH 0: cum=16  INST(3) VOL(4) NOTE_ON(57) [t3] NOTE_ON(56) [t8] NOTE_ON(52) [t5]
-         raw: 04030504003983003888003485
-    CH 1: cum=16  INST(3) VOL(4) NOTE_ON(62) [t3] NOTE_ON(61) [t4] NOTE_ON(59) [t4] NOTE_ON(57) [t5]
-         raw: 04030504003e83003d84003b84003985
-    CH 2: cum=16  INST(3) VOL(4) NOTE_ON(54) [t3] NOTE_ON(50) [t8] NOTE_ON(49) [t5]
-         raw: 04030504003683003288003185
-    CH 3: cum=16  INST(3) VOL(4) NOTE_ON(40) [t3] NOTE_ON(28) [t8] NOTE_ON(33) [t4] NOTE_ON(35) [t1]
-         raw: 04030504002883001c88002184002381
+    CH 0: cum=16  [t3] NOTE_ON(56) [t8] NOTE_ON(52) [t5]
+         raw: 83003888003485
+    CH 1: cum=16  [t3] NOTE_ON(61) [t4] NOTE_ON(59) [t4] NOTE_ON(57) [t5]
+         raw: 83003d84003b84003985
+    CH 2: cum=16  [t3] NOTE_ON(50) [t8] NOTE_ON(49) [t5]
+         raw: 83003288003185
+    CH 3: cum=16  [t3] NOTE_ON(28) [t8] NOTE_ON(33) [t4] NOTE_ON(35) [t1]
+         raw: 83001c88002184002381
   --- Pattern 66 ---
-    CH 0: cum=16  INST(3) VOL(4) NOTE_ON(52) [t16]
-         raw: 04030504003490
-    CH 1: cum=16  INST(3) VOL(4) NOTE_ON(57) [t16]
-         raw: 04030504003990
-    CH 2: cum=16  INST(3) VOL(4) NOTE_ON(49) [t16]
-         raw: 04030504003190
-    CH 3: cum=16  INST(3) VOL(4) NOTE_ON(35) [t2] NOTE_ON(37) [t4] NOTE_ON(38) [t4] NOTE_ON(40) [t4] NOTE_ON(43) [t2]
-         raw: 04030504002382002584002684002884002b82
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t2] NOTE_ON(37) [t4] NOTE_ON(38) [t4] NOTE_ON(40) [t4] NOTE_ON(43) [t2]
+         raw: 82002584002684002884002b82
   --- Pattern 67 ---
-    CH 0: cum=16  INST(3) VOL(4) NOTE_ON(52) [t9] INST(4) NOTE_ON(66) [t7]
-         raw: 040305040034890404004287
-    CH 1: cum=16  INST(3) VOL(4) NOTE_ON(57) [t9] INST(4) NOTE_ON(62) [t7]
-         raw: 040305040039890404003e87
-    CH 2: cum=16  INST(3) VOL(4) NOTE_ON(49) [t9] INST(4) NOTE_ON(57) [t7]
-         raw: 040305040031890404003987
-    CH 3: cum=16  INST(3) VOL(4) NOTE_ON(43) [t1] NOTE_ON(42) [t4] NOTE_ON(40) [t4] INST(4) NOTE_ON(38) [t7]
-         raw: 04030504002b81002a840028840404002687
+    CH 0: cum=16  [t9] NOTE_ON(66) INST(3) [t7]
+         raw: 890042040387
+    CH 1: cum=16  [t9] NOTE_ON(62) INST(3) [t7]
+         raw: 89003e040387
+    CH 2: cum=16  [t9] NOTE_ON(57) INST(3) [t7]
+         raw: 890039040387
+    CH 3: cum=16  [t1] NOTE_ON(42) [t4] NOTE_ON(40) [t4] NOTE_ON(38) INST(3) [t7]
+         raw: 81002a840028840026040387
   --- Pattern 68 ---
-    CH 0: cum=16  INST(4) VOL(4) NOTE_ON(66) [t16]
-         raw: 04040504004290
-    CH 1: cum=16  INST(4) VOL(4) NOTE_ON(62) [t16]
-         raw: 04040504003e90
-    CH 2: cum=16  INST(4) VOL(4) NOTE_ON(57) [t16]
-         raw: 04040504003990
-    CH 3: cum=16  INST(4) VOL(4) NOTE_ON(50) [t8] NOTE_ON(49) [t7] NOTE_ON(37) [t1]
-         raw: 04040504003288003187002581
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  NOTE_ON(50) [t8] NOTE_ON(49) [t7] NOTE_ON(37) [t1]
+         raw: 003288003187002581
   --- Pattern 69 ---
-    CH 0: cum=16  INST(4) VOL(4) NOTE_ON(66) [t16]
-         raw: 04040504004290
-    CH 1: cum=16  INST(4) VOL(4) NOTE_ON(62) [t16]
-         raw: 04040504003e90
-    CH 2: cum=16  INST(4) VOL(4) NOTE_ON(57) [t7] NOTE_ON(59) [t9]
-         raw: 04040504003987003b89
-    CH 3: cum=16  INST(4) VOL(4) NOTE_ON(37) [t7] NOTE_ON(35) [t7] NOTE_ON(47) [t2]
-         raw: 04040504002587002387002f82
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t7] NOTE_ON(59) [t9]
+         raw: 87003b89
+    CH 3: cum=16  [t7] NOTE_ON(35) [t7] NOTE_ON(47) [t2]
+         raw: 87002387002f82
   --- Pattern 70 ---
-    CH 0: cum=16  INST(4) VOL(4) NOTE_ON(66) [t16]
-         raw: 04040504004290
-    CH 1: cum=16  INST(4) VOL(4) NOTE_ON(62) [t16]
-         raw: 04040504003e90
-    CH 2: cum=16  INST(4) VOL(4) NOTE_ON(59) [t16]
-         raw: 04040504003b90
-    CH 3: cum=16  INST(4) VOL(4) NOTE_ON(47) [t6] NOTE_ON(45) [t7] NOTE_ON(33) [t3]
-         raw: 04040504002f86002d87002183
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t6] NOTE_ON(45) [t7] NOTE_ON(33) [t3]
+         raw: 86002d87002183
   --- Pattern 71 ---
-    CH 0: cum=16  INST(4) VOL(4) NOTE_ON(66) [t5] NOTE_OFF [t7] INST(5) NOTE_ON(71) [t4]
-         raw: 0404050400428501870405004784
-    CH 1: cum=16  INST(4) VOL(4) NOTE_ON(62) [t5] NOTE_OFF [t11]
-         raw: 04040504003e85018b
-    CH 2: cum=16  INST(4) VOL(4) NOTE_ON(59) [t5] NOTE_OFF [t11]
-         raw: 04040504003b85018b
-    CH 3: cum=16  INST(4) VOL(4) NOTE_ON(33) [t5] INST(5) NOTE_ON(31) [t7] NOTE_ON(43) [t4]
-         raw: 040405040021850405001f87002b84
+    CH 0: cum=16  [t5] NOTE_OFF [t7] NOTE_ON(71) INST(4) [t4]
+         raw: 8501870047040484
+    CH 1: cum=16  [t5] NOTE_OFF [t11]
+         raw: 85018b
+    CH 2: cum=16  [t5] NOTE_OFF [t11]
+         raw: 85018b
+    CH 3: cum=16  [t5] NOTE_ON(31) INST(4) [t7] NOTE_ON(43) [t4]
+         raw: 85001f040487002b84
   --- Pattern 72 ---
-    CH 0: cum=16  INST(5) VOL(4) NOTE_ON(67) [t4] NOTE_ON(64) [t4] NOTE_ON(62) [t3] NOTE_ON(61) [t4] NOTE_ON(62) [t1]
-         raw: 04050504004384004084003e83003d84003e81
+    CH 0: cum=16  NOTE_ON(67) [t4] NOTE_ON(64) [t4] NOTE_ON(62) [t3] NOTE_ON(61) [t4] NOTE_ON(62) [t1]
+         raw: 004384004084003e83003d84003e81
     CH 1: cum=16  [t16]
          raw: 90
-    CH 2: cum=16  [t4] INST(5) VOL(4) NOTE_ON(52) [t12]
-         raw: 840405050400348c
-    CH 3: cum=16  INST(5) VOL(4) NOTE_ON(43) [t4] NOTE_ON(44) [t7] NOTE_ON(32) [t5]
-         raw: 04050504002b84002c87002085
+    CH 2: cum=16  [t4] NOTE_ON(52) INST(4) [t12]
+         raw: 84003404048c
+    CH 3: cum=16  [t4] NOTE_ON(44) [t7] NOTE_ON(32) [t5]
+         raw: 84002c87002085
   --- Pattern 73 ---
-    CH 0: cum=16  INST(5) VOL(4) NOTE_ON(62) [t3] NOTE_ON(61) [t13]
-         raw: 04050504003e83003d8d
+    CH 0: cum=16  [t3] NOTE_ON(61) [t13]
+         raw: 83003d8d
     CH 1: cum=16  [t16]
          raw: 90
-    CH 2: cum=16  INST(5) VOL(4) NOTE_ON(52) [t16]
-         raw: 04050504003490
-    CH 3: cum=16  INST(5) VOL(4) NOTE_ON(32) [t3] NOTE_ON(33) [t7] NOTE_ON(45) [t6]
-         raw: 04050504002083002187002d86
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t3] NOTE_ON(33) [t7] NOTE_ON(45) [t6]
+         raw: 83002187002d86
   --- Pattern 74 ---
-    CH 0: cum=16  INST(5) VOL(4) NOTE_ON(61) [t2] NOTE_ON(57) [t14]
-         raw: 04050504003d8200398e
+    CH 0: cum=16  [t2] NOTE_ON(57) [t14]
+         raw: 8200398e
     CH 1: cum=16  [t16]
          raw: 90
-    CH 2: cum=16  INST(5) VOL(4) NOTE_ON(52) [t16]
-         raw: 04050504003490
-    CH 3: cum=16  INST(5) VOL(4) NOTE_ON(45) [t2] NOTE_ON(43) [t7] NOTE_ON(31) [t7]
-         raw: 04050504002d82002b87001f87
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t2] NOTE_ON(43) [t7] NOTE_ON(31) [t7]
+         raw: 82002b87001f87
   --- Pattern 75 ---
-    CH 0: cum=16  INST(5) VOL(4) NOTE_ON(57) [t1] NOTE_OFF [t7] INST(6) NOTE_ON(48) [t4] NOTE_ON(47) [t4]
-         raw: 0405050400398101870406003084002f84
-    CH 1: cum=16  [t1] INST(6) VOL(4) NOTE_ON(69) [t15]
-         raw: 810406050400458f
-    CH 2: cum=16  INST(5) VOL(4) NOTE_ON(52) [t1] NOTE_OFF [t15]
-         raw: 04050504003481018f
-    CH 3: cum=16  INST(5) VOL(4) NOTE_ON(31) [t1] INST(6) NOTE_ON(30) [t7] NOTE_ON(42) [t8]
-         raw: 04050504001f810406001e87002a88
+    CH 0: cum=16  [t1] NOTE_OFF [t7] NOTE_ON(48) INST(5) [t4] NOTE_ON(47) [t4]
+         raw: 8101870030040584002f84
+    CH 1: cum=16  [t1] NOTE_ON(69) INST(5) [t15]
+         raw: 81004504058f
+    CH 2: cum=16  [t1] NOTE_OFF [t15]
+         raw: 81018f
+    CH 3: cum=16  [t1] NOTE_ON(30) INST(5) [t7] NOTE_ON(42) [t8]
+         raw: 81001e040587002a88
   --- Pattern 76 ---
-    CH 0: cum=16  INST(6) VOL(4) NOTE_ON(48) [t7] NOTE_OFF [t1] NOTE_ON(57) [t3] NOTE_ON(48) [t4] NOTE_ON(47) [t1]
-         raw: 040605040030870181003983003084002f81
-    CH 1: cum=16  INST(6) VOL(4) NOTE_ON(69) [t16]
-         raw: 04060504004590
-    CH 2: cum=16  [t15] INST(6) VOL(4) NOTE_ON(54) [t1]
-         raw: 8f04060504003681
-    CH 3: cum=16  INST(6) VOL(4) NOTE_ON(40) [t8] NOTE_ON(28) [t7] NOTE_ON(27) [t1]
-         raw: 04060504002888001c87001b81
+    CH 0: cum=16  NOTE_ON(48) [t7] NOTE_OFF [t1] NOTE_ON(57) [t3] NOTE_ON(48) [t4] NOTE_ON(47) [t1]
+         raw: 0030870181003983003084002f81
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t15] NOTE_ON(54) INST(5) [t1]
+         raw: 8f0036040581
+    CH 3: cum=16  NOTE_ON(40) [t8] NOTE_ON(28) [t7] NOTE_ON(27) [t1]
+         raw: 002888001c87001b81
   --- Pattern 77 ---
-    CH 0: cum=16  INST(6) VOL(4) NOTE_ON(47) [t7] NOTE_OFF [t9]
-         raw: 04060504002f870189
-    CH 1: cum=16  INST(6) VOL(4) NOTE_ON(69) [t3] NOTE_ON(66) [t4] NOTE_ON(60) [t3] NOTE_ON(59) [t4] NOTE_ON(64) [t2]
-         raw: 04060504004583004284003c83003b84004082
-    CH 2: cum=16  INST(6) VOL(4) NOTE_ON(54) [t7] NOTE_OFF [t9]
-         raw: 040605040036870189
-    CH 3: cum=16  INST(6) VOL(4) NOTE_ON(27) [t7] NOTE_ON(39) [t7] NOTE_ON(35) [t2]
-         raw: 04060504001b87002787002382
+    CH 0: cum=16  [t7] NOTE_OFF [t9]
+         raw: 870189
+    CH 1: cum=16  [t3] NOTE_ON(66) [t4] NOTE_ON(60) [t3] NOTE_ON(59) [t4] NOTE_ON(64) [t2]
+         raw: 83004284003c83003b84004082
+    CH 2: cum=16  [t7] NOTE_OFF [t9]
+         raw: 870189
+    CH 3: cum=16  [t7] NOTE_ON(39) [t7] NOTE_ON(35) [t2]
+         raw: 87002787002382
   --- Pattern 78 ---
-    CH 0: cum=16  [t13] INST(7) VOL(4) NOTE_ON(59) [t3]
-         raw: 8d04070504003b83
-    CH 1: cum=16  INST(6) VOL(4) NOTE_ON(64) [t2] NOTE_ON(63) [t4] NOTE_ON(69) [t3] NOTE_ON(67) [t4] INST(7) NOTE_ON(67) [t3]
-         raw: 04060504004082003f840045830043840407004383
+    CH 0: cum=16  [t13] NOTE_ON(59) INST(6) [t3]
+         raw: 8d003b040683
+    CH 1: cum=16  [t2] NOTE_ON(63) [t4] NOTE_ON(69) [t3] NOTE_ON(67) [t4] NOTE_ON(67) INST(6) [t3]
+         raw: 82003f840045830043840043040683
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(6) VOL(4) NOTE_ON(35) [t6] NOTE_ON(47) [t7] INST(7) NOTE_ON(28) [t3]
-         raw: 04060504002386002f870407001c83
+    CH 3: cum=16  [t6] NOTE_ON(47) [t7] NOTE_ON(28) INST(6) [t3]
+         raw: 86002f87001c040683
   --- Pattern 79 ---
-    CH 0: cum=16  INST(7) VOL(4) NOTE_ON(59) [t5] NOTE_ON(52) [t3] NOTE_ON(50) [t4] NOTE_ON(52) [t4]
-         raw: 04070504003b85003483003284003484
-    CH 1: cum=16  INST(7) VOL(4) NOTE_ON(67) [t16]
-         raw: 04070504004390
+    CH 0: cum=16  [t5] NOTE_ON(52) [t3] NOTE_ON(50) [t4] NOTE_ON(52) [t4]
+         raw: 85003483003284003484
+    CH 1: cum=16  [t16]
+         raw: 90
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(7) VOL(4) NOTE_ON(28) [t5] NOTE_ON(40) [t7] NOTE_ON(38) [t4]
-         raw: 04070504001c85002887002684
+    CH 3: cum=16  [t5] NOTE_ON(40) [t7] NOTE_ON(38) [t4]
+         raw: 85002887002684
   --- Pattern 80 ---
-    CH 0: cum=16  INST(7) VOL(4) NOTE_ON(54) [t4] NOTE_ON(55) [t3] NOTE_ON(52) [t4] NOTE_ON(45) [t5]
-         raw: 04070504003684003783003484002d85
-    CH 1: cum=16  INST(7) VOL(4) NOTE_ON(67) [t15] NOTE_ON(64) [t1]
-         raw: 0407050400438f004081
+    CH 0: cum=16  NOTE_ON(54) [t4] NOTE_ON(55) [t3] NOTE_ON(52) [t4] NOTE_ON(45) [t5]
+         raw: 003684003783003484002d85
+    CH 1: cum=16  [t15] NOTE_ON(64) [t1]
+         raw: 8f004081
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(7) VOL(4) NOTE_ON(38) [t4] NOTE_ON(26) [t7] NOTE_ON(25) [t5]
-         raw: 04070504002684001a87001985
+    CH 3: cum=16  [t4] NOTE_ON(26) [t7] NOTE_ON(25) [t5]
+         raw: 84001a87001985
   --- Pattern 81 ---
-    CH 0: cum=16  INST(7) VOL(4) NOTE_ON(45) [t3] NOTE_OFF [t13]
-         raw: 04070504002d83018d
-    CH 1: cum=16  INST(7) VOL(4) NOTE_ON(64) [t3] NOTE_ON(59) [t3] NOTE_ON(57) [t4] NOTE_ON(62) [t4] NOTE_ON(61) [t2]
-         raw: 04070504004083003b83003984003e84003d82
+    CH 0: cum=16  [t3] NOTE_OFF [t13]
+         raw: 83018d
+    CH 1: cum=16  [t3] NOTE_ON(59) [t3] NOTE_ON(57) [t4] NOTE_ON(62) [t4] NOTE_ON(61) [t2]
+         raw: 83003b83003984003e84003d82
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(7) VOL(4) NOTE_ON(25) [t3] NOTE_ON(37) [t7] NOTE_ON(33) [t6]
-         raw: 04070504001983002587002186
+    CH 3: cum=16  [t3] NOTE_ON(37) [t7] NOTE_ON(33) [t6]
+         raw: 83002587002186
   --- Pattern 82 ---
-    CH 0: cum=16  [t9] INST(8) VOL(4) NOTE_ON(57) [t7]
-         raw: 8904080504003987
-    CH 1: cum=16  INST(7) VOL(4) NOTE_ON(61) [t2] NOTE_ON(67) [t3] NOTE_ON(66) [t4] INST(8) NOTE_ON(66) [t7]
-         raw: 04070504003d820043830042840408004287
+    CH 0: cum=16  [t9] NOTE_ON(57) INST(7) [t7]
+         raw: 890039040787
+    CH 1: cum=16  [t2] NOTE_ON(67) [t3] NOTE_ON(66) [t4] NOTE_ON(66) INST(7) [t7]
+         raw: 820043830042840042040787
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(7) VOL(4) NOTE_ON(33) [t2] NOTE_ON(45) [t7] INST(8) NOTE_ON(38) [t7]
-         raw: 04070504002182002d870408002687
+    CH 3: cum=16  [t2] NOTE_ON(45) [t7] NOTE_ON(38) INST(7) [t7]
+         raw: 82002d870026040787
   --- Pattern 83 ---
-    CH 0: cum=16  INST(8) VOL(4) NOTE_ON(57) [t16]
-         raw: 04080504003990
-    CH 1: cum=16  INST(8) VOL(4) NOTE_ON(66) [t16]
-         raw: 04080504004290
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(8) VOL(4) NOTE_ON(38) [t1] NOTE_ON(50) [t7] NOTE_ON(49) [t8]
-         raw: 04080504002681003287003188
+    CH 3: cum=16  [t1] NOTE_ON(50) [t7] NOTE_ON(49) [t8]
+         raw: 81003287003188
   --- Pattern 84 ---
-    CH 0: cum=16  INST(8) VOL(4) NOTE_ON(57) [t15] NOTE_ON(56) [t1]
-         raw: 0408050400398f003881
-    CH 1: cum=16  INST(8) VOL(4) NOTE_ON(68) [t3] NOTE_ON(69) [t4] NOTE_ON(62) [t9]
-         raw: 04080504004483004584003e89
-    CH 2: cum=16  INST(8) VOL(4) NOTE_ON(52) [t7] NOTE_ON(42) [t8] NOTE_ON(50) [t1]
-         raw: 04080504003487002a88003281
-    CH 3: cum=16  INST(8) VOL(4) NOTE_ON(37) [t7] NOTE_ON(35) [t8] NOTE_ON(47) [t1]
-         raw: 04080504002587002388002f81
+    CH 0: cum=16  [t15] NOTE_ON(56) [t1]
+         raw: 8f003881
+    CH 1: cum=16  NOTE_ON(68) [t3] NOTE_ON(69) [t4] NOTE_ON(62) [t9]
+         raw: 004483004584003e89
+    CH 2: cum=16  NOTE_ON(52) INST(7) [t7] NOTE_ON(42) [t8] NOTE_ON(50) [t1]
+         raw: 0034040787002a88003281
+    CH 3: cum=16  NOTE_ON(37) [t7] NOTE_ON(35) [t8] NOTE_ON(47) [t1]
+         raw: 002587002388002f81
   --- Pattern 85 ---
-    CH 0: cum=16  INST(8) VOL(4) NOTE_ON(56) [t2] NOTE_ON(57) [t4] NOTE_ON(59) [t8] NOTE_ON(56) [t2]
-         raw: 04080504003882003984003b88003882
-    CH 1: cum=16  INST(8) VOL(4) NOTE_ON(62) [t1] NOTE_ON(64) [t1] NOTE_ON(66) [t8] NOTE_ON(64) [t6]
-         raw: 04080504003e81004081004288004086
-    CH 2: cum=16  INST(8) VOL(4) NOTE_ON(50) [t6] NOTE_ON(47) [t8] NOTE_ON(52) [t2]
-         raw: 04080504003286002f88003482
-    CH 3: cum=16  INST(8) VOL(4) NOTE_ON(47) [t6] NOTE_ON(44) [t8] NOTE_ON(40) [t2]
-         raw: 04080504002f86002c88002882
+    CH 0: cum=16  [t2] NOTE_ON(57) [t4] NOTE_ON(59) [t8] NOTE_ON(56) [t2]
+         raw: 82003984003b88003882
+    CH 1: cum=16  [t1] NOTE_ON(64) [t1] NOTE_ON(66) [t8] NOTE_ON(64) [t6]
+         raw: 81004081004288004086
+    CH 2: cum=16  [t6] NOTE_ON(47) [t8] NOTE_ON(52) [t2]
+         raw: 86002f88003482
+    CH 3: cum=16  [t6] NOTE_ON(44) [t8] NOTE_ON(40) [t2]
+         raw: 86002c88002882
   --- Pattern 86 ---
-    CH 0: cum=16  INST(8) VOL(4) NOTE_ON(56) [t5] INST(9) NOTE_ON(57) [t11]
-         raw: 04080504003885040900398b
-    CH 1: cum=16  INST(8) VOL(4) NOTE_ON(64) [t1] NOTE_ON(62) [t4] INST(9) NOTE_ON(61) [t4] NOTE_ON(59) [t6] NOTE_ON(61) [t1]
-         raw: 04080504004081003e840409003d84003b86003d81
-    CH 2: cum=16  INST(8) VOL(4) NOTE_ON(52) [t5] NOTE_OFF [t8] INST(9) NOTE_ON(54) [t3]
-         raw: 0408050400348501880409003683
-    CH 3: cum=16  INST(8) VOL(4) NOTE_ON(40) [t5] INST(9) NOTE_ON(45) [t8] NOTE_ON(38) [t3]
-         raw: 040805040028850409002d88002683
+    CH 0: cum=16  [t5] NOTE_ON(57) INST(8) [t11]
+         raw: 85003904088b
+    CH 1: cum=16  [t1] NOTE_ON(62) [t4] NOTE_ON(61) INST(8) [t4] NOTE_ON(59) [t6] NOTE_ON(61) [t1]
+         raw: 81003e84003d040884003b86003d81
+    CH 2: cum=16  [t5] NOTE_OFF [t8] NOTE_ON(54) INST(8) [t3]
+         raw: 8501880036040883
+    CH 3: cum=16  [t5] NOTE_ON(45) INST(8) [t8] NOTE_ON(38) [t3]
+         raw: 85002d040888002683
   --- Pattern 87 ---
-    CH 0: cum=16  INST(9) VOL(4) NOTE_ON(57) [t12] NOTE_ON(56) [t4]
-         raw: 0409050400398c003884
-    CH 1: cum=16  INST(9) VOL(4) NOTE_ON(62) [t12] NOTE_ON(61) [t3] NOTE_ON(59) [t1]
-         raw: 04090504003e8c003d83003b81
-    CH 2: cum=16  INST(9) VOL(4) NOTE_ON(54) [t12] NOTE_ON(50) [t4]
-         raw: 0409050400368c003284
-    CH 3: cum=16  INST(9) VOL(4) NOTE_ON(38) [t4] NOTE_ON(40) [t8] NOTE_ON(28) [t4]
-         raw: 04090504002684002888001c84
+    CH 0: cum=16  [t12] NOTE_ON(56) [t4]
+         raw: 8c003884
+    CH 1: cum=16  NOTE_ON(62) [t12] NOTE_ON(61) [t3] NOTE_ON(59) [t1]
+         raw: 003e8c003d83003b81
+    CH 2: cum=16  [t12] NOTE_ON(50) [t4]
+         raw: 8c003284
+    CH 3: cum=16  [t4] NOTE_ON(40) [t8] NOTE_ON(28) [t4]
+         raw: 84002888001c84
   --- Pattern 88 ---
-    CH 0: cum=16  INST(9) VOL(4) NOTE_ON(56) [t3] NOTE_ON(52) [t13]
-         raw: 0409050400388300348d
-    CH 1: cum=16  INST(9) VOL(4) NOTE_ON(59) [t3] NOTE_ON(57) [t13]
-         raw: 04090504003b8300398d
-    CH 2: cum=16  INST(9) VOL(4) NOTE_ON(50) [t3] NOTE_ON(49) [t13]
-         raw: 0409050400328300318d
-    CH 3: cum=16  INST(9) VOL(4) NOTE_ON(28) [t3] NOTE_ON(33) [t13]
-         raw: 04090504001c8300218d
+    CH 0: cum=16  [t3] NOTE_ON(52) [t13]
+         raw: 8300348d
+    CH 1: cum=16  [t3] NOTE_ON(57) [t13]
+         raw: 8300398d
+    CH 2: cum=16  [t3] NOTE_ON(49) [t13]
+         raw: 8300318d
+    CH 3: cum=16  [t3] NOTE_ON(33) [t13]
+         raw: 8300218d
   --- Pattern 89 ---
-    CH 0: cum=16  INST(9) VOL(4) NOTE_ON(52) [t16]
-         raw: 04090504003490
-    CH 1: cum=16  INST(9) VOL(4) NOTE_ON(57) [t16]
-         raw: 04090504003990
-    CH 2: cum=16  INST(9) VOL(4) NOTE_ON(49) [t16]
-         raw: 04090504003190
-    CH 3: cum=16  INST(9) VOL(4) NOTE_ON(33) [t16]
-         raw: 04090504002190
-  --- Pattern 90 ---
-    CH 0: cum=16  INST(9) VOL(4) NOTE_ON(52) [t1] INST(10) NOTE_ON(66) [t15]
-         raw: 04090504003481040a00428f
-    CH 1: cum=16  INST(9) VOL(4) NOTE_ON(57) [t1] INST(10) NOTE_ON(62) [t15]
-         raw: 04090504003981040a003e8f
-    CH 2: cum=16  INST(9) VOL(4) NOTE_ON(49) [t1] INST(10) NOTE_ON(57) [t15]
-         raw: 04090504003181040a00398f
-    CH 3: cum=16  INST(9) VOL(4) NOTE_ON(33) [t1] INST(10) NOTE_ON(38) [t8] NOTE_ON(50) [t7]
-         raw: 04090504002181040a002688003287
-  --- Pattern 91 ---
-    CH 0: cum=16  INST(10) VOL(4) NOTE_ON(66) [t16]
-         raw: 040a0504004290
-    CH 1: cum=16  INST(10) VOL(4) NOTE_ON(62) [t16]
-         raw: 040a0504003e90
-    CH 2: cum=16  INST(10) VOL(4) NOTE_ON(57) [t15] NOTE_ON(59) [t1]
-         raw: 040a050400398f003b81
-    CH 3: cum=16  INST(10) VOL(4) NOTE_ON(49) [t8] NOTE_ON(37) [t7] NOTE_ON(35) [t1]
-         raw: 040a0504003188002587002381
-  --- Pattern 92 ---
-    CH 0: cum=16  INST(10) VOL(4) NOTE_ON(66) [t16]
-         raw: 040a0504004290
-    CH 1: cum=16  INST(10) VOL(4) NOTE_ON(62) [t16]
-         raw: 040a0504003e90
-    CH 2: cum=16  INST(10) VOL(4) NOTE_ON(59) [t16]
-         raw: 040a0504003b90
-    CH 3: cum=16  INST(10) VOL(4) NOTE_ON(35) [t7] NOTE_ON(47) [t7] NOTE_ON(45) [t2]
-         raw: 040a0504002387002f87002d82
-  --- Pattern 93 ---
-    CH 0: cum=16  INST(10) VOL(4) NOTE_ON(66) [t13] NOTE_OFF [t3]
-         raw: 040a050400428d0183
-    CH 1: cum=16  INST(10) VOL(4) NOTE_ON(62) [t13] NOTE_OFF [t3]
-         raw: 040a0504003e8d0183
-    CH 2: cum=16  INST(10) VOL(4) NOTE_ON(59) [t13] NOTE_OFF [t3]
-         raw: 040a0504003b8d0183
-    CH 3: cum=16  INST(10) VOL(4) NOTE_ON(45) [t6] NOTE_ON(33) [t7] INST(11) NOTE_ON(31) [t3]
-         raw: 040a0504002d86002187040b001f83
-  --- Pattern 94 ---
-    CH 0: cum=16  [t5] INST(11) VOL(4) NOTE_ON(71) [t4] NOTE_ON(67) [t3] NOTE_ON(64) [t4]
-         raw: 85040b0504004784004383004084
+    CH 0: cum=16  [t16]
+         raw: 90
     CH 1: cum=16  [t16]
          raw: 90
-    CH 2: cum=16  [t12] INST(11) VOL(4) NOTE_ON(52) [t4]
-         raw: 8c040b0504003484
-    CH 3: cum=16  INST(11) VOL(4) NOTE_ON(31) [t5] NOTE_ON(43) [t7] NOTE_ON(44) [t4]
-         raw: 040b0504001f85002b87002c84
-  --- Pattern 95 ---
-    CH 0: cum=16  INST(11) VOL(4) NOTE_ON(62) [t4] NOTE_ON(61) [t4] NOTE_ON(62) [t3] NOTE_ON(61) [t5]
-         raw: 040b0504003e84003d84003e83003d85
-    CH 1: cum=16  [t16]
-         raw: 90
-    CH 2: cum=16  INST(11) VOL(4) NOTE_ON(52) [t16]
-         raw: 040b0504003490
-    CH 3: cum=16  INST(11) VOL(4) NOTE_ON(44) [t4] NOTE_ON(32) [t7] NOTE_ON(33) [t5]
-         raw: 040b0504002c84002087002185
-  --- Pattern 96 ---
-    CH 0: cum=16  INST(11) VOL(4) NOTE_ON(61) [t10] NOTE_ON(59) [t1] NOTE_ON(57) [t5]
-         raw: 040b0504003d8a003b81003985
-    CH 1: cum=16  [t16]
-         raw: 90
-    CH 2: cum=16  INST(11) VOL(4) NOTE_ON(52) [t16]
-         raw: 040b0504003490
-    CH 3: cum=16  INST(11) VOL(4) NOTE_ON(33) [t3] NOTE_ON(45) [t7] NOTE_ON(43) [t6]
-         raw: 040b0504002183002d87002b86
-  --- Pattern 97 ---
-    CH 0: cum=16  INST(11) VOL(4) NOTE_ON(57) [t9] NOTE_OFF [t7]
-         raw: 040b05040039890187
-    CH 1: cum=16  [t9] INST(12) VOL(4) NOTE_ON(69) [t7]
-         raw: 89040c0504004587
-    CH 2: cum=16  INST(11) VOL(4) NOTE_ON(52) [t9] NOTE_OFF [t7]
-         raw: 040b05040034890187
-    CH 3: cum=16  INST(11) VOL(4) NOTE_ON(43) [t2] NOTE_ON(31) [t7] INST(12) NOTE_ON(30) [t7]
-         raw: 040b0504002b82001f87040c001e87
-  --- Pattern 98 ---
-    CH 0: cum=16  [t1] INST(12) VOL(4) NOTE_ON(48) [t4] NOTE_ON(47) [t3] NOTE_ON(48) [t8]
-         raw: 81040c0504003084002f83003088
-    CH 1: cum=16  INST(12) VOL(4) NOTE_ON(69) [t16]
-         raw: 040c0504004590
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(12) VOL(4) NOTE_ON(30) [t1] NOTE_ON(42) [t7] NOTE_ON(40) [t8]
-         raw: 040c0504001e81002a87002888
+    CH 3: cum=16  [t16]
+         raw: 90
+  --- Pattern 90 ---
+    CH 0: cum=16  [t1] NOTE_ON(66) INST(9) [t15]
+         raw: 81004204098f
+    CH 1: cum=16  [t1] NOTE_ON(62) INST(9) [t15]
+         raw: 81003e04098f
+    CH 2: cum=16  [t1] NOTE_ON(57) INST(9) [t15]
+         raw: 81003904098f
+    CH 3: cum=16  [t1] NOTE_ON(38) INST(9) [t8] NOTE_ON(50) [t7]
+         raw: 810026040988003287
+  --- Pattern 91 ---
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t15] NOTE_ON(59) [t1]
+         raw: 8f003b81
+    CH 3: cum=16  NOTE_ON(49) [t8] NOTE_ON(37) [t7] NOTE_ON(35) [t1]
+         raw: 003188002587002381
+  --- Pattern 92 ---
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t7] NOTE_ON(47) [t7] NOTE_ON(45) [t2]
+         raw: 87002f87002d82
+  --- Pattern 93 ---
+    CH 0: cum=16  [t13] NOTE_OFF [t3]
+         raw: 8d0183
+    CH 1: cum=16  [t13] NOTE_OFF [t3]
+         raw: 8d0183
+    CH 2: cum=16  [t13] NOTE_OFF [t3]
+         raw: 8d0183
+    CH 3: cum=16  [t6] NOTE_ON(33) [t7] NOTE_ON(31) INST(10) [t3]
+         raw: 86002187001f040a83
+  --- Pattern 94 ---
+    CH 0: cum=16  [t5] NOTE_ON(71) INST(10) [t4] NOTE_ON(67) [t3] NOTE_ON(64) [t4]
+         raw: 850047040a84004383004084
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t12] NOTE_ON(52) INST(10) [t4]
+         raw: 8c0034040a84
+    CH 3: cum=16  [t5] NOTE_ON(43) [t7] NOTE_ON(44) [t4]
+         raw: 85002b87002c84
+  --- Pattern 95 ---
+    CH 0: cum=16  NOTE_ON(62) [t4] NOTE_ON(61) [t4] NOTE_ON(62) [t3] NOTE_ON(61) [t5]
+         raw: 003e84003d84003e83003d85
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t4] NOTE_ON(32) [t7] NOTE_ON(33) [t5]
+         raw: 84002087002185
+  --- Pattern 96 ---
+    CH 0: cum=16  [t10] NOTE_ON(59) [t1] NOTE_ON(57) [t5]
+         raw: 8a003b81003985
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t3] NOTE_ON(45) [t7] NOTE_ON(43) [t6]
+         raw: 83002d87002b86
+  --- Pattern 97 ---
+    CH 0: cum=16  [t9] NOTE_OFF [t7]
+         raw: 890187
+    CH 1: cum=16  [t9] NOTE_ON(69) INST(11) [t7]
+         raw: 890045040b87
+    CH 2: cum=16  [t9] NOTE_OFF [t7]
+         raw: 890187
+    CH 3: cum=16  [t2] NOTE_ON(31) [t7] NOTE_ON(30) INST(11) [t7]
+         raw: 82001f87001e040b87
+  --- Pattern 98 ---
+    CH 0: cum=16  [t1] NOTE_ON(48) INST(11) [t4] NOTE_ON(47) [t3] NOTE_ON(48) [t8]
+         raw: 810030040b84002f83003088
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t1] NOTE_ON(42) [t7] NOTE_ON(40) [t8]
+         raw: 81002a87002888
   --- Pattern 99 ---
-    CH 0: cum=16  INST(12) VOL(4) NOTE_ON(57) [t4] NOTE_ON(48) [t3] NOTE_ON(47) [t8] NOTE_OFF [t1]
-         raw: 040c0504003984003083002f880181
-    CH 1: cum=16  INST(12) VOL(4) NOTE_ON(69) [t11] NOTE_ON(66) [t4] NOTE_ON(60) [t1]
-         raw: 040c050400458b004284003c81
-    CH 2: cum=16  [t7] INST(12) VOL(4) NOTE_ON(54) [t8] NOTE_OFF [t1]
-         raw: 87040c05040036880181
-    CH 3: cum=16  INST(12) VOL(4) NOTE_ON(28) [t7] NOTE_ON(27) [t8] NOTE_ON(39) [t1]
-         raw: 040c0504001c87001b88002781
+    CH 0: cum=16  NOTE_ON(57) [t4] NOTE_ON(48) [t3] NOTE_ON(47) [t8] NOTE_OFF [t1]
+         raw: 003984003083002f880181
+    CH 1: cum=16  [t11] NOTE_ON(66) [t4] NOTE_ON(60) [t1]
+         raw: 8b004284003c81
+    CH 2: cum=16  [t7] NOTE_ON(54) INST(11) [t8] NOTE_OFF [t1]
+         raw: 870036040b880181
+    CH 3: cum=16  NOTE_ON(28) [t7] NOTE_ON(27) [t8] NOTE_ON(39) [t1]
+         raw: 001c87001b88002781
   --- Pattern 100 ---
     CH 0: cum=16  [t16]
          raw: 90
-    CH 1: cum=16  INST(12) VOL(4) NOTE_ON(60) [t3] NOTE_ON(59) [t3] NOTE_ON(64) [t4] NOTE_ON(63) [t4] NOTE_ON(69) [t2]
-         raw: 040c0504003c83003b83004084003f84004582
+    CH 1: cum=16  [t3] NOTE_ON(59) [t3] NOTE_ON(64) [t4] NOTE_ON(63) [t4] NOTE_ON(69) [t2]
+         raw: 83003b83004084003f84004582
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(12) VOL(4) NOTE_ON(39) [t6] NOTE_ON(35) [t8] NOTE_ON(47) [t2]
-         raw: 040c0504002786002388002f82
+    CH 3: cum=16  [t6] NOTE_ON(35) [t8] NOTE_ON(47) [t2]
+         raw: 86002388002f82
   --- Pattern 101 ---
-    CH 0: cum=16  [t5] INST(13) VOL(4) NOTE_ON(59) [t8] NOTE_ON(52) [t3]
-         raw: 85040d0504003b88003483
-    CH 1: cum=16  INST(12) VOL(4) NOTE_ON(69) [t2] NOTE_ON(67) [t3] INST(13) NOTE_ON(67) [t11]
-         raw: 040c0504004582004383040d00438b
+    CH 0: cum=16  [t5] NOTE_ON(59) INST(12) [t8] NOTE_ON(52) [t3]
+         raw: 85003b040c88003483
+    CH 1: cum=16  [t2] NOTE_ON(67) [t3] NOTE_ON(67) INST(12) [t11]
+         raw: 820043830043040c8b
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(12) VOL(4) NOTE_ON(47) [t5] INST(13) NOTE_ON(28) [t8] NOTE_ON(40) [t3]
-         raw: 040c0504002f85040d001c88002883
+    CH 3: cum=16  [t5] NOTE_ON(28) INST(12) [t8] NOTE_ON(40) [t3]
+         raw: 85001c040c88002883
   --- Pattern 102 ---
-    CH 0: cum=16  INST(13) VOL(4) NOTE_ON(52) [t1] NOTE_ON(50) [t3] NOTE_ON(52) [t4] NOTE_ON(54) [t4] NOTE_ON(55) [t4]
-         raw: 040d0504003481003283003484003684003784
-    CH 1: cum=16  INST(13) VOL(4) NOTE_ON(67) [t16]
-         raw: 040d0504004390
+    CH 0: cum=16  [t1] NOTE_ON(50) [t3] NOTE_ON(52) [t4] NOTE_ON(54) [t4] NOTE_ON(55) [t4]
+         raw: 81003283003484003684003784
+    CH 1: cum=16  [t16]
+         raw: 90
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(13) VOL(4) NOTE_ON(40) [t4] NOTE_ON(38) [t8] NOTE_ON(26) [t4]
-         raw: 040d0504002884002688001a84
+    CH 3: cum=16  [t4] NOTE_ON(38) [t8] NOTE_ON(26) [t4]
+         raw: 84002688001a84
   --- Pattern 103 ---
-    CH 0: cum=16  INST(13) VOL(4) NOTE_ON(52) [t3] NOTE_ON(45) [t8] NOTE_OFF [t5]
-         raw: 040d0504003483002d880185
-    CH 1: cum=16  INST(13) VOL(4) NOTE_ON(67) [t7] NOTE_ON(64) [t4] NOTE_ON(59) [t4] NOTE_ON(57) [t1]
-         raw: 040d0504004387004084003b84003981
+    CH 0: cum=16  NOTE_ON(52) [t3] NOTE_ON(45) [t8] NOTE_OFF [t5]
+         raw: 003483002d880185
+    CH 1: cum=16  [t7] NOTE_ON(64) [t4] NOTE_ON(59) [t4] NOTE_ON(57) [t1]
+         raw: 87004084003b84003981
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(13) VOL(4) NOTE_ON(26) [t3] NOTE_ON(25) [t8] NOTE_ON(37) [t5]
-         raw: 040d0504001a83001988002585
+    CH 3: cum=16  [t3] NOTE_ON(25) [t8] NOTE_ON(37) [t5]
+         raw: 83001988002585
   --- Pattern 104 ---
     CH 0: cum=16  [t16]
          raw: 90
-    CH 1: cum=16  INST(13) VOL(4) NOTE_ON(57) [t2] NOTE_ON(62) [t4] NOTE_ON(61) [t4] NOTE_ON(67) [t4] NOTE_ON(66) [t2]
-         raw: 040d0504003982003e84003d84004384004282
+    CH 1: cum=16  [t2] NOTE_ON(62) [t4] NOTE_ON(61) [t4] NOTE_ON(67) [t4] NOTE_ON(66) [t2]
+         raw: 82003e84003d84004384004282
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(13) VOL(4) NOTE_ON(37) [t2] NOTE_ON(33) [t8] NOTE_ON(45) [t6]
-         raw: 040d0504002582002188002d86
+    CH 3: cum=16  [t2] NOTE_ON(33) [t8] NOTE_ON(45) [t6]
+         raw: 82002188002d86
   --- Pattern 105 ---
-    CH 0: cum=16  [t1] INST(14) VOL(4) NOTE_ON(57) [t15]
-         raw: 81040e050400398f
-    CH 1: cum=16  INST(13) VOL(4) NOTE_ON(66) [t1] INST(14) NOTE_ON(66) [t15]
-         raw: 040d0504004281040e00428f
+    CH 0: cum=16  [t1] NOTE_ON(57) INST(13) [t15]
+         raw: 810039040d8f
+    CH 1: cum=16  [t1] NOTE_ON(66) INST(13) [t15]
+         raw: 810042040d8f
     CH 2: cum=16  [t16]
          raw: 90
-    CH 3: cum=16  INST(13) VOL(4) NOTE_ON(45) [t1] INST(14) NOTE_ON(38) [t8] NOTE_ON(50) [t7]
-         raw: 040d0504002d81040e002688003287
+    CH 3: cum=16  [t1] NOTE_ON(38) INST(13) [t8] NOTE_ON(50) [t7]
+         raw: 810026040d88003287
   --- Pattern 106 ---
-    CH 0: cum=16  INST(14) VOL(4) NOTE_ON(57) [t16]
-         raw: 040e0504003990
-    CH 1: cum=16  INST(14) VOL(4) NOTE_ON(66) [t8] NOTE_ON(68) [t4] NOTE_ON(69) [t4]
-         raw: 040e0504004288004484004584
-    CH 2: cum=16  [t8] INST(14) VOL(4) NOTE_ON(52) [t8]
-         raw: 88040e0504003488
-    CH 3: cum=16  INST(14) VOL(4) NOTE_ON(49) [t8] NOTE_ON(37) [t8]
-         raw: 040e0504003188002588
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t8] NOTE_ON(68) [t4] NOTE_ON(69) [t4]
+         raw: 88004484004584
+    CH 2: cum=16  [t8] NOTE_ON(52) INST(13) [t8]
+         raw: 880034040d88
+    CH 3: cum=16  NOTE_ON(49) [t8] NOTE_ON(37) [t8]
+         raw: 003188002588
   --- Pattern 107 ---
-    CH 0: cum=16  INST(14) VOL(4) NOTE_ON(57) [t7] NOTE_ON(56) [t4] NOTE_ON(57) [t4] NOTE_ON(59) [t1]
-         raw: 040e0504003987003884003984003b81
-    CH 1: cum=16  INST(14) VOL(4) NOTE_ON(62) [t9] NOTE_ON(64) [t2] NOTE_ON(66) [t5]
-         raw: 040e0504003e89004082004285
-    CH 2: cum=16  INST(14) VOL(4) NOTE_ON(42) [t7] NOTE_ON(50) [t8] NOTE_ON(47) [t1]
-         raw: 040e0504002a87003288002f81
-    CH 3: cum=16  INST(14) VOL(4) NOTE_ON(35) [t7] NOTE_ON(47) [t8] NOTE_ON(44) [t1]
-         raw: 040e0504002387002f88002c81
+    CH 0: cum=16  [t7] NOTE_ON(56) [t4] NOTE_ON(57) [t4] NOTE_ON(59) [t1]
+         raw: 87003884003984003b81
+    CH 1: cum=16  NOTE_ON(62) [t9] NOTE_ON(64) [t2] NOTE_ON(66) [t5]
+         raw: 003e89004082004285
+    CH 2: cum=16  NOTE_ON(42) [t7] NOTE_ON(50) [t8] NOTE_ON(47) [t1]
+         raw: 002a87003288002f81
+    CH 3: cum=16  NOTE_ON(35) [t7] NOTE_ON(47) [t8] NOTE_ON(44) [t1]
+         raw: 002387002f88002c81
   --- Pattern 108 ---
-    CH 0: cum=16  INST(14) VOL(4) NOTE_ON(59) [t6] NOTE_ON(56) [t8] INST(0) NOTE_ON(57) [t2]
-         raw: 040e0504003b860038880400003982
-    CH 1: cum=16  INST(14) VOL(4) NOTE_ON(66) [t2] NOTE_ON(64) [t8] NOTE_ON(62) [t4] INST(0) NOTE_ON(61) [t2]
-         raw: 040e0504004282004088003e840400003d82
-    CH 2: cum=16  INST(14) VOL(4) NOTE_ON(47) [t6] NOTE_ON(52) [t8] NOTE_OFF [t2]
-         raw: 040e0504002f860034880182
-    CH 3: cum=16  INST(14) VOL(4) NOTE_ON(44) [t6] NOTE_ON(40) [t8] INST(0) NOTE_ON(45) [t2]
-         raw: 040e0504002c860028880400002d82
+    CH 0: cum=16  [t6] NOTE_ON(56) [t8] NOTE_ON(57) INST(14) [t2]
+         raw: 860038880039040e82
+    CH 1: cum=16  [t2] NOTE_ON(64) [t8] NOTE_ON(62) [t4] NOTE_ON(61) INST(14) [t2]
+         raw: 82004088003e84003d040e82
+    CH 2: cum=16  [t6] NOTE_ON(52) [t8] NOTE_OFF [t2]
+         raw: 860034880182
+    CH 3: cum=16  [t6] NOTE_ON(40) [t8] NOTE_ON(45) INST(14) [t2]
+         raw: 86002888002d040e82
   --- Pattern 109 ---
-    CH 0: cum=16  INST(0) VOL(4) NOTE_ON(57) [t16]
-         raw: 04000504003990
-    CH 1: cum=16  INST(0) VOL(4) NOTE_ON(61) [t1] NOTE_ON(59) [t6] NOTE_ON(61) [t2] NOTE_ON(62) [t7]
-         raw: 04000504003d81003b86003d82003e87
-    CH 2: cum=16  [t5] INST(0) VOL(4) NOTE_ON(54) [t11]
-         raw: 850400050400368b
-    CH 3: cum=16  INST(0) VOL(4) NOTE_ON(45) [t5] NOTE_ON(38) [t8] NOTE_ON(40) [t3]
-         raw: 04000504002d85002688002883
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t1] NOTE_ON(59) [t6] NOTE_ON(61) [t2] NOTE_ON(62) [t7]
+         raw: 81003b86003d82003e87
+    CH 2: cum=16  [t5] NOTE_ON(54) INST(14) [t11]
+         raw: 850036040e8b
+    CH 3: cum=16  [t5] NOTE_ON(38) [t8] NOTE_ON(40) [t3]
+         raw: 85002688002883
   --- Pattern 110 ---
-    CH 0: cum=16  INST(0) VOL(4) NOTE_ON(57) [t4] NOTE_ON(56) [t8] NOTE_ON(52) [t4]
-         raw: 04000504003984003888003484
-    CH 1: cum=16  INST(0) VOL(4) NOTE_ON(62) [t4] NOTE_ON(61) [t4] NOTE_ON(59) [t4] NOTE_ON(57) [t4]
-         raw: 04000504003e84003d84003b84003984
-    CH 2: cum=16  INST(0) VOL(4) NOTE_ON(54) [t4] NOTE_ON(50) [t8] NOTE_ON(49) [t4]
-         raw: 04000504003684003288003184
-    CH 3: cum=16  INST(0) VOL(4) NOTE_ON(40) [t4] NOTE_ON(28) [t8] NOTE_ON(33) [t3] NOTE_ON(35) [t1]
-         raw: 04000504002884001c88002183002381
+    CH 0: cum=16  [t4] NOTE_ON(56) [t8] NOTE_ON(52) [t4]
+         raw: 84003888003484
+    CH 1: cum=16  [t4] NOTE_ON(61) [t4] NOTE_ON(59) [t4] NOTE_ON(57) [t4]
+         raw: 84003d84003b84003984
+    CH 2: cum=16  [t4] NOTE_ON(50) [t8] NOTE_ON(49) [t4]
+         raw: 84003288003184
+    CH 3: cum=16  [t4] NOTE_ON(28) [t8] NOTE_ON(33) [t3] NOTE_ON(35) [t1]
+         raw: 84001c88002183002381
   --- Pattern 111 ---
-    CH 0: cum=16  INST(0) VOL(4) NOTE_ON(52) [t16]
-         raw: 04000504003490
-    CH 1: cum=16  INST(0) VOL(4) NOTE_ON(57) [t16]
-         raw: 04000504003990
-    CH 2: cum=16  INST(0) VOL(4) NOTE_ON(49) [t16]
-         raw: 04000504003190
-    CH 3: cum=16  INST(0) VOL(4) NOTE_ON(35) [t3] NOTE_ON(37) [t4] NOTE_ON(38) [t4] NOTE_ON(40) [t3] NOTE_ON(43) [t2]
-         raw: 04000504002383002584002684002883002b82
+    CH 0: cum=16  [t16]
+         raw: 90
+    CH 1: cum=16  [t16]
+         raw: 90
+    CH 2: cum=16  [t16]
+         raw: 90
+    CH 3: cum=16  [t3] NOTE_ON(37) [t4] NOTE_ON(38) [t4] NOTE_ON(40) [t3] NOTE_ON(43) [t2]
+         raw: 83002584002684002883002b82
   --- Pattern 112 ---
-    CH 0: cum=16  INST(0) VOL(4) NOTE_ON(52) [t10] NOTE_OFF [t6]
-         raw: 0400050400348a0186
-    CH 1: cum=16  INST(0) VOL(4) NOTE_ON(57) [t10] NOTE_OFF [t6]
-         raw: 0400050400398a0186
-    CH 2: cum=16  INST(0) VOL(4) NOTE_ON(49) [t10] NOTE_OFF [t6]
-         raw: 0400050400318a0186
-    CH 3: cum=16  INST(0) VOL(4) NOTE_ON(43) [t2] NOTE_ON(42) [t4] NOTE_ON(40) [t4] NOTE_OFF [t6]
-         raw: 04000504002b82002a840028840186
+    CH 0: cum=16  [t10] NOTE_OFF [t6]
+         raw: 8a0186
+    CH 1: cum=16  [t10] NOTE_OFF [t6]
+         raw: 8a0186
+    CH 2: cum=16  [t10] NOTE_OFF [t6]
+         raw: 8a0186
+    CH 3: cum=16  [t2] NOTE_ON(42) [t4] NOTE_ON(40) [t4] NOTE_OFF [t6]
+         raw: 82002a840028840186
 
-[0x16b6] Chunk type 8 (Pitch Envelopes)  version=0  size=5
+[0x140e] Chunk type 8 (Pitch Envelopes)  version=0  size=5
 
-[0x16bf] Chunk type 0 (Sentinel)  version=0  size=0
+[0x1417] Chunk type 0 (Sentinel)  version=0  size=0
   (end of file)
 
