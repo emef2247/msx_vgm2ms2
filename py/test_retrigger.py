@@ -1,4 +1,4 @@
-"""test_retrigger.py – Unit tests for keyoff→keyon retrigger detection.
+"""test_retrigger.py - Unit tests for keyoff->keyon retrigger detection.
 
 Tests that when a keyoff and keyon occur within the same VGM tick (tick group),
 the exporter emits a NOTE_ON retrigger instead of leaving the step blank (which
