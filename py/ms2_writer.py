@@ -143,6 +143,48 @@ def opll_patch_to_opl4(patch_bytes: bytes) -> dict:
     }
 
 
+def opll_patch_raw(patch_bytes: bytes) -> dict:
+    """Pack 8-byte YM2413 patch (R0..R7) directly into OPL4 2OP register fields.
+
+    This is the "raw" mode packing: each OPLL source byte is placed into the
+    corresponding OPL4 register without applying any additional conversion
+    tables or OPLL→OPL multiplier scaling.  No ``opll_load_voice()``-style
+    conversion is performed.
+
+    Mapping (direct field assignment):
+        reg20 = R0            (mod AM/VIB/EGT/KSR/MULT – identical layout)
+        reg21 = R4            (car AM/VIB/EGT/KSR/MULT – identical layout)
+        reg40 = R1            (mod KSL/TL – all 8 bits)
+        reg41 = R5 & 0xC0    (car KSL bits [7:6]; carrier TL=0, no TL field in OPLL)
+        reg60 = R2            (mod AR/DR – identical layout)
+        reg61 = R6            (car AR/DR – identical layout)
+        reg80 = R3            (mod SL/RR – identical layout)
+        reg81 = R7            (car SL/RR – identical layout)
+        regE0 = (R5 >> 3) & 1  (mod waveform: DM bit)
+        regE1 = (R5 >> 4) & 1  (car waveform: DC bit)
+        regC0 = (R5 & 7) << 1  (feedback FB in bits [3:1], CNT=0)
+
+    Returns a dict: {0x20: byte, 0x21: byte, 0x40: byte, 0x41: byte,
+                     0x60: byte, 0x61: byte, 0x80: byte, 0x81: byte,
+                     0xE0: byte, 0xE1: byte, 0xC0: byte}
+    """
+    r = (bytes(patch_bytes)[:8] + b'\x00' * max(0, 8 - len(patch_bytes)))[:8]
+
+    return {
+        0x20: r[0],                  # mod AM/VIB/EGT/KSR/MULT – direct
+        0x21: r[4],                  # car AM/VIB/EGT/KSR/MULT – direct
+        0x40: r[1],                  # mod KSL/TL – all 8 bits, direct
+        0x41: r[5] & 0xC0,           # car KSL [7:6]; TL=0 (no carrier TL in OPLL)
+        0x60: r[2],                  # mod AR/DR – direct
+        0x61: r[6],                  # car AR/DR – direct
+        0x80: r[3],                  # mod SL/RR – direct
+        0x81: r[7],                  # car SL/RR – direct
+        0xE0: (r[5] >> 3) & 0x01,   # mod waveform: DM bit
+        0xE1: (r[5] >> 4) & 0x01,   # car waveform: DC bit
+        0xC0: (r[5] & 0x07) << 1,   # feedback FB, CNT=0
+    }
+
+
 # ---------------------------------------------------------------------------
 # Pitch conversion: OPLL Fnum + Block → MS2 note index (0-based, C1=0)
 # ---------------------------------------------------------------------------
@@ -1068,6 +1110,7 @@ def build_instrument_library_ms2(
     patches: list,
     library_name: str = 'OPLL Library',
     n_presets: int = 16,
+    raw_mode: bool = False,
 ) -> bytes:
     """Build a minimal MS2 file that contains only tunings and 2OP instruments.
 
@@ -1080,15 +1123,22 @@ def build_instrument_library_ms2(
         library_name: Up to 65 ASCII chars used as the MS2 description.
         n_presets:    Number of preset instruments to include (default 16).
                       Uses the first *n_presets* entries from *patches*.
+        raw_mode:     When ``True``, pack patch bytes into OPL4 register fields
+                      using :func:`opll_patch_raw` (direct field mapping, no
+                      additional OPLL→OPL conversion tables).
+                      When ``False`` (default), use :func:`opll_patch_to_opl4`
+                      (the "converted" mode, current default behaviour).
 
     Returns raw bytes of a complete, loadable .MS2 file.
     """
+    _converter = opll_patch_raw if raw_mode else opll_patch_to_opl4
+
     # Build the 2OP instruments chunk from the first n_presets patches.
     preset_count = min(n_presets, len(patches))
     instruments_bytes = struct.pack('<H', preset_count)
     for i in range(preset_count):
         patch = bytes(patches[i])[:8]
-        opl4 = opll_patch_to_opl4(patch)
+        opl4 = _converter(patch)
         name = f'Preset {i + 1}'
         instruments_bytes += _build_2op_instrument(opl4, tuning_idx=0, name=name)
 
