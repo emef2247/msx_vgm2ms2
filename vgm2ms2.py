@@ -11,7 +11,7 @@ Usage:
 Arguments:
     vgm_file          Path to the input VGM file.
     --outdir <dir>    Output directory (default: outputs/<song_stem>/).
-    --bpm <bpm>       Song tempo in BPM (default: 75).
+    --bpm <bpm>       Song tempo in BPM (default: 120).
     --timer <0|1>     0 = VDP timer (default), 1 = 50 Hz timer.
     --debug           Print extra info and dump the generated MS2 structure.
     --compare         Also run ms2_dump.py --compare against ms2_example/TEST.MS2.
@@ -31,6 +31,7 @@ from vgm_reader import parse_vgm
 from opll_mml import _build_segments, _assign_voice_ids, NUM_CH
 from ms2_writer import build_ms2_file
 from ms2_dump import dump_ms2, compare_signatures
+from ms2_validate import validate_ms2_bytes
 
 
 def main():
@@ -43,8 +44,8 @@ def main():
         help='Output directory (default: outputs/<song_stem>/)'
     )
     parser.add_argument(
-        '--bpm', type=int, default=75,
-        help='Song tempo in BPM (default: 75)'
+        '--bpm', type=int, default=120,
+        help='Song tempo in BPM (default: 120)'
     )
     parser.add_argument(
         '--timer', type=int, default=0, choices=[0, 1],
@@ -57,6 +58,10 @@ def main():
     parser.add_argument(
         '--compare', action='store_true',
         help='Compare generated file against ms2_example/TEST.MS2'
+    )
+    parser.add_argument(
+        '--no-validate', dest='validate', action='store_false', default=True,
+        help='Skip post-build validation of Patterns chunk (validation is on by default)'
     )
     args = parser.parse_args()
 
@@ -113,6 +118,23 @@ def main():
         f.write(ms2_bytes)
 
     print(f"Written: {out_path}  ({len(ms2_bytes)} bytes)")
+
+    # ── Optional: validate Patterns chunk structure ───────────────────────
+    if args.validate:
+        errors = validate_ms2_bytes(ms2_bytes)
+        if errors:
+            print(f"\nVALIDATION FAILED ({len(errors)} error(s)):")
+            for e in errors:
+                print(f"  {e}")
+            print("Aborting: generated file is structurally invalid for MS².")
+            # Remove the invalid file so the user doesn't accidentally load it
+            try:
+                os.remove(out_path)
+            except OSError:
+                pass
+            sys.exit(1)
+        else:
+            print("Validation OK: Patterns chunk is structurally valid.")
 
     # ── Optional: dump structure ──────────────────────────────────────────
     if args.debug:
