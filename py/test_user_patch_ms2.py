@@ -265,7 +265,6 @@ def test_build_ms2_file_user_patch_end_to_end():
     """Full build_ms2_file pipeline: when inst==0 is used with a voice CSV,
     the output MS2 has more instruments than the reference and the pattern
     contains an INST event referencing a slot >= ref_count."""
-    import tempfile
     from opll_mml import _build_segments
     from ms2_writer import build_ms2_file
     from ms2_validate import validate_ms2_bytes

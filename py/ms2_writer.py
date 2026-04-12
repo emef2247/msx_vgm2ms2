@@ -736,8 +736,7 @@ def _build_step_grid(
             else:
                 # Clear the retrigger flag when carrying forward
                 if cur_state[4]:
-                    cur_state = cur_state[:5] + (cur_state[5],)
-                    cur_state = cur_state[:4] + (False,) + cur_state[5:]
+                    cur_state = cur_state[:4] + (False, cur_state[5])
             grid[(ch, step)] = cur_state
 
     return grid
