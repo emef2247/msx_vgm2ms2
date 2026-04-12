@@ -1,4 +1,8 @@
-    # Set byte 65 to max(1, min(255, n_patterns-1)) because MS² expects
-    # song length to be the last pattern index (patterns-1) even when
-    # patterns count includes extra pattern(s).
-    song_settings_data[65] = max(1, min(255, n_patterns - 1))
+# existing code above remains unchanged
+
+# Modify OPLL volume mapping to MS2
+# Changing opll_vol_to_ms2_vol to map 0-15 to 0-63
+
+def opll_vol_to_ms2_vol(v):
+    ms2 = int(((v+1)/16)*64 - 1)
+    return max(0, min(ms2, 63))
