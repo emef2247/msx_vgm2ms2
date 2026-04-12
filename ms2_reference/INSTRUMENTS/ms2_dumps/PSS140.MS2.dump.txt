@@ -1,0 +1,124 @@
+File: ./PSS140.MS2  (3614 bytes)
+Signature: 4d53c2b20d0a001a  (OK)
+
+[0x0008] Chunk type 1 (Song Settings)  version=0  size=273
+  (too short: 273 bytes, expected 291)
+
+[0x011d] Chunk type 2 (Tunings)  version=0  size=210
+  Count: 1
+  Tuning 0: 'Equal Temp.'  offsets[0..11]=[0, 128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280, 1408]
+
+[0x01f3] Chunk type 3 (2OP Instruments)  version=0  size=3002
+  Count: 100
+  Inst  0: 'Accordion 1     ' tuning=0  regs=13 01 18 00 9E 60 00 9F 01 00 0E
+  Inst  1: 'Accordion 2     ' tuning=0  regs=23 21 95 00 90 60 03 08 00 01 0E
+  Inst  2: 'Alpenhorn       ' tuning=0  regs=31 21 A2 00 32 51 10 06 00 00 00
+  Inst  3: 'Alto Sax        ' tuning=0  regs=50 41 08 00 50 73 10 00 01 01 04
+  Inst  4: 'Bagpipe         ' tuning=0  regs=01 01 8E 00 E0 70 20 20 00 01 04
+  Inst  5: 'Banjo           ' tuning=0  regs=13 01 15 00 F9 F6 20 24 00 00 0E
+  Inst  6: 'Bar Chimes      ' tuning=0  regs=38 24 51 00 90 83 11 F3 00 00 06
+  Inst  7: 'Bass Clarinet   ' tuning=0  regs=31 30 9D 00 90 80 00 08 00 00 0C
+  Inst  8: 'Bassoon         ' tuning=0  regs=30 21 16 00 E0 70 01 07 00 00 0A
+  Inst  9: 'Boom Piano      ' tuning=0  regs=40 40 08 00 D1 A4 B1 A1 01 00 0A
+  Inst 10: 'Bowed Bass      ' tuning=0  regs=10 12 C7 00 72 31 20 20 00 00 06
+  Inst 11: 'Brass & Marimba ' tuning=0  regs=31 23 1D 80 36 F6 00 28 01 00 0E
+  Inst 12: 'Cello           ' tuning=0  regs=40 00 0E 00 D0 50 56 D9 01 01 0A
+  Inst 13: 'Chime & Organ   ' tuning=0  regs=1F 00 95 00 F5 F0 F1 21 01 01 00
+  Inst 14: 'Chimes          ' tuning=0  regs=22 21 11 00 90 83 11 F3 00 00 00
+  Inst 15: 'Clarinet        ' tuning=0  regs=12 01 9E 00 E0 76 00 20 00 00 0C
+  Inst 16: 'Classic Guitar  ' tuning=0  regs=13 11 A5 00 B2 D2 40 AA 01 00 0E
+  Inst 17: 'Clavi 1         ' tuning=0  regs=13 12 C8 00 E8 83 10 A2 00 01 0C
+  Inst 18: 'Clavi 2         ' tuning=0  regs=13 01 91 80 E0 95 38 A2 01 01 08
+  Inst 19: 'Drip            ' tuning=0  regs=20 21 10 00 44 F5 F8 F8 00 00 0A
+  Inst 20: 'Electric Bass   ' tuning=0  regs=00 01 9A 00 84 A4 C8 CB 00 00 0E
+  Inst 21: 'Electric Piano 1' tuning=0  regs=14 91 5A 00 AA C1 13 76 00 00 0A
+  Inst 22: 'Electric Piano 2' tuning=0  regs=D3 01 CF 00 99 93 22 64 00 00 00
+  Inst 23: 'Electric Trumpet' tuning=0  regs=51 12 1A 00 83 91 10 00 00 00 0E
+  Inst 24: 'Electronic Organ' tuning=0  regs=21 31 A9 80 80 80 00 08 00 00 0E
+  Inst 25: 'Fantastic Piano ' tuning=0  regs=1F 01 A5 00 F7 FF 38 12 00 00 0E
+  Inst 26: 'Fireworks       ' tuning=0  regs=03 01 00 00 11 41 00 03 00 00 0E
+  Inst 27: 'Flute           ' tuning=0  regs=52 11 0B 00 B9 42 A0 20 00 00 06
+  Inst 28: 'Folk Guitar 1   ' tuning=0  regs=13 01 53 00 F2 A4 10 84 01 00 0E
+  Inst 29: 'Folk Guitar 2   ' tuning=0  regs=15 01 4D 00 E1 95 38 A2 01 01 06
+  Inst 30: 'Funky Marimba   ' tuning=0  regs=18 01 1F 00 F9 FE FF 03 00 00 0E
+  Inst 31: 'Glass Celesta   ' tuning=0  regs=5F D2 0A 80 BB D2 91 B1 01 00 00
+  Inst 32: 'Glockenspiel    ' tuning=0  regs=1B 12 A8 80 C2 E3 FF EF 01 00 00
+  Inst 33: 'Gurgle          ' tuning=0  regs=F0 81 80 00 20 48 05 12 00 00 00
+  Inst 34: 'Hand Bell       ' tuning=0  regs=0C 02 AB 00 B0 25 80 FF 01 00 00
+  Inst 35: 'Handsaw         ' tuning=0  regs=50 14 20 80 F1 6A 10 13 00 00 0C
+  Inst 36: 'Harmonica       ' tuning=0  regs=23 21 18 00 64 74 01 07 00 00 0A
+  Inst 37: 'Harp            ' tuning=0  regs=13 01 29 00 F2 FF 10 04 01 00 0E
+  Inst 38: 'Harpsichord 1   ' tuning=0  regs=13 01 8C 00 E0 95 10 A3 00 01 00
+  Inst 39: 'Harpsichord 2   ' tuning=0  regs=13 01 48 00 E0 95 10 A3 00 01 00
+  Inst 40: 'Harpsichord 3   ' tuning=0  regs=13 01 41 00 E0 95 10 A3 01 01 00
+  Inst 41: 'Hawaiian Guitar ' tuning=0  regs=13 81 23 00 A1 A4 42 32 01 00 0C
+  Inst 42: 'Honky-Tonk 1    ' tuning=0  regs=D3 01 8C 80 E0 95 10 A3 01 00 00
+  Inst 43: 'Honky-Tonk 2    ' tuning=0  regs=55 01 85 00 FA A4 22 98 01 01 00
+  Inst 44: 'Horn            ' tuning=0  regs=31 21 9D 00 32 61 10 07 00 00 0E
+  Inst 45: 'Human Voice 1   ' tuning=0  regs=E1 23 10 00 77 54 93 F4 00 01 00
+  Inst 46: 'Human Voice 2   ' tuning=0  regs=E2 21 17 00 F0 54 00 F4 00 01 00
+  Inst 47: 'Human Voice 3   ' tuning=0  regs=21 24 1B 00 F5 66 30 27 00 01 0E
+  Inst 48: 'Ice Block       ' tuning=0  regs=1C 01 98 00 B1 B7 94 84 00 00 00
+  Inst 49: 'Jamisen         ' tuning=0  regs=50 13 99 80 D3 74 A4 B9 00 00 00
+  Inst 50: 'Jazz Guitar     ' tuning=0  regs=13 01 23 80 F1 A4 70 84 01 00 0C
+  Inst 51: 'Jazz Organ      ' tuning=0  regs=33 21 14 80 FF F1 66 1A 00 00 0A
+  Inst 52: 'Jug             ' tuning=0  regs=08 11 CF 00 C7 54 D2 93 01 00 06
+  Inst 53: 'Koto            ' tuning=0  regs=11 04 83 00 FB B6 40 D2 01 00 08
+  Inst 54: 'Leaf Spring     ' tuning=0  regs=50 98 12 00 F1 D4 40 13 00 00 06
+  Inst 55: 'Marimba         ' tuning=0  regs=14 01 1F 00 F8 FD FF 06 00 00 0E
+  Inst 56: 'Metallic Synth  ' tuning=0  regs=01 01 0B 00 85 F7 71 00 00 00 00
+  Inst 57: 'Music Box       ' tuning=0  regs=19 82 0F 00 FC B6 52 25 00 00 06
+  Inst 58: 'Mute Bass       ' tuning=0  regs=00 01 4C 00 A8 B5 34 9E 00 00 0A
+  Inst 59: 'Mute Trumpet    ' tuning=0  regs=21 21 1C 80 77 81 21 07 00 00 0C
+  Inst 60: 'Oboe            ' tuning=0  regs=11 02 16 00 E0 71 00 10 00 00 0A
+  Inst 61: 'Panflute        ' tuning=0  regs=4C 62 60 80 EE 8F D8 08 00 00 0E
+  Inst 62: 'Piano 1         ' tuning=0  regs=13 11 D3 00 FD 92 00 91 00 00 0A
+  Inst 63: 'Piano 2         ' tuning=0  regs=13 01 23 00 F1 A4 70 84 00 00 0C
+  Inst 64: 'Piccolo         ' tuning=0  regs=04 24 30 80 6F 8F 19 08 00 00 0E
+  Inst 65: 'Picked Bass     ' tuning=0  regs=10 01 94 00 C4 C2 30 82 00 00 08
+  Inst 66: 'Pipe Organ 1    ' tuning=0  regs=21 22 3F 80 0F 60 00 06 00 00 00
+  Inst 67: 'Pipe Organ 2    ' tuning=0  regs=22 21 2C 00 A2 72 00 07 00 01 08
+  Inst 68: 'Popcorn         ' tuning=0  regs=21 21 13 00 50 F5 F8 F8 00 00 0A
+  Inst 69: 'Reed Organ      ' tuning=0  regs=23 21 2C 00 A2 72 00 07 00 01 08
+  Inst 70: 'Reverse         ' tuning=0  regs=20 A1 20 00 F0 28 00 F8 00 00 00
+  Inst 71: 'Rock Guitar 1   ' tuning=0  regs=00 04 0F 80 F1 91 60 40 00 01 08
+  Inst 72: 'Rock Guitar 2   ' tuning=0  regs=11 08 00 00 A6 B2 10 FC 00 00 04
+  Inst 73: 'Shamisen        ' tuning=0  regs=11 04 00 00 FA F6 70 D5 01 00 08
+  Inst 74: 'Sine Wave       ' tuning=0  regs=22 32 3F 80 0F 80 FF 08 00 00 00
+  Inst 75: 'Slap Bass       ' tuning=0  regs=10 10 06 00 E9 F4 41 51 00 00 0A
+  Inst 76: 'Small Church    ' tuning=0  regs=4A 40 39 00 37 C1 60 00 01 01 0E
+  Inst 77: 'Soft Trombone   ' tuning=0  regs=31 21 99 00 44 81 10 07 00 00 0C
+  Inst 78: 'Soprano Sax     ' tuning=0  regs=41 01 05 00 8A 70 10 D9 01 00 08
+  Inst 79: 'Steel Drum 1    ' tuning=0  regs=05 81 C8 00 66 C4 90 84 00 00 00
+  Inst 80: 'Steel Drum 2    ' tuning=0  regs=87 12 2A 00 63 93 4F 73 00 00 0A
+  Inst 81: 'Street Organ    ' tuning=0  regs=13 02 9E 00 52 61 D1 EF 00 01 04
+  Inst 82: 'Strings         ' tuning=0  regs=43 01 21 00 D0 50 66 D9 01 01 0E
+  Inst 83: 'Synth Bass      ' tuning=0  regs=10 01 8D 00 B6 E1 50 96 00 00 0A
+  Inst 84: 'Synth Brass     ' tuning=0  regs=01 01 94 00 63 81 30 41 00 00 0E
+  Inst 85: 'Tenor Sax       ' tuning=0  regs=40 00 88 00 76 C1 00 20 00 01 08
+  Inst 86: 'Toy Piano       ' tuning=0  regs=0F 14 0C 00 9D A5 82 A1 00 00 0E
+  Inst 87: 'Transistor Organ' tuning=0  regs=01 51 3E 00 F0 F0 36 BF 00 01 00
+  Inst 88: 'Tremolo Organ   ' tuning=0  regs=43 41 AA 00 DE EC 10 00 00 00 06
+  Inst 89: 'Trombone        ' tuning=0  regs=70 60 99 00 42 81 10 07 00 00 0E
+  Inst 90: 'Trumpet         ' tuning=0  regs=61 61 1C 00 92 81 10 07 00 00 0E
+  Inst 91: 'Tuba            ' tuning=0  regs=30 20 97 00 42 62 10 07 00 00 0E
+  Inst 92: 'Ukulele         ' tuning=0  regs=13 01 25 00 C5 D7 A5 05 01 00 0E
+  Inst 93: 'Vibraphone      ' tuning=0  regs=17 81 24 00 FA FA 22 12 00 00 0E
+  Inst 94: 'Violin 1        ' tuning=0  regs=42 42 9C 80 D0 60 40 D9 01 01 00
+  Inst 95: 'Violin 2        ' tuning=0  regs=02 42 C4 80 DB 60 40 D9 00 01 00
+  Inst 96: 'Whistle         ' tuning=0  regs=46 64 60 80 EE 6F F8 08 00 00 0E
+  Inst 97: 'Wind Bell       ' tuning=0  regs=40 82 FF 00 0C 16 74 FC 00 00 04
+  Inst 98: 'Wood Bass 1     ' tuning=0  regs=00 00 8F 00 83 81 52 71 00 00 08
+  Inst 99: 'Wood Bass 2     ' tuning=0  regs=00 00 94 00 D1 91 43 71 00 00 08
+
+[0x0db1] Chunk type 4 (4OP Instruments)  version=0  size=43
+
+[0x0de0] Chunk type 5 (WAV Instruments)  version=0  size=38
+
+[0x0e0a] Chunk type 6 (Patterns)  version=0  size=3
+
+[0x0e11] Chunk type 8 (Pitch Envelopes)  version=0  size=5
+
+[0x0e1a] Chunk type 0 (Sentinel)  version=0  size=0
+  (end of file)
+

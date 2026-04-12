@@ -1,0 +1,256 @@
+File: ./MB14.MS2  (8298 bytes)
+Signature: 4d53c2b20d0a001a  (OK)
+
+[0x0008] Chunk type 1 (Song Settings)  version=0  size=291
+  Description:     'MS2 instrument library: MoonBlaster v1.4'
+  Song length:      0 patterns
+  Loop pattern:     0
+  Timer:            0 (VDP)
+  Timer divider:    6.0000 (0x0600)
+  Modulation depth: 0xC0
+  Channels:         1 total  (1 2OP + 0 4OP + 0 WAV)
+  Channel types:    [1]  (1 enabled)
+  Start instruments:[0]
+  Tunings:          8
+  2OP instruments:  207
+  4OP instruments:  1
+  WAV instruments:  1
+  Patterns:         1
+  Pitch envelopes:  1
+
+[0x012f] Chunk type 2 (Tunings)  version=0  size=1666
+  Count: 8
+  Tuning 0: 'MB v1.4 T-3'  offsets[0..11]=[-40, 86, 218, 348, 476, 606, 738, 866, 994, 1124, 1254, 1382]
+  Tuning 1: 'MB v1.4 T-2'  offsets[0..11]=[-28, 98, 228, 358, 486, 616, 746, 874, 1002, 1132, 1262, 1390]
+  Tuning 2: 'MB v1.4 T-1'  offsets[0..11]=[-16, 110, 240, 368, 496, 624, 756, 884, 1010, 1140, 1268, 1396]
+  Tuning 3: 'MB v1.4 T+0'  offsets[0..11]=[-2, 124, 252, 380, 506, 634, 764, 892, 1018, 1148, 1276, 1404]
+  Tuning 4: 'MB v1.4 T+1'  offsets[0..11]=[10, 136, 264, 390, 516, 644, 774, 898, 1026, 1154, 1282, 1408]
+  Tuning 5: 'MB v1.4 T+2'  offsets[0..11]=[24, 148, 274, 400, 526, 654, 782, 908, 1034, 1162, 1290, 1416]
+  Tuning 6: 'MB v1.4 T+3'  offsets[0..11]=[36, 160, 286, 412, 536, 664, 792, 916, 1042, 1170, 1298, 1424]
+  Tuning 7: 'MB v1.4 ADPCM'  offsets[0..11]=[6, 124, 249, 378, 512, 637, 765, 896, 1019, 1152, 1285, 1410]
+
+[0x07b5] Chunk type 3 (2OP Instruments)  version=0  size=6212
+  Count: 207
+  Inst  0: 'Bass 1          ' tuning=3  regs=31 21 19 80 F2 F2 10 56 00 00 0C
+  Inst  1: 'Bass 2          ' tuning=3  regs=21 E2 D1 00 86 88 37 17 00 00 0C
+  Inst  2: 'Cool Bass 1     ' tuning=3  regs=21 01 0A 00 F5 F5 F5 FA 00 00 06
+  Inst  3: 'Cool Bass 2     ' tuning=3  regs=01 02 07 00 CB E3 36 25 00 00 00
+  Inst  4: 'Rasp Bass       ' tuning=3  regs=61 31 94 00 E4 C1 1B EB 00 00 0E
+  Inst  5: 'Slap Bass 1     ' tuning=3  regs=71 01 95 00 98 D4 65 56 00 00 08
+  Inst  6: 'Slap Bass 2     ' tuning=3  regs=61 31 15 00 F3 F3 BB EC 00 00 0C
+  Inst  7: 'Slap Bass 3     ' tuning=3  regs=41 61 54 00 F6 F2 74 59 00 00 00
+  Inst  8: 'Short Bass      ' tuning=3  regs=31 32 0F 00 F2 F4 23 99 00 00 0A
+  Inst  9: 'Synth Bass 1    ' tuning=3  regs=21 02 0F 00 F5 F5 F5 F5 00 00 06
+  Inst 10: 'Synth Bass 2    ' tuning=3  regs=01 01 46 00 E5 F5 F4 F7 00 00 04
+  Inst 11: 'Synth Bass 3    ' tuning=3  regs=21 01 08 00 96 B2 49 F8 00 00 00
+  Inst 12: 'Electric Bass 1 ' tuning=3  regs=31 31 17 00 D3 E1 BB EB 00 00 0C
+  Inst 13: 'Electric Bass 2 ' tuning=3  regs=01 41 12 00 94 F2 F9 E8 00 00 08
+  Inst 14: 'Electric Bass 3 ' tuning=3  regs=41 61 54 00 F6 F2 74 59 00 00 0C
+  Inst 15: 'Rock Bass       ' tuning=3  regs=32 22 0C 40 F2 F2 10 56 00 00 0C
+  Inst 16: 'Elastic Bass    ' tuning=3  regs=01 10 0E 00 CA E6 44 24 00 00 0E
+  Inst 17: 'Strings 1       ' tuning=3  regs=61 61 1B 00 94 54 14 06 00 00 0E
+  Inst 18: 'Strings 2       ' tuning=3  regs=61 B2 0F 40 6D 4C 30 06 00 00 0E
+  Inst 19: 'Strings 3       ' tuning=3  regs=42 64 17 40 A1 A2 33 25 00 00 0E
+  Inst 20: 'Jarre String    ' tuning=3  regs=71 71 18 00 9F 30 14 06 00 00 0E
+  Inst 21: 'Synth String 1  ' tuning=3  regs=61 61 22 00 94 54 14 06 00 00 0E
+  Inst 22: 'Synth String 2  ' tuning=3  regs=71 31 0A 05 AF C7 14 24 00 00 0D
+  Inst 23: 'Synth String 3  ' tuning=3  regs=42 42 00 00 FE FD 41 01 00 00 0C
+  Inst 24: 'Plink String    ' tuning=3  regs=21 04 09 00 41 A6 B4 C6 00 00 0B
+  Inst 25: 'Heavy String    ' tuning=3  regs=61 62 8F 00 F5 F2 2F FE 00 00 0E
+  Inst 26: 'Violin          ' tuning=3  regs=71 71 18 00 F1 41 14 16 00 00 0E
+  Inst 27: 'Synth Violin    ' tuning=3  regs=61 A1 0A 00 76 54 12 07 00 00 0A
+  Inst 28: 'Harp            ' tuning=3  regs=32 B1 29 00 F4 D2 34 F3 00 00 0E
+  Inst 29: 'Mouth Harp      ' tuning=3  regs=F0 F3 15 80 72 F1 24 74 00 00 0C
+  Inst 30: 'Laser Harp      ' tuning=3  regs=00 20 00 00 F2 FF F2 04 00 00 26
+  Inst 31: 'Bell Brass      ' tuning=3  regs=51 72 94 00 41 62 24 02 00 00 0E
+  Inst 32: 'Brass 1         ' tuning=3  regs=71 31 1C 00 51 71 24 26 00 00 0E
+  Inst 33: 'Brass 2         ' tuning=3  regs=71 71 19 00 32 44 35 2A 00 00 0E
+  Inst 34: 'Brass 3         ' tuning=3  regs=30 70 19 00 42 62 26 24 00 00 0E
+  Inst 35: 'Trumpet 1       ' tuning=3  regs=72 72 19 00 63 8F 15 0E 00 00 0E
+  Inst 36: 'Trumpet 2       ' tuning=3  regs=71 71 15 00 63 8F 15 0E 00 00 0E
+  Inst 37: 'Trumpet 3       ' tuning=3  regs=60 61 1D 00 F1 71 1A DA 00 00 0E
+  Inst 38: 'Synth Trumpet 1 ' tuning=3  regs=31 61 1A 00 E1 C1 1F 1F 00 00 0E
+  Inst 39: 'Synth Trumpet 2 ' tuning=3  regs=72 72 18 00 A5 C0 28 26 00 00 0E
+  Inst 40: 'Synth Trumpet 3 ' tuning=3  regs=51 61 17 00 50 F1 5C DC 00 00 0E
+  Inst 41: 'Trombone        ' tuning=3  regs=70 70 20 00 41 6F 15 0E 00 00 0E
+  Inst 42: 'Saxophone 1     ' tuning=3  regs=70 B0 87 08 6F 52 03 25 00 00 08
+  Inst 43: 'Saxophone 2     ' tuning=3  regs=61 61 0E 00 81 75 F5 05 00 00 08
+  Inst 44: 'Saxophone 3     ' tuning=3  regs=60 60 40 00 81 75 F5 05 00 00 08
+  Inst 45: 'Tuba 1          ' tuning=3  regs=70 70 14 00 42 4F 63 07 00 00 08
+  Inst 46: 'Tuba 2          ' tuning=3  regs=31 71 16 00 51 52 26 24 00 00 00
+  Inst 47: 'Clarinet        ' tuning=3  regs=72 31 97 00 51 6F 75 09 00 00 0A
+  Inst 48: 'Horn            ' tuning=3  regs=70 30 4D 00 42 6F 25 06 00 00 06
+  Inst 49: 'Oboe            ' tuning=3  regs=71 76 93 00 40 4F F4 07 00 00 0A
+  Inst 50: 'Flute 1         ' tuning=3  regs=61 71 26 00 61 50 75 F6 00 00 0A
+  Inst 51: 'Flute 2         ' tuning=3  regs=24 22 24 00 A8 9F 17 07 00 00 02
+  Inst 52: 'Flute 3         ' tuning=3  regs=62 71 25 00 64 43 12 26 00 00 0E
+  Inst 53: 'Flute 4         ' tuning=3  regs=61 61 5C 00 56 44 1D 0C 00 00 0A
+  Inst 54: 'Flute 5         ' tuning=3  regs=72 31 17 00 F9 61 61 53 00 00 00
+  Inst 55: 'Synth Flute     ' tuning=3  regs=22 E1 15 80 A4 62 B3 94 00 00 0E
+  Inst 56: 'Piccolo         ' tuning=3  regs=62 72 26 00 61 50 75 F6 00 00 00
+  Inst 57: 'Plucked 1       ' tuning=3  regs=61 61 1B 00 C5 96 F5 F6 00 00 0E
+  Inst 58: 'Plucked 2       ' tuning=3  regs=61 61 18 00 C5 96 F5 F6 00 00 0E
+  Inst 59: 'Plucked 3       ' tuning=3  regs=61 61 1F 00 C5 96 F5 F6 00 00 0E
+  Inst 60: 'Sitar           ' tuning=3  regs=71 75 06 00 F1 F1 72 A2 00 00 00
+  Inst 61: 'Banjo           ' tuning=3  regs=31 36 0D 00 F2 F4 23 99 00 00 0A
+  Inst 62: 'Spanish Guitar 1' tuning=3  regs=B3 B1 52 00 F3 F2 A8 E9 00 00 08
+  Inst 63: 'Spanish Guitar 2' tuning=3  regs=F3 F1 A0 00 B3 D2 A6 E6 00 00 0E
+  Inst 64: 'Fuzz Guitar 1   ' tuning=3  regs=31 12 10 00 F0 F1 67 95 00 00 0C
+  Inst 65: 'Fuzz Guitar 2   ' tuning=3  regs=60 E0 10 0F 71 F4 B6 FA 00 00 0D
+  Inst 66: 'Fuzz Guitar 3   ' tuning=3  regs=70 F0 16 00 F3 FF 02 06 00 00 0E
+  Inst 67: 'Blues Guitar    ' tuning=3  regs=B3 B1 16 00 F3 F2 A8 E9 00 00 08
+  Inst 68: 'Rock Guitar     ' tuning=3  regs=01 11 40 00 C2 D1 FF FF 00 00 08
+  Inst 69: 'Hardrock Guitar ' tuning=3  regs=20 71 0D 00 C1 D5 56 06 00 00 0C
+  Inst 70: 'Wanderer        ' tuning=3  regs=10 14 00 00 F1 F1 F1 11 00 00 08
+  Inst 71: 'Funny Guitar    ' tuning=3  regs=61 65 40 00 F4 F6 1A 7D 00 00 08
+  Inst 72: 'Slide Guitar 1  ' tuning=3  regs=41 64 41 00 F4 FF 22 1F 00 00 06
+  Inst 73: 'Slide Guitar 2  ' tuning=3  regs=12 1A 06 00 A1 80 21 62 00 00 00
+  Inst 74: 'Slide Guitar 3  ' tuning=3  regs=11 18 00 00 EF F1 12 20 00 00 06
+  Inst 75: 'Koto 1          ' tuning=3  regs=73 B1 4D 00 E4 F4 84 94 00 00 00
+  Inst 76: 'Koto 2          ' tuning=3  regs=13 11 0C 00 FC D2 33 83 00 00 0C
+  Inst 77: 'Space Piano     ' tuning=3  regs=30 00 41 00 F1 F1 A0 F7 00 00 04
+  Inst 78: 'Synth Piano     ' tuning=3  regs=60 20 1A 80 F3 F3 24 37 00 00 0A
+  Inst 79: 'Acid Piano      ' tuning=3  regs=F0 31 0A 00 80 81 30 45 00 00 08
+  Inst 80: 'Piano 1         ' tuning=3  regs=21 22 52 40 E1 D3 F4 F6 00 00 0A
+  Inst 81: 'Piano 2         ' tuning=3  regs=01 01 12 10 E3 E3 F3 F6 00 00 06
+  Inst 82: 'Piano 3         ' tuning=3  regs=30 00 41 00 F1 F1 A0 F7 00 00 04
+  Inst 83: 'Piano 4         ' tuning=3  regs=11 11 08 00 FA B2 20 F4 00 00 08
+  Inst 84: 'DX-7 Piano 1    ' tuning=3  regs=30 11 0E 00 D9 B2 11 F4 00 00 02
+  Inst 85: 'DX-7 Piano 2    ' tuning=3  regs=30 11 0E 00 D9 B2 11 F4 00 00 0A
+  Inst 86: 'DX-7 Piano 3    ' tuning=3  regs=30 10 0F 00 D9 B2 10 F3 00 00 08
+  Inst 87: 'Electric Piano 1' tuning=3  regs=33 31 D0 00 91 91 82 85 00 00 06
+  Inst 88: 'Electric Piano 2' tuning=3  regs=60 61 89 00 F2 F1 5A 1A 00 00 00
+  Inst 89: 'Electric Piano 3' tuning=3  regs=13 11 11 00 FA F2 21 F4 00 00 00
+  Inst 90: 'Electric Piano 4' tuning=3  regs=00 00 12 00 E3 E3 F3 F6 00 00 06
+  Inst 91: 'Synth 1         ' tuning=3  regs=60 20 11 80 F3 F3 24 35 00 00 0A
+  Inst 92: 'Synth 2         ' tuning=3  regs=60 22 0D 80 F3 F3 24 35 00 00 0A
+  Inst 93: 'Synth 3         ' tuning=3  regs=72 74 09 00 F1 F1 72 A2 00 00 00
+  Inst 94: 'Synth 4         ' tuning=3  regs=00 41 53 00 E0 82 F8 98 00 00 0E
+  Inst 95: 'Synth 5         ' tuning=3  regs=61 61 15 00 91 91 14 16 00 00 00
+  Inst 96: 'Synth Lead      ' tuning=3  regs=F1 32 0A 01 80 81 30 42 00 00 08
+  Inst 97: 'New Synth       ' tuning=3  regs=40 42 0B 00 94 B0 33 F6 00 00 08
+  Inst 98: 'Wow Synth       ' tuning=3  regs=40 40 8A 00 74 E1 F6 F6 00 00 0A
+  Inst 99: 'Wave Synth      ' tuning=3  regs=20 60 94 47 E3 D2 D5 C5 00 00 0F
+  Inst 100: 'Synth Sweep 1   ' tuning=3  regs=61 61 20 40 21 31 22 02 00 00 0E
+  Inst 101: 'Synth Sweep 2   ' tuning=3  regs=62 22 19 00 54 12 08 D6 00 00 0A
+  Inst 102: 'Heavy Synth     ' tuning=3  regs=60 21 09 80 F3 F3 24 34 00 00 0A
+  Inst 103: 'Base Synth      ' tuning=3  regs=B1 22 87 C0 A2 44 B6 66 00 00 0D
+  Inst 104: 'Smad Synth      ' tuning=3  regs=F1 F2 15 80 72 F1 24 74 00 00 0C
+  Inst 105: 'Dark Synth      ' tuning=3  regs=51 42 13 00 13 10 42 01 00 00 00
+  Inst 106: 'Marimba 1       ' tuning=3  regs=13 10 18 00 F7 F3 56 85 00 00 0C
+  Inst 107: 'Marimba 2       ' tuning=3  regs=40 00 00 00 FA D9 37 04 00 00 00
+  Inst 108: 'Marimba 3       ' tuning=3  regs=12 11 18 00 F7 F3 56 8C 00 00 0C
+  Inst 109: 'Marimba 4       ' tuning=3  regs=14 11 23 00 F7 F3 56 8C 00 00 0C
+  Inst 110: 'Marimba 5       ' tuning=3  regs=72 71 8F 80 B6 B2 43 B7 00 00 0C
+  Inst 111: 'Marimba 6       ' tuning=3  regs=44 61 99 00 F9 F5 2A ED 00 00 0E
+  Inst 112: 'Vibraphone 1    ' tuning=3  regs=F9 F1 DB 00 F5 F3 74 F2 00 00 00
+  Inst 113: 'Vibraphone 2    ' tuning=3  regs=F3 F1 DB 00 F5 F3 74 F7 00 00 00
+  Inst 114: 'Vibraphone 3    ' tuning=3  regs=F9 F1 DB 00 F3 F2 74 F2 00 00 00
+  Inst 115: 'Vibraphone 4    ' tuning=3  regs=25 60 1E 00 FA C3 FC 87 00 00 0A
+  Inst 116: 'Xylophone 1     ' tuning=3  regs=38 32 08 03 F9 F4 F6 F5 00 00 07
+  Inst 117: 'Xylophone 2     ' tuning=3  regs=17 52 18 00 88 D9 66 24 00 00 00
+  Inst 118: 'Bell 1          ' tuning=3  regs=32 30 94 0C F1 F1 21 31 00 00 0A
+  Inst 119: 'Bell 2          ' tuning=3  regs=24 28 4A 00 F2 F1 44 56 00 00 02
+  Inst 120: 'Bell 3          ' tuning=3  regs=B5 B1 15 81 96 D8 63 22 00 00 0E
+  Inst 121: 'Synth Bell      ' tuning=3  regs=73 31 0F 00 C1 F2 CF 4E 00 00 0C
+  Inst 122: 'Space Bell 1    ' tuning=3  regs=6B 63 1A 00 C5 96 F5 F4 00 00 0E
+  Inst 123: 'Space Bell 2    ' tuning=3  regs=A5 C1 04 00 67 61 B8 A5 00 00 04
+  Inst 124: 'Chimes 1        ' tuning=3  regs=3E 32 57 00 F5 F4 74 F3 00 00 00
+  Inst 125: 'Chimes 2        ' tuning=3  regs=43 40 92 00 F4 F2 AA AA 00 00 0E
+  Inst 126: 'Santool         ' tuning=3  regs=19 53 15 00 E7 95 21 03 00 00 0E
+  Inst 127: 'Celeste         ' tuning=3  regs=2D 22 19 00 C6 C6 F6 F5 00 00 01
+  Inst 128: 'Harpsichord 1   ' tuning=3  regs=33 11 0C 00 F1 F3 58 C9 00 00 06
+  Inst 129: 'Harpsichord 2   ' tuning=3  regs=19 53 0C 00 C7 F5 11 03 00 00 00
+  Inst 130: 'Harpsichord 3   ' tuning=3  regs=01 01 11 00 C0 B4 01 F6 00 00 0C
+  Inst 131: 'Clavicode 1     ' tuning=3  regs=03 09 11 00 D2 B4 F4 F4 00 00 0C
+  Inst 132: 'Clavicode 2     ' tuning=3  regs=21 03 0B 00 90 D4 02 F5 00 00 0A
+  Inst 133: 'Organ           ' tuning=3  regs=73 71 16 00 A9 80 11 34 00 00 08
+  Inst 134: 'SF Organ        ' tuning=3  regs=70 61 08 85 B9 F9 26 06 00 00 0D
+  Inst 135: 'Funk Organ      ' tuning=3  regs=F1 32 07 00 80 81 30 49 00 00 08
+  Inst 136: 'Pipe Organ 1    ' tuning=3  regs=73 E0 57 81 86 C2 66 96 00 00 02
+  Inst 137: 'Pipe Organ 2    ' tuning=3  regs=73 E2 4D 81 86 C2 66 96 00 00 02
+  Inst 138: 'Pipe Organ 3    ' tuning=3  regs=21 24 10 16 89 9A 1F 0E 00 00 0B
+  Inst 139: 'Electric Organ 1' tuning=3  regs=F0 F1 12 00 F8 FF 3F 0F 00 00 08
+  Inst 140: 'Electric Organ 2' tuning=3  regs=F0 F2 07 03 F8 F8 18 18 00 00 09
+  Inst 141: 'Warmth 1        ' tuning=3  regs=72 32 19 00 84 42 01 25 00 00 0A
+  Inst 142: 'Warmth 2        ' tuning=3  regs=60 60 17 00 F0 40 00 05 00 00 00
+  Inst 143: 'Chord           ' tuning=3  regs=12 12 16 00 50 40 10 1A 00 00 0E
+  Inst 144: 'New Wave 1      ' tuning=3  regs=30 30 09 C4 82 6B 32 02 00 00 0D
+  Inst 145: 'New Wave 2      ' tuning=3  regs=36 30 0A C4 82 6B 32 02 00 00 0D
+  Inst 146: 'Accordion       ' tuning=3  regs=71 74 10 00 FF 5F 02 07 00 00 0A
+  Inst 147: 'Harmonica       ' tuning=3  regs=71 F4 1B 00 73 3F 02 06 00 00 0E
+  Inst 148: 'MSX-PSG 1       ' tuning=3  regs=32 A1 16 00 C0 C0 20 17 00 00 0E
+  Inst 149: 'MSX-PSG 2       ' tuning=3  regs=72 31 92 00 51 6F 75 09 00 00 0E
+  Inst 150: 'Synth Perc. 1   ' tuning=3  regs=01 03 0B 00 BA D9 25 06 00 00 0E
+  Inst 151: 'Synth Perc. 2   ' tuning=3  regs=00 21 01 00 DA F6 5F FF 00 00 0E
+  Inst 152: 'Harm drum       ' tuning=3  regs=02 03 09 00 CB FF 39 06 00 00 0E
+  Inst 153: 'Bass Drum 1     ' tuning=3  regs=20 20 09 00 FA F6 FF FF 00 00 00
+  Inst 154: 'Bass Drum 2     ' tuning=3  regs=00 01 07 00 CB E3 36 25 00 00 0C
+  Inst 155: 'Chop 1          ' tuning=3  regs=43 61 41 00 F9 F6 FC FC 00 00 00
+  Inst 156: 'Chop 2          ' tuning=3  regs=03 00 04 00 F9 F4 F0 FA 00 00 00
+  Inst 157: 'Electrons 1     ' tuning=3  regs=61 61 0D 00 F5 F4 F5 F5 00 00 06
+  Inst 158: 'Electrons 2     ' tuning=3  regs=61 61 07 00 F6 F5 F5 F5 00 00 06
+  Inst 159: 'Electrons 3     ' tuning=3  regs=72 31 06 00 F4 F2 FA FD 00 00 00
+  Inst 160: 'Bell Percussion ' tuning=3  regs=52 41 2C 00 45 99 FA FA 00 00 00
+  Inst 161: 'Snare Drum      ' tuning=3  regs=20 00 00 00 F1 F7 00 B8 00 00 0E
+  Inst 162: 'Steel Drum 1    ' tuning=3  regs=B3 B2 28 00 F3 F2 92 B4 00 00 0E
+  Inst 163: 'Steel Drum 2    ' tuning=3  regs=61 61 00 00 C5 96 E5 F6 00 00 10
+  Inst 164: 'Open Hihat      ' tuning=3  regs=2F 2F 00 00 F1 A9 00 48 00 00 0E
+  Inst 165: 'Closed Hihat    ' tuning=3  regs=2F 0F 00 00 F1 99 00 B8 00 00 0E
+  Inst 166: 'Comic           ' tuning=3  regs=01 08 0D 00 78 F8 7F F9 00 00 0E
+  Inst 167: 'Nice Sound      ' tuning=3  regs=00 68 02 00 E5 D4 B5 94 00 00 0B
+  Inst 168: 'Alien 1         ' tuning=3  regs=60 76 09 00 12 21 72 21 00 00 00
+  Inst 169: 'Alien 2         ' tuning=3  regs=60 72 0D 00 12 21 72 21 00 00 00
+  Inst 170: 'Invasion        ' tuning=3  regs=61 78 0D 00 85 F2 14 03 00 00 00
+  Inst 171: 'SE-Star         ' tuning=3  regs=51 42 10 00 03 10 42 01 00 00 04
+  Inst 172: 'Sonic 1         ' tuning=3  regs=20 A0 10 00 01 F4 B6 FA 00 00 10
+  Inst 173: 'Sonic 2         ' tuning=3  regs=42 64 1F 40 A4 72 33 24 00 00 0E
+  Inst 174: 'Lo Ho 1         ' tuning=3  regs=02 63 06 02 E5 D4 B7 97 00 00 0B
+  Inst 175: 'Lo Ho 2         ' tuning=3  regs=00 61 06 02 E5 D4 B7 97 00 00 0B
+  Inst 176: 'MB Extra 1      ' tuning=3  regs=61 61 54 00 F5 7C 14 17 00 00 0E
+  Inst 177: 'MB Extra 2      ' tuning=3  regs=02 41 1C 00 B3 C3 AA AA 00 00 0A
+  Inst 178: 'MB Extra 3      ' tuning=3  regs=01 01 4F 00 B3 D3 7C 77 00 00 08
+  Inst 179: 'MB Extra 4      ' tuning=3  regs=31 71 20 00 51 51 16 16 00 00 02
+  Inst 180: 'MB Extra 5      ' tuning=3  regs=22 71 56 00 78 63 06 0A 00 00 02
+  Inst 181: 'MB Extra 6      ' tuning=3  regs=31 34 18 00 F2 62 15 15 00 00 0A
+  Inst 182: 'MB Extra 7      ' tuning=3  regs=71 31 1E 00 A1 D1 16 06 00 00 0E
+  Inst 183: 'MB Extra 8      ' tuning=3  regs=23 21 9C 00 DC 70 28 26 00 00 06
+  Inst 184: 'MB Extra 9      ' tuning=3  regs=61 31 18 00 65 D2 15 05 00 00 0C
+  Inst 185: 'MB Extra 10     ' tuning=3  regs=61 61 0E 00 75 94 36 16 00 00 08
+  Inst 186: 'MB Extra 11     ' tuning=3  regs=13 01 C0 80 B0 B3 BA CA 00 00 00
+  Inst 187: 'MB Extra 12     ' tuning=3  regs=49 C1 67 00 93 D2 BB DB 00 00 06
+  Inst 188: 'MB Extra 13     ' tuning=3  regs=27 02 1D 00 F4 B1 61 F6 00 00 0E
+  Inst 189: 'MB Extra 14     ' tuning=3  regs=04 62 1E 00 F5 F5 F0 F6 00 00 00
+  Inst 190: 'MB Extra 15     ' tuning=3  regs=28 61 63 00 F5 F2 F4 95 00 00 0C
+  Inst 191: 'MB Extra 16     ' tuning=3  regs=00 00 00 00 00 00 00 00 00 00 00
+  Inst 192: 'OPLL Violin     ' tuning=3  regs=71 61 1E 00 D0 78 00 17 00 01 0E
+  Inst 193: 'OPLL Guitar     ' tuning=3  regs=13 41 1A 00 D8 F7 23 13 01 00 0A
+  Inst 194: 'OPLL Piano      ' tuning=3  regs=13 01 59 00 F2 C4 11 23 00 00 00
+  Inst 195: 'OPLL Flute      ' tuning=3  regs=31 61 0E 00 A8 64 70 27 00 00 0E
+  Inst 196: 'OPLL Clarinet   ' tuning=3  regs=32 21 1E 00 E0 76 00 28 00 00 0C
+  Inst 197: 'OPLL Oboe       ' tuning=3  regs=31 22 16 00 E0 71 00 18 00 00 0A
+  Inst 198: 'OPLL Trumpet    ' tuning=3  regs=21 61 1D 00 82 81 10 07 00 00 0E
+  Inst 199: 'OPLL Organ      ' tuning=3  regs=23 21 2D 00 A2 72 00 07 00 01 08
+  Inst 200: 'OPLL Horn       ' tuning=3  regs=61 61 1B 00 64 65 10 17 00 00 0C
+  Inst 201: 'OPLL Synthesizer' tuning=3  regs=41 61 0B 00 85 F7 71 07 01 01 00
+  Inst 202: 'OPLL Harpsichord' tuning=3  regs=13 01 43 00 FA E4 10 04 00 01 02
+  Inst 203: 'OPLL Vibraphone ' tuning=3  regs=17 C1 24 00 F8 F8 22 12 00 00 0E
+  Inst 204: 'OPLL Synth. Bass' tuning=3  regs=61 50 0C 00 C2 F5 20 42 00 00 0A
+  Inst 205: 'OPLL Acoust.Bass' tuning=3  regs=01 01 95 00 C9 95 03 02 00 00 06
+  Inst 206: 'OPLL Elec.Guitar' tuning=3  regs=61 41 49 00 F1 E4 40 13 00 00 06
+
+[0x1ffd] Chunk type 4 (4OP Instruments)  version=0  size=43
+
+[0x202c] Chunk type 5 (WAV Instruments)  version=0  size=38
+
+[0x2056] Chunk type 6 (Patterns)  version=0  size=3
+  Count: 1 patterns, 1 channels each
+  --- Pattern 0 ---
+    CH 0: cum=16  [t16]
+         raw: 90
+
+[0x205d] Chunk type 8 (Pitch Envelopes)  version=0  size=5
+
+[0x2066] Chunk type 0 (Sentinel)  version=0  size=0
+  (end of file)
+
