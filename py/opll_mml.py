@@ -497,7 +497,7 @@ def _assign_voice_ids(segments: dict,
                             'inst=0 user patches treated as all-zero')
                         warned_no_voice_csv = True
                 user_v_num = _get_user_v_num(patch)
-                seg.at_token = f'@{user_v_num}'
+                seg.at_token = f'@v{user_v_num}'
 
             seg.voice_id = _get_voice_id(key)
 
