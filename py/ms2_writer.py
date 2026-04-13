@@ -1238,7 +1238,7 @@ def build_ms2_file(
     else:
         freq_hz = _FREQ_NTSC
 
-    timer_divider  = round(freq_hz * 3840 / bpm)
+    timer_divider  = round(freq_hz * 3840 / bpm)   # 8.8 fixed-point: 3840 = 15 * 256
     ticks_per_step = max(1, round(freq_hz * 15 / bpm))
 
     if debug:
