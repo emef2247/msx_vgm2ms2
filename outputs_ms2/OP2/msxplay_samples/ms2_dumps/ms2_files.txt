@@ -1,5 +1,0 @@
-./opll_rom.MS2
-./preview1.MS2
-./preview2.MS2
-./psg_fm_sample.MS2
-./sx01v.MS2
