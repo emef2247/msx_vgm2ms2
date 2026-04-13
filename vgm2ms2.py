@@ -7,6 +7,7 @@ Only the YM2413 (OPLL) FM channels are exported; PSG and SCC are ignored.
 
 Usage:
     python vgm2ms2.py <vgm_file> [--outdir <dir>] [--bpm <bpm>] [--debug]
+    python vgm2ms2.py --export-inst-libraries <output_dir>
 
 Arguments:
     vgm_file          Path to the input VGM file.
@@ -17,9 +18,41 @@ Arguments:
                       Ignored when --timer 1.
     --debug           Print extra info and dump the generated MS2 structure.
     --compare         Also run ms2_dump.py --compare against ms2_example/TEST.MS2.
+    vgm_file                    Path to the input VGM file.
+    --outdir <dir>              Output directory (default: outputs/<song_stem>/).
+    --bpm <bpm>                 Song tempo in BPM (default: 120).
+    --timer <0|1>               0 = VDP timer (default), 1 = 50 Hz timer.
+    --base-ms2 <path>           MS2 file to use as the base preset instrument
+                                library for song export.  The first 16
+                                instruments from this file map to OPLL presets
+                                1..16.  Instruments beyond index 15 are
+                                ignored; user patches are appended after them.
+    --debug                     Print extra info and dump the generated MS2
+                                structure.
+    --compare                   Also run ms2_dump.py --compare against
+                                ms2_example/TEST.MS2.
+    --export-inst-libraries <dir>
+                                Generate instrument-only MS2 files for all
+                                built-in OPLL preset tables and write them to
+                                <dir>.  Does not require a VGM input file.
+    --inst-lib-mode {converted,raw}
+                                Conversion mode for --export-inst-libraries
+                                (default: converted).
+                                  converted – use opll_patch_to_opl4() which
+                                    maps each OPLL register field to its OPL4
+                                    counterpart (existing behaviour).
+                                  raw – use opll_patch_raw() which packs the
+                                    8-byte OPLL patch bytes directly into the
+                                    OPL4 chunk-3 register fields with no
+                                    additional conversion tables or scaling.
+                                    Useful for experimentation when the
+                                    converted output does not sound as expected.
 
 Example:
     python vgm2ms2.py "inputs/ym2413/Ys-SMS-FM/Ys (FM) - 01 - Feena.vgm" --debug
+    python vgm2ms2.py "song.vgm" --base-ms2 ms2_reference/OP2/YMVOPLL.MS2
+    python vgm2ms2.py --export-inst-libraries out/inst_libraries/
+    python vgm2ms2.py --export-inst-libraries out/raw/ --inst-lib-mode raw
 """
 
 import sys
@@ -31,16 +64,45 @@ sys.path.insert(0, os.path.join(_SCRIPT_DIR, 'py'))
 
 from vgm_reader import parse_vgm
 from opll_mml import _build_segments, _assign_voice_ids, NUM_CH
-from ms2_writer import build_ms2_file
+from ms2_writer import build_ms2_file, build_instrument_library_ms2
 from ms2_dump import dump_ms2, compare_signatures
 from ms2_validate import validate_ms2_bytes
+
+
+def export_inst_libraries(output_dir: str, raw_mode: bool = False) -> None:
+    """Generate one instrument-only MS2 file per built-in OPLL preset table.
+
+    Output filenames follow 8.3 naming as defined in opll_presets.PRESET_LIBRARY_MAP.
+
+    Args:
+        output_dir: Directory in which to write the generated .MS2 files.
+        raw_mode:   When ``True``, use the "raw" packing mode (direct byte
+                    mapping via :func:`ms2_writer.opll_patch_raw`).
+                    When ``False`` (default), use the "converted" mode
+                    (:func:`ms2_writer.opll_patch_to_opl4`).
+    """
+    from opll_presets import PRESET_LIBRARY_MAP
+    os.makedirs(output_dir, exist_ok=True)
+    mode_label = 'raw' if raw_mode else 'converted'
+    for preset_key, (table, filename) in PRESET_LIBRARY_MAP.items():
+        patches = [bytes(row) for row in table[:16]]
+        ms2_bytes = build_instrument_library_ms2(
+            patches=patches,
+            library_name=preset_key[:65],
+            n_presets=16,
+            raw_mode=raw_mode,
+        )
+        out_path = os.path.join(output_dir, filename)
+        with open(out_path, 'wb') as f:
+            f.write(ms2_bytes)
+        print(f"  {filename}  ({len(ms2_bytes)} bytes)  [{preset_key}]  mode={mode_label}")
 
 
 def main():
     parser = argparse.ArgumentParser(
         description='Convert VGM (OPLL/YM2413) to MS2 binary for MoonSound Music Studio'
     )
-    parser.add_argument('vgm_file', help='Input VGM file')
+    parser.add_argument('vgm_file', nargs='?', default=None, help='Input VGM file')
     parser.add_argument(
         '--outdir', default=None,
         help='Output directory (default: outputs/<song_stem>/)'
@@ -54,8 +116,11 @@ def main():
         help='0 = VDP timer (default), 1 = 50 Hz timer'
     )
     parser.add_argument(
-        '--video', default='ntsc', choices=['ntsc', 'pal'],
-        help='Video system: ntsc (default) or pal; only used when --timer 0'
+        '--base-ms2', default=None, metavar='PATH',
+        help=(
+            'Path to an MS2 file to use as the base preset instrument library.'
+            '  The first 16 instruments map to OPLL presets 1..16.'
+        ),
     )
     parser.add_argument(
         '--debug', action='store_true',
@@ -69,11 +134,46 @@ def main():
         '--no-validate', dest='validate', action='store_false', default=True,
         help='Skip post-build validation of Patterns chunk (validation is on by default)'
     )
+    parser.add_argument(
+        '--export-inst-libraries', metavar='DIR', default=None,
+        help=(
+            'Generate instrument-only MS2 files for all built-in OPLL preset'
+            ' tables and write them to DIR.  No VGM input is required.'
+        ),
+    )
+    parser.add_argument(
+        '--inst-lib-mode', choices=['converted', 'raw'], default='converted',
+        metavar='{converted,raw}',
+        help=(
+            'Conversion mode for --export-inst-libraries (default: converted). '
+            '"converted" maps OPLL patch bytes to OPL4 registers using '
+            'opll_patch_to_opl4() (existing behaviour). '
+            '"raw" packs bytes directly into the OPL4 chunk-3 register fields '
+            'using opll_patch_raw() with no additional conversion tables or '
+            'scaling — useful for experimentation.'
+        ),
+    )
     args = parser.parse_args()
+
+    # ── Instrument-library export mode ────────────────────────────────────
+    if args.export_inst_libraries is not None:
+        raw_mode = (args.inst_lib_mode == 'raw')
+        print(f"Exporting instrument libraries to: {args.export_inst_libraries}  (mode={args.inst_lib_mode})")
+        export_inst_libraries(args.export_inst_libraries, raw_mode=raw_mode)
+        print("Done.")
+        return
+
+    # ── Normal song-export mode ───────────────────────────────────────────
+    if args.vgm_file is None:
+        parser.error('vgm_file is required unless --export-inst-libraries is specified')
 
     vgm_path = args.vgm_file
     if not os.path.isfile(vgm_path):
         print(f"ERROR: VGM file not found: {vgm_path}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.base_ms2 and not os.path.isfile(args.base_ms2):
+        print(f"ERROR: --base-ms2 file not found: {args.base_ms2}", file=sys.stderr)
         sys.exit(1)
 
     # ── Derive output directory and stem ─────────────────────────────────
@@ -110,6 +210,9 @@ def main():
     # ── Generate MS2 binary ───────────────────────────────────────────────
     video_label = '' if args.timer == 1 else f', video={args.video}'
     print(f"Generating MS2 (BPM={args.bpm}, timer={args.timer}{video_label}) …")
+    print(f"Generating MS2 (BPM={args.bpm}, timer={args.timer}) …")
+    if args.base_ms2:
+        print(f"  Using base instrument library: {args.base_ms2}")
     ms2_bytes = build_ms2_file(
         segments       = segments,
         voice_csv_path = opll_voice_csv,
@@ -118,6 +221,7 @@ def main():
         timer          = args.timer,
         video          = args.video,
         debug          = args.debug,
+        base_ms2       = args.base_ms2,
     )
 
     # ── Write output file ─────────────────────────────────────────────────
