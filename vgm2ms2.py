@@ -13,6 +13,8 @@ Arguments:
     --outdir <dir>    Output directory (default: outputs/<song_stem>/).
     --bpm <bpm>       Song tempo in BPM (default: 120).
     --timer <0|1>     0 = VDP timer (default), 1 = 50 Hz timer.
+    --video <ntsc|pal> Video system for VDP timer (default: ntsc).
+                      Ignored when --timer 1.
     --debug           Print extra info and dump the generated MS2 structure.
     --compare         Also run ms2_dump.py --compare against ms2_example/TEST.MS2.
 
@@ -50,6 +52,10 @@ def main():
     parser.add_argument(
         '--timer', type=int, default=0, choices=[0, 1],
         help='0 = VDP timer (default), 1 = 50 Hz timer'
+    )
+    parser.add_argument(
+        '--video', default='ntsc', choices=['ntsc', 'pal'],
+        help='Video system: ntsc (default) or pal; only used when --timer 0'
     )
     parser.add_argument(
         '--debug', action='store_true',
@@ -102,13 +108,16 @@ def main():
     print(f"  {n_segs} segments across {NUM_CH} channels")
 
     # ── Generate MS2 binary ───────────────────────────────────────────────
-    print(f"Generating MS2 (BPM={args.bpm}, timer={args.timer}) …")
+    video_label = '' if args.timer == 1 else f', video={args.video}'
+    print(f"Generating MS2 (BPM={args.bpm}, timer={args.timer}{video_label}) …")
     ms2_bytes = build_ms2_file(
         segments       = segments,
         voice_csv_path = opll_voice_csv,
         stem           = base_name,
         bpm            = args.bpm,
         timer          = args.timer,
+        video          = args.video,
+        debug          = args.debug,
     )
 
     # ── Write output file ─────────────────────────────────────────────────

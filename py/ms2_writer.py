@@ -68,11 +68,14 @@ OPLL_PRESET_NAMES: dict[int, str] = {
     15: 'Electric Guitar',
 }
 
-# Default: 75 BPM at 60 Hz NTSC VDP timer.
-# Timer divider formula (8.8 fixed-point, stored as 16-bit integer × 256):
-#   16th-note duration (seconds) = 60 / BPM / 4
-#   At 60 Hz VDP: divider = 16th_note_sec × 60 = 900 / BPM
-#   For 75 BPM: 900 / 75 = 12.0 → 0x0C00 in 8.8 fixed-point (12 << 8 = 0x0C00).
+# Timer interrupt frequencies used for tempo and quantization calculations.
+# SongSettings+67: 0 = VDP timer (NTSC/PAL), 1 = 50 Hz fixed.
+# SongSettings+68: timer divider (16-bit 8.8 fixed-point), = freq_hz * 3840 / bpm.
+_FREQ_NTSC: float = 59.988527908187   # NTSC VDP interrupt frequency (Hz)
+_FREQ_PAL:  float = 50.214039335288   # PAL VDP / 50 Hz fixed interrupt frequency (Hz)
+
+# Deprecated lookup table (60 Hz NTSC approximation, kept for reference).
+# Replaced by the freq-based formula: round(freq_hz * 3840 / bpm).
 _BPM_TO_DIVIDER: dict[int, int] = {
     60:  0x0F00,   # 15.0
     75:  0x0C00,   # 12.0
@@ -956,6 +959,8 @@ def build_ms2_file(
     stem: str,
     bpm: int = 120,
     timer: int = 0,
+    video: str = 'ntsc',
+    debug: bool = False,
 ) -> bytes:
     """Build a complete MS2 binary from OPLL segment data.
 
@@ -965,6 +970,8 @@ def build_ms2_file(
         stem:           Song name (used as description).
         bpm:            Song tempo in BPM (default 120).
         timer:          0 = VDP timer (default), 1 = 50 Hz timer.
+        video:          'ntsc' or 'pal'; only used when timer=0 (VDP).
+        debug:          Print timing diagnostics when True.
 
     Returns raw bytes of the complete .MS2 file.
     """
@@ -973,8 +980,27 @@ def build_ms2_file(
     voice_table, user_patches, _warnings = _assign_voice_ids(segments, voice_csv_path)
 
     # ── Timing parameters ────────────────────────────────────────────────
-    ticks_per_step = round(900 / bpm)                  # at 60 fps
-    timer_divider  = _BPM_TO_DIVIDER.get(bpm, round(900 / bpm) << 8)
+    # Choose interrupt frequency based on timer mode and video system.
+    # timer=1 (50 Hz fixed) always uses PAL frequency regardless of --video.
+    # timer=0 (VDP) uses NTSC or PAL depending on --video.
+    # TODO: timer >= 2 (OPL Timer1, N1 = timer value) is not yet implemented.
+    if timer == 1:
+        freq_hz = _FREQ_PAL
+    elif video == 'pal':
+        freq_hz = _FREQ_PAL
+    else:
+        freq_hz = _FREQ_NTSC
+
+    timer_divider  = round(freq_hz * 3840 / bpm)
+    ticks_per_step = max(1, round(freq_hz * 15 / bpm))
+
+    if debug:
+        bpm2 = freq_hz * 3840 / timer_divider
+        print(f"  freq_hz           = {freq_hz}")
+        print(f"  timer_divider_raw = {timer_divider} (0x{timer_divider:04X}, "
+              f"/{256}: {timer_divider / 256:.6f})")
+        print(f"  ticks_per_step    = {ticks_per_step}")
+        print(f"  implied BPM       = {bpm2:.4f}")
 
     # ── Compute total number of patterns ─────────────────────────────────
     # Use the tick of the last NOTE-ON segment end (not key-off) to avoid

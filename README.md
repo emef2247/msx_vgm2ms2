@@ -1,88 +1,50 @@
-# vgm2mml
-MSX-Music（PSG, OPLL）および SCC の VGM ファイルから、MGSDRV 用 MML を生成するスクリプトです。  
-生成した MML は https://msxplay.com/editor.html にコピー＆ペーストすることで、そのまま再生できます。
+# vgm2ms2
+
+YM2413（OPLL）を使用した VGM ファイルを、MoonSound Music Studio（MS²）用の .MS2 バイナリに変換するスクリプトです。
 
 ## 機能概要
-- VGM（MSX-Music / SCC）を解析し、MGSDRV 形式の MML を自動生成  
-- レジスタアクセスに忠実な MML を出力  h
+
+- YM2413 OPLL FM チャンネルのみをエクスポート（PSG・SCC は無視）
+- NTSC・PAL のビデオシステムに応じたテンポ・量子化計算
+- OPL4 参照音色ライブラリ（MoonBlaster v1.4）を使用
 
 ## 使い方
-x`x
-### コマンド
+
 ```bash
-python vgm2mml.py [-h] [--outdir OUTDIR] [--dump-passes] [--debug]  vgm
+python vgm2ms2.py --outdir <出力ディレクトリ> <入力VGMファイル>
 ```
 
 ### 基本例
-```
-python vgm2mml.py stem.vgm
+
+```bash
+python vgm2ms2.py --outdir out/ mysong.vgm
 ```
 
-出力例：
-outputs/stem/stem.mml
+出力例: `out/mysong.MS2`
 
 ## オプション
+
 | オプション | 説明 |
 |-----------|------|
-| `--outdir OUTDIR` | MML ファイルの出力先ディレクトリを指定 |
-| `--dump-passes` | 中間ファイル（intermediate files）を出力 |
-| `--debug` | デバッグ用ファイルを出力 |
+| `--outdir OUTDIR` | 出力ディレクトリを指定（省略時: `outputs/<stem>/`） |
+| `--bpm BPM` | テンポを BPM で指定（デフォルト: 120） |
+| `--timer 0\|1` | タイマー選択: `0` = VDP タイマー（デフォルト）、`1` = 50 Hz 固定 |
+| `--video ntsc\|pal` | ビデオシステム: `ntsc`（デフォルト）または `pal`。`--timer 0` のときのみ有効 |
+| `--debug` | デバッグ情報（周波数・タイマ除数・量子化）を表示 |
+| `--no-validate` | 生成後の Patterns チャンク検証をスキップ |
 
-## 制限事項 
-- `#alloc` に設定されている値はchごとの文字数です。コンパイル後のバッファサイズに合うよう調整が必要な場合があります
-- OPLLは現状ノートの展開のみに対応しています。音色指定は現状未対応です
+### `--timer` と `--video` の説明
 
-## 注意事項 
-MGSDRV の MML は **コンパイル後、全チャンネルのバッファサイズ合計が 16KB 以内**である必要があります。 しかし **本スクリプトはこの制限を考慮しません**。
-そのため、生成されたMMLが大きすぎる場合は、以下のような調整が必要です
-- `#alloc` の値を手動で調整  
-- マクロ化してデータ量を削減  
+- `--timer 0`（VDP タイマー）の場合：
+  - `--video ntsc`（デフォルト）→ NTSC VDP 割り込み周波数 59.988527... Hz を使用
+  - `--video pal` → PAL VDP 割り込み周波数 50.214039... Hz を使用
+- `--timer 1`（50 Hz 固定）の場合：
+  - `--video` の設定は無視され、常に 50.214039... Hz を使用
+
+テンポ計算式：
+- `SongSettings+68 (timer_divider_raw) = round(freq_hz × 3840 / bpm)`
+- 量子化ステップ数 `ticks_per_step = max(1, round(freq_hz × 15 / bpm))`
 
 ## ライセンス
-MIT License
 
----
-
-
-# vgm2mml
-A script that converts VGM files for MSX-Music (PSG, OPLL) and SCC into MML for MGSDRV.
-The generated MML can be copied and pasted directly into https://msxplay.com/editor.html for playback.
-
-## Overview
-- Automatic conversion: Parses VGM (MSX-Music / SCC) and generates MGSDRV-style MML
-- Register-accurate output: Produces MML that closely reflects the original register writes
-
-## Usage
-To convert a VGM file to MML, use the following command:
-```bash
-python vgm2mml.py [-h] [--outdir OUTDIR] [--dump-passes] [--debug] vgm
-```
-
-### Example
-To convert a stem file:
-```
-python vgm2mml stem.vgm
-```
-The output will be saved in `outputs/<stem>/<stem>.mml`.
-
-## Options
-| Option | Description |
-|--------|-------------|
-| `--outdir OUTDIR` | Specify the output directory for the MML file |
-| `--dump-passes` | Output intermediate files |
-| `--debug` | Output debug files |
-
-## Limitations
-- The value set in `#alloc` is the character count per channel. You may need to adjust it to fit the buffer size after compilation.
-- OPLL support is currently limited to note expansion only. Tone (instrument) assignment is not yet supported.
-
-## Notes
-MGSDRV MML must satisfy the constraint that the total buffer size of all channels after compilation is within 16 KB.
-However, this script does not take that limitation into account.
-
-If the generated MML is too large, you may need to:
-- Manually adjust the `#alloc` values
-- Use macros to reduce data size
-
-## License
 MIT License
