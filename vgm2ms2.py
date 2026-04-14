@@ -207,26 +207,18 @@ def main():
     print(f"  {n_segs} segments across {NUM_CH} channels")
 
     # ── Generate MS2 binary ───────────────────────────────────────────────
-<<<<<<< HEAD
     print(f"Generating MS2 (BPM={args.bpm}, timer={args.timer}) …")
     if args.base_ms2:
         print(f"  Using base instrument library: {args.base_ms2}")
-=======
-    video_label = '' if args.timer == 1 else f', video={args.video}'
-    print(f"Generating MS2 (BPM={args.bpm}, timer={args.timer}{video_label}) …")
->>>>>>> Add PAL/NTSC-aware tempo and quantization for vgm2ms2 exporter
     ms2_bytes = build_ms2_file(
         segments       = segments,
         voice_csv_path = opll_voice_csv,
         stem           = base_name,
         bpm            = args.bpm,
         timer          = args.timer,
-<<<<<<< HEAD
         base_ms2       = args.base_ms2,
-=======
         video          = args.video,
         debug          = args.debug,
->>>>>>> Add PAL/NTSC-aware tempo and quantization for vgm2ms2 exporter
     )
 
     # ── Write output file ─────────────────────────────────────────────────

@@ -1238,7 +1238,12 @@ def build_ms2_file(
     else:
         freq_hz = _FREQ_NTSC
 
-    timer_divider  = round(freq_hz * 3840 / bpm)   # 8.8 fixed-point: 3840 = 15 * 256
+    # Use floor to bias timer divider to the lower integer (selects the
+    # slightly faster quantisation slot for the given nominal BPM).
+    # Example: for NTSC and bpm=120 raw≈1919.6329 -> floor->1919 -> implied BPM≈120.03
+    timer_divider  = int(math.floor(freq_hz * 3840 / bpm))  # 8.8 fixed-point: 3840 = 15 * 256
+    # Ensure stays in 16-bit range and at least 1
+    timer_divider  = max(1, min(0xFFFF, timer_divider))
     ticks_per_step = max(1, round(freq_hz * 15 / bpm))
 
     if debug:
