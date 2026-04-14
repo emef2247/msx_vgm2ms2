@@ -14,6 +14,8 @@ Arguments:
     --outdir <dir>              Output directory (default: outputs/<song_stem>/).
     --bpm <bpm>                 Song tempo in BPM (default: 120).
     --timer <0|1>               0 = VDP timer (default), 1 = 50 Hz timer.
+    --video <ntsc|pal>          Video system for VDP timer (default: ntsc).
+                                Ignored when --timer 1.
     --base-ms2 <path>           MS2 file to use as the base preset instrument
                                 library for song export.  The first 16
                                 instruments from this file map to OPLL presets
@@ -110,9 +112,14 @@ def main():
     parser.add_argument(
         '--base-ms2', default=None, metavar='PATH',
         help=(
-            'Path to an MS2 file to use as the base preset instrument library.'
-            '  The first 16 instruments map to OPLL presets 1..16.'
+            'Path to an MS2 file to use as the base preset instrument library. '
+            'The first 16 instruments map to OPLL presets 1..16.'
         ),
+    )
+
+    parser.add_argument(
+        '--video', default='ntsc', choices=['ntsc', 'pal'],
+        help='Video system: ntsc (default) or pal; only used when --timer 0',
     )
     parser.add_argument(
         '--debug', action='store_true',
@@ -200,16 +207,26 @@ def main():
     print(f"  {n_segs} segments across {NUM_CH} channels")
 
     # ── Generate MS2 binary ───────────────────────────────────────────────
+<<<<<<< HEAD
     print(f"Generating MS2 (BPM={args.bpm}, timer={args.timer}) …")
     if args.base_ms2:
         print(f"  Using base instrument library: {args.base_ms2}")
+=======
+    video_label = '' if args.timer == 1 else f', video={args.video}'
+    print(f"Generating MS2 (BPM={args.bpm}, timer={args.timer}{video_label}) …")
+>>>>>>> Add PAL/NTSC-aware tempo and quantization for vgm2ms2 exporter
     ms2_bytes = build_ms2_file(
         segments       = segments,
         voice_csv_path = opll_voice_csv,
         stem           = base_name,
         bpm            = args.bpm,
         timer          = args.timer,
+<<<<<<< HEAD
         base_ms2       = args.base_ms2,
+=======
+        video          = args.video,
+        debug          = args.debug,
+>>>>>>> Add PAL/NTSC-aware tempo and quantization for vgm2ms2 exporter
     )
 
     # ── Write output file ─────────────────────────────────────────────────
