@@ -17,7 +17,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
-from opll_mml import _build_segments, _opll_note, NUM_CH
+from opll_mml import _build_segments, _opll_note, detect_num_ch
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -189,11 +189,11 @@ def build_song_settings_data(
     description: str,
     n_patterns: int,
     n_tunings: int,
+    n_channels: int,
     n_2op_inst: int,
     n_4op_inst: int = 1,
     n_wav_inst: int = 1,
     n_pitch_env: int = 1,
-    n_channels: int = NUM_CH,
     timer: int = 0,
     timer_divider: int = 0x0C00,
     modulation_depth: int = 0xC0,
@@ -486,7 +486,13 @@ def _build_step_grid(
     total_steps: int,
 ) -> dict:
     grid: dict[tuple, tuple] = {}
-    for ch in range(NUM_CH):
+    # Iterate over all channel indices present in 'segments' (not only NUM_CH).
+    # Rhythm channels may be added at indices >= NUM_CH, so include them.
+    if segments:
+        max_ch = max(segments.keys())
+    else:
+        max_ch = NUM_CH - 1
+    for ch in range(max_ch + 1):
         segs = segments.get(ch, [])
         assignments: dict[int, tuple] = {}
         keyoff_steps: set = set()
@@ -712,11 +718,11 @@ def build_instrument_library_ms2(
         description        = library_name[:65],
         n_patterns         = 1,
         n_tunings          = n_tunings,
+        n_channels         = 1,
         n_2op_inst         = preset_count,
         n_4op_inst         = 1,
         n_wav_inst         = 1,
         n_pitch_env        = 1,
-        n_channels         = 1,
         timer              = 0,
         timer_divider      = 0x0C00,
     )
@@ -777,19 +783,20 @@ def build_ms2_file(
 
     # Compute n_patterns from last note segment end
     last_note_end_tick = 0
-    for ch in range(NUM_CH):
+    num_ch = max(segments.keys()) + 1
+    for ch in range(num_ch):
         for seg in segments.get(ch, []):
             if seg.keyon:
                 last_note_end_tick = max(last_note_end_tick, seg.tick_end)
     if last_note_end_tick == 0:
-        for ch in range(NUM_CH):
+        for ch in range(num_ch):
             for seg in segments.get(ch, []):
                 last_note_end_tick = max(last_note_end_tick, seg.tick_end)
     n_patterns = max(1, math.ceil(last_note_end_tick / (ticks_per_step * STEPS_PER_PATTERN)))
 
     # Determine active channels (ensure melody_count >= 9 for MS2 output)
     active_channels = []
-    melody_count = max(NUM_CH, 9)
+    melody_count = max(num_ch, 9)
     max_seg_ch = max(list(segments.keys())) if segments else (melody_count - 1)
     desired_max = max(max_seg_ch, melody_count - 1)
     if rhythm_instruments:
@@ -861,7 +868,7 @@ def build_ms2_file(
     # Assign rhythm instruments to their logical channels if appended
     if rhythm_name_to_idx:
         for idx, name in enumerate(['BD', 'SD', 'TOM', 'TCT', 'HH']):
-            orig_ch = NUM_CH + idx
+            orig_ch = num_ch + idx
             if orig_ch in active_channels:
                 out_idx = active_channels.index(orig_ch)
                 inst_idx = rhythm_name_to_idx.get(name)
@@ -869,7 +876,7 @@ def build_ms2_file(
                     starting_instruments[out_idx] = inst_idx
 
     # Ensure minimum channels for OPLL export:
-    melody_min = max(NUM_CH, 9)
+    melody_min = max(num_ch, 9)
     if rhythm_instruments:
         required = melody_min + 5
         if n_channels < required:
@@ -892,8 +899,8 @@ def build_ms2_file(
         description     = description,
         n_patterns      = n_patterns,
         n_tunings       = n_tunings,
-        n_2op_inst      = n_2op_inst,
         n_channels      = n_channels,
+        n_2op_inst      = n_2op_inst,
         timer           = timer,
         timer_divider   = timer_divider,
         starting_instruments = starting_instruments,

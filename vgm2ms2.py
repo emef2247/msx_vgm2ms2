@@ -57,7 +57,7 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_SCRIPT_DIR, 'py'))
 
 from vgm_reader import parse_vgm
-from opll_mml import _build_segments, _assign_voice_ids, NUM_CH
+from opll_mml import _build_segments, _assign_voice_ids
 from ms2_writer import build_ms2_file, build_instrument_library_ms2
 from ms2_dump import dump_ms2, compare_signatures
 from ms2_validate import validate_ms2_bytes
@@ -202,10 +202,10 @@ def main():
 
     # ── Build OPLL segments ───────────────────────────────────────────────
     print("Building OPLL segments …")
-    segments = _build_segments(opll_trace_csv)
+    segments, num_ch = _build_segments(opll_trace_csv)
     n_segs = sum(len(v) for v in segments.values())
-    print(f"  {n_segs} segments across {NUM_CH} channels")
-
+    print(f"  {n_segs} segments across {num_ch} channels")
+    
     # ── Generate MS2 binary ───────────────────────────────────────────────
     print(f"Generating MS2 (BPM={args.bpm}, timer={args.timer}) …")
     if args.base_ms2:
