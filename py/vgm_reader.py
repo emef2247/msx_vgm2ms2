@@ -444,9 +444,9 @@ class _OpllState:
       type='instVol' – per-channel inst/vol change with current patch snapshot
     """
 
-    NUM_CH = 6
+    NUM_CH = 9   # 0..8:melody, 6:BD, 7:SD/HH, 8:TOM/CYM when rhy=1
 
-    _HEADER       = '#type,time,ch,ticks,keyon,fnum,block,inst,vol'
+    _HEADER = ('#type,time,ch,ticks,keyon,fnum,block,inst,vol,is_ryt,bd,sd,tom,tc,hh,fnum_ch6,vol_ch6,fnum_ch7,vol_ch7,fnum_ch8,vol_ch8')
     _VOICE_HEADER = '#type,time,ch,ticks,inst,vol,patch_hex'
     _REGS_HEADER  = '#type,time,ticks,addr,val,ch'
 
@@ -454,18 +454,25 @@ class _OpllState:
         self._global_time = 0.0
         self._start_time: float | None = None   # None = not yet initialised
         self._common_time = 0.0
-
-        self.fnum_low  = [0] * self.NUM_CH   # 8-bit LSB of Fnum (ch0..5)
-        self.key_blk   = [0] * self.NUM_CH   # raw reg 0x20+ch value (ch0..5)
-        self.inst_vol  = [0] * self.NUM_CH   # raw reg 0x30+ch value (ch0..5)
-        self.user_patch = [0] * 8             # raw regs 0x00-0x07 (user patch)
-        self.rhythm_mode = 0                  # bit5 of reg 0x0E
-
+        self.fnum_low  = [0] * self.NUM_CH      # 8-bit LSB of Fnum (ch0..8)
+        self.key_blk   = [0] * self.NUM_CH      # raw reg 0x20+ch value (ch0..8)
+        self.inst_vol  = [0] * self.NUM_CH      # raw reg 0x30+ch value (ch0..8)
+        self.user_patch = [0] * 8               # raw regs 0x00-0x07 (user patch)
+        self.rhythm_mode = 0                    # bit5 of reg 0x0E (just for reference)
+        self.rhythm_history = []                # [ (tick, regval) ]
+        
+        # ch6-8　fnum & vol information needed for both of merody and rythm
+        self._fnum_ch6 = 0
+        self._vol_ch6  = 0
+        self._fnum_ch7 = 0
+        self._vol_ch7  = 0
+        self._fnum_ch8 = 0
+        self._vol_ch8  = 0
+        
         self.log_buf        = {ch: [] for ch in range(self.NUM_CH)}
         self.trace_buf: list[str] = []
         self.voice_trace_buf: list[str] = []   # chronological voice events
         self.regs_trace_buf: list[str] = []    # all YM2413 writes (extended)
-
     # ── time ────────────────────────────────────────────────────
     def _update_time(self, time_s: float):
         self._global_time = time_s
@@ -494,10 +501,32 @@ class _OpllState:
         """Current user patch as a 16-char hex string (8 bytes)."""
         return ''.join(f'{b:02x}' for b in self.user_patch)
 
+    @staticmethod
+    def _decode_rhythm_bits(regval):
+        is_ryt = (regval >> 5) & 1
+        bits = regval & 0x1F
+        bd  = (bits >> 0) & 1
+        sd  = (bits >> 1) & 1
+        tom = (bits >> 2) & 1
+        tc  = (bits >> 3) & 1
+        hh  = (bits >> 4) & 1
+        return is_ryt, bd, sd, tom, tc, hh
+        
+    def _rhythm_fields_at_tick(self, ticks):
+        # (tick, regval) are stored in self.rhythm_history
+        last_val = 0
+        for t, v in self.rhythm_history:
+            if t > ticks:
+                break
+            last_val = v
+        return self._decode_rhythm_bits(last_val)
+        
     # ── CSV row builder ─────────────────────────────────────────
+
     def _row(self, ch: int, type_: str) -> str:
         t     = self._common_time
         ticks = get_ticks(t)
+        is_ryt, bd, sd, tom, tc, hh = self._rhythm_fields_at_tick(ticks)
         cols = [
             type_, repr(t), str(ch), str(ticks),
             str(self._keyon(ch)),
@@ -505,9 +534,13 @@ class _OpllState:
             str(self._block(ch)),
             str(self._inst(ch)),
             str(self._vol(ch)),
+            str(is_ryt), str(bd), str(sd), str(tom), str(tc), str(hh),
+            str(self._fnum_ch6), str(self._vol_ch6),
+            str(self._fnum_ch7), str(self._vol_ch7),
+            str(self._fnum_ch8), str(self._vol_ch8),
         ]
         return ','.join(cols)
-
+        
     def _voice_row(self, type_: str, ch: int, inst: int, vol: int) -> str:
         t     = self._common_time
         ticks = get_ticks(t)
@@ -528,13 +561,27 @@ class _OpllState:
         row = self._row(ch, type_)
         self.log_buf[ch].append(row)
         self.trace_buf.append(row)
-
+        
+    def _log_rhythm_event(self, type_: str, regval: int):
+        t     = self._common_time
+        ticks = get_ticks(t)
+        is_ryt, bd, sd, tom, tc, hh = self._decode_rhythm_bits(regval)
+        cols = [
+            type_, repr(t), '-1', str(ticks), '', '', '', '', '',
+            str(is_ryt), str(bd), str(sd), str(tom), str(tc), str(hh),
+            str(self._fnum_ch6), str(self._vol_ch6),
+            str(self._fnum_ch7), str(self._vol_ch7),
+            str(self._fnum_ch8), str(self._vol_ch8),
+        ]
+        self.trace_buf.append(','.join(cols))
+        
+        
     # ── main write entry point ───────────────────────────────────
     def write(self, time_s: float, address: int, value: int):
         self._update_time(time_s)
         a = address
         v = value
-
+    
         # ── Extended register trace: capture every YM2413 write ──
         # Determine type and logical channel for the regs CSV row.
         if 0x00 <= a <= 0x07:
@@ -552,20 +599,18 @@ class _OpllState:
         else:
             _type, _ch = 'raw', -1
         self.regs_trace_buf.append(self._regs_row(_type, a, v, _ch))
-
-        # ── Per-channel melody state machine (ch0..5) ────────────
-        # The extended regs trace (above) captures ch0..8; the melody
-        # state machine below intentionally processes only ch0..5.
-        if 0x00 <= a <= 0x07:
-            # User patch register update (global, all channels)
-            self.user_patch[a] = v & 0xFF
-            row = self._voice_row('patch', -1, 0, 0)
-            self.voice_trace_buf.append(row)
-        elif a == 0x0E:
-            # Rhythm control: bit5=rhythm-mode, bits0-4=rhythm instruments on/off.
-            # Stored for future rhythm-mode processing (e.g. decoding ch6..8 notes).
-            self.rhythm_mode = (v >> 5) & 0x01
-        elif 0x10 <= a <= 0x15:
+        
+        t = self._common_time
+        ticks = get_ticks(t)
+        
+        # Record Rhythm register
+        if a == 0x0E:
+            self.rhythm_mode = (v >> 5) & 1
+            self.rhythm_history.append((ticks, v))
+            self._log_rhythm_event('rhythm', v)
+        # NOTE: OPLLメロディch 0-5のみにlog/trace出力（Tclと同じ）
+        # ただしリズム情報付きで出す
+        if 0x10 <= a <= 0x15:
             ch = a - 0x10
             self.fnum_low[ch] = v & 0xFF
             self._log(ch, 'fNumL')
@@ -577,24 +622,47 @@ class _OpllState:
             ch = a - 0x30
             self.inst_vol[ch] = v & 0xFF
             self._log(ch, 'instVol')
-            # Also emit to voice CSV so opll_mml.py can build the voice table
             row = self._voice_row('instVol', ch, self._inst(ch), self._vol(ch))
             self.voice_trace_buf.append(row)
-        # 0x0F (test), 0x16-0x18, 0x26-0x28, 0x36-0x38 (ch6..8 / rhythm vols)
-        # are already captured in regs_trace_buf above.
+        elif 0x00 <= a <= 0x07:
+            self.user_patch[a] = v & 0xFF
+            row = self._voice_row('patch', -1, 0, 0)
+            self.voice_trace_buf.append(row)
 
+        # ch6-8書き込み: NOTEとして必ずtraceバッファに出力 + ch6-8カラム更新
+        # FNUM
+        if a == 0x16:
+            self._fnum_ch6 = v & 0xFF
+            self._log(6, 'NOTE')
+        if a == 0x17:
+            self._fnum_ch7 = v & 0xFF
+            self._log(7, 'NOTE')
+        if a == 0x18:
+            self._fnum_ch8 = v & 0xFF
+            self._log(8, 'NOTE')
+        # VOL
+        if a == 0x36:
+            self._vol_ch6 = v & 0xFF
+            self._log(6, 'NOTE')
+        if a == 0x37:
+            self._vol_ch7 = v & 0xFF
+            self._log(7, 'NOTE')
+        if a == 0x38:
+            self._vol_ch8 = v & 0xFF
+            self._log(8, 'NOTE')
     # ── CSV output ───────────────────────────────────────────────
     def output_trace_csv(self, out_path: str):
         """Write chronological trace CSV (all channels interleaved by time)."""
+        header = "#type,time,ch,ticks,keyon,fnum,block,inst,vol,is_ryt,bd,sd,tom,tc,hh,fnum_ch6,vol_ch6,fnum_ch7,vol_ch7,fnum_ch8,vol_ch8"
         with open(out_path, 'w', newline='\n') as fh:
-            fh.write(self._HEADER + '\n')
+            fh.write(header + '\n')
             for row in self.trace_buf:
                 fh.write(row + '\n')
-
     def output_log_csv(self, out_path: str):
         """Write per-channel grouped log CSV."""
+        header = "#type,time,ch,ticks,keyon,fnum,block,inst,vol,is_ryt,bd,sd,tom,tc,hh,fnum_ch6,vol_ch6,fnum_ch7,vol_ch7,fnum_ch8,vol_ch8"
         with open(out_path, 'w', newline='\n') as fh:
-            fh.write(self._HEADER + '\n')
+            fh.write(header + '\n')
             for ch in range(self.NUM_CH):
                 for row in self.log_buf[ch]:
                     fh.write(row + '\n')

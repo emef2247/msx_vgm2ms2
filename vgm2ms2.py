@@ -57,7 +57,7 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_SCRIPT_DIR, 'py'))
 
 from vgm_reader import parse_vgm
-from opll_mml import _build_segments, _assign_voice_ids
+from opll_mml import _build_segments, _assign_voice_ids, _assign_voice_ids
 from ms2_writer import build_ms2_file, build_instrument_library_ms2
 from ms2_dump import dump_ms2, compare_signatures
 from ms2_validate import validate_ms2_bytes
