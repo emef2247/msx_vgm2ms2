@@ -746,6 +746,7 @@ def build_instrument_library_ms2(
         + _sentinel_chunk()
     )
     return ms2_bytes
+    
 def build_ms2_file(
     segments: dict,
     voice_csv_path: str | None,
@@ -757,6 +758,119 @@ def build_ms2_file(
     debug: bool = False,
     rhythm_instruments: dict | None = None,
 ) -> bytes:
+    """
+    New segment仕様 (has_melody)のみ対応したMS2ビルド関数
+    """
+    from opll_mml import _assign_voice_ids
+    voice_table, user_patches, _warnings = _assign_voice_ids(segments, voice_csv_path)
+
+    # 1. Timing params (既存通り)
+    if timer == 1:
+        freq_hz = _FREQ_PAL
+    elif video == 'pal':
+        freq_hz = _FREQ_PAL
+    else:
+        freq_hz = _FREQ_NTSC
+
+    timer_divider  = int(math.floor(freq_hz * 3840 / bpm))
+    timer_divider  = max(1, min(0xFFFF, timer_divider))
+    ticks_per_step = max(1, round(freq_hz * 15 / bpm))
+
+    # 2. 有効ch列挙・パターン数算出 (旧ロジック通り)
+    num_ch = max(segments.keys()) + 1
+    melody_count = max(num_ch, 9)
+    max_seg_ch = max(list(segments.keys())) if segments else (melody_count - 1)
+    desired_max = max(max_seg_ch, melody_count - 1)
+    desired_max = min(desired_max, 16)
+    active_channels = []
+    for ch in range(desired_max + 1):
+        # Melodyのchに限定
+        if any(getattr(seg, "has_melody", False) for seg in segments.get(ch, [])):
+            active_channels.append(ch)
+    n_channels = max(1, len(active_channels))
+    if n_channels < melody_count:
+        n_channels = melody_count
+
+    # 3. ベースMS2等のロード（既存通り）
+    if base_ms2 is not None:
+        tunings_data, instruments_data, n_tunings, n_2op_inst = _load_library_from_ms2(base_ms2, max_presets=16)
+    else:
+        tunings_data, instruments_data, n_tunings, n_2op_inst = _load_reference_library()
+
+    # 4. ユーザーパッチ追記（既存通り）
+    ref_count = n_2op_inst
+    if user_patches:
+        extra_records = b''
+        for v_num in sorted(user_patches):
+            patch_bytes = user_patches[v_num]
+            opl4 = opll_patch_to_opl4(patch_bytes)
+            name = f'User Patch v{v_num}'
+            extra_records += _build_2op_instrument(opl4, tuning_idx=0, name=name)
+        new_total = ref_count + len(user_patches)
+        instruments_data = struct.pack('<H', new_total) + instruments_data[2:] + extra_records
+        n_2op_inst = new_total
+
+    # 5. メロディに限ったremapped_segmentsを生成
+    remapped_segments = {}
+    for new_ch, orig_ch in enumerate(active_channels):
+        filtered = [
+            seg for seg in segments.get(orig_ch, [])
+            if getattr(seg, "has_melody", False)
+        ]
+        remapped_segments[new_ch] = filtered
+
+    # 6. パターン数見積もり
+    last_note_end_tick = 0
+    for ch in remapped_segments:
+        for seg in remapped_segments[ch]:
+            if getattr(seg, "keyon", False):
+                last_note_end_tick = max(last_note_end_tick, seg.tick_end)
+    if last_note_end_tick == 0:
+        for ch in remapped_segments:
+            for seg in remapped_segments[ch]:
+                last_note_end_tick = max(last_note_end_tick, seg.tick_end)
+    n_patterns = max(1, math.ceil(last_note_end_tick / (ticks_per_step * STEPS_PER_PATTERN)))
+
+    # 7. 楽器割当リスト
+    starting_instruments = _get_starting_instruments(remapped_segments, n_channels, n_2op_inst, ticks_per_step, user_patches=user_patches, ref_count=ref_count)
+    if len(starting_instruments) < n_channels:
+        starting_instruments += [0] * (n_channels - len(starting_instruments))
+
+    # 8. パターンバイナリ
+    channel_event_lists = segments_to_patterns(
+        remapped_segments, ticks_per_step, n_patterns, n_channels, n_2op_inst, user_patches=user_patches, ref_count=ref_count
+    )
+
+    # 9. Song Settings & chunk build
+    description = stem[:65]
+    song_settings = build_song_settings_data(
+        description          = description,
+        n_patterns           = n_patterns,
+        n_tunings            = n_tunings,
+        n_channels           = n_channels,
+        n_2op_inst           = n_2op_inst,
+        timer                = timer,
+        timer_divider        = timer_divider,
+        starting_instruments = starting_instruments,
+    )
+    patterns_data   = build_patterns_chunk_data(channel_event_lists, n_patterns, n_channels)
+    four_op_data    = build_4op_instruments_chunk_data(1)
+    wav_data        = build_wav_instruments_chunk_data(1)
+    pitch_env_data  = build_pitch_envelopes_chunk_data(1)
+
+    ms2_bytes = (
+        MS2_SIGNATURE
+        + _build_chunk(1, song_settings)
+        + _build_chunk(2, tunings_data)
+        + _build_chunk(3, instruments_data)
+        + _build_chunk(4, four_op_data)
+        + _build_chunk(5, wav_data)
+        + _build_chunk(6, patterns_data)
+        + _build_chunk(8, pitch_env_data)
+        + _sentinel_chunk()
+    )
+    return ms2_bytes
+    
     """Build a complete MS2 binary from OPLL segment data.
     """
     from opll_mml import _assign_voice_ids  # noqa: PLC0415

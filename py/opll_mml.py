@@ -8,6 +8,7 @@ Channels: dynamic (auto-detect from CSV, supports 6~9~)
 import sys
 import os
 import math
+import csv
 
 sys.path.insert(0, os.path.dirname(__file__))
 from mml_utils import (
@@ -116,15 +117,34 @@ def parse_opll_regs_for_rhythm(regs_csv_path):
 # -----------------------------------------------------------------------------
 class _Segment:
     """
-    Segment for one OPLL channel (now with voice_id/rhythm info)
+    Segment for one OPLL channel (now with extended fields for rhythm support)
+    - has_melody: True if this segment is a melody note (NOTE系で、ch=0-5 or is_ryt=0のch=6-8)
+    - has_rhythm: True if this segment is a rhythm trigger (type=rhythm, is_ryt=1)
+    NOTE:
+      - All NOTE rows always generate a segment for ch=0..8 (even ch6-8 during rhythm mode, 
+        always reflecting the register write, but melody flag logic as per the spec below)
+      - For ch6-8:
+            is_ryt==0 → has_melody=True
+            is_ryt==1 → has_melody=False
+      - Rhythm trigger events only: type="rhythm" with is_ryt==1 (see below)
     """
     __slots__ = (
-        'tick_start','tick_end','keyon','fnum','block','inst','vol',
-        'voice_id','is_ryt','bd','sd','tom','tc','hh','at_token'
+        'tick_start', 'tick_end', 'keyon', 'fnum', 'block', 'inst', 'vol',
+        'voice_id', 'is_ryt', 'bd', 'sd', 'tom', 'tc', 'hh',
+        'fnum_ch6', 'vol_ch6', 'fnum_ch7', 'vol_ch7', 'fnum_ch8', 'vol_ch8',
+        'has_melody', 'has_rhythm',
+        'at_token'
     )
-    def __init__(self, tick_start, keyon, fnum, block, inst, vol):
+
+    def __init__(
+        self, tick_start, keyon, fnum, block, inst, vol,
+        is_ryt=0, bd=0, sd=0, tom=0, tc=0, hh=0,
+        fnum_ch6=0, vol_ch6=0, fnum_ch7=0, vol_ch7=0, fnum_ch8=0, vol_ch8=0,
+        has_melody=False, has_rhythm=False
+    ):
         self.tick_start = tick_start
         self.tick_end   = tick_start
+        # Melody fields:
         self.keyon      = keyon
         self.fnum       = fnum
         self.block      = block
@@ -132,97 +152,159 @@ class _Segment:
         self.vol        = vol
         # Extended fields:
         self.voice_id   = -1
-        self.is_ryt     = 0
-        self.bd         = 0
-        self.sd         = 0
-        self.tom        = 0
-        self.tc         = 0
-        self.hh         = 0
-        self.at_token   = ""
+        self.at_token   = ''
+        # Rhythm fields
+        self.is_ryt     = is_ryt
+        self.bd         = bd
+        self.sd         = sd
+        self.tom        = tom
+        self.tc         = tc
+        self.hh         = hh
+        self.fnum_ch6   = fnum_ch6
+        self.vol_ch6    = vol_ch6
+        self.fnum_ch7   = fnum_ch7
+        self.vol_ch7    = vol_ch7
+        self.fnum_ch8   = fnum_ch8
+        self.vol_ch8    = vol_ch8
+        # Segmentation contents:
+        self.has_melody = has_melody
+        self.has_rhythm = has_rhythm
 
     def mml_vol(self): return 15 - self.vol
 
 # -----------------------------------------------------------------------------
 # Build per-channel segment lists from the trace CSV - with dynamic NUM_CH
 # -----------------------------------------------------------------------------
-def _build_segments(trace_path, rhythm_reg_timeline=None) -> (dict, int):
-    NUM_CH = detect_num_ch(trace_path)
-    ch_events = {ch: [] for ch in range(NUM_CH)}
-    rhythm_state = RhythmState()
-    rhythm_time_map = {} # tick -> RhythmState tuple
+def _build_segments(trace_path) -> (dict, int):
+    """
+    Build per-channel segment lists from trace.opll.csv (all OPLL register writes).
+    Implementation notes (see also comments in the _Segment class):
 
-    # 1. Rhythm: build timeline from reg events if given
-    if rhythm_reg_timeline is not None:
-        for tick, regval in rhythm_reg_timeline:
-            rhythm_state.update(regval, tick)
-            rhythm_time_map[tick] = rhythm_state.as_tuple()
+    - type=NOTE: for every ch=0..8, always create a segment. (Register update must not be missed!)
+      - ch=0-5: always has_melody=True
+      - ch=6-8: 
+        * is_ryt==0: has_melody=True
+        * is_ryt==1: has_melody=False (physical write only for correct state; does not participate as melody)
+      - has_rhythm is never set by type=NOTE segments (remains False)
+      - NOTE: For ch=6,7,8, fnum_ch6/ch7/ch8, vol_ch6/ch7/ch8も物理的な実データ反映
 
-    # 2. Parse trace into per-channel lists of events
-    with open(trace_path, 'r') as fh:
-        for line in fh:
-            if not line or line.startswith('#'):
+    - type=rhythm:
+      - is_ryt==1: Rhythm trigger event. For each instrument (BD, SD/HH, TOM/TC), 
+        if its value is non-zero (i.e. ON, 0->1), append a segment for the corresponding channel (ch6,7,8) with has_rhythm=True.
+      - is_ryt==0: Not a trigger, just a control/off event. Do not generate rhythm segments (has_rhythm=False, not appended).
+    """
+    FIELD_INDICES = {
+        'type': 0, 'time': 1, 'ch': 2, 'ticks': 3, 'keyon': 4, 'fnum': 5, 'block': 6,
+        'inst': 7, 'vol': 8, 'is_ryt': 9, 'bd': 10, 'sd': 11, 'tom': 12, 'tc': 13, 'hh': 14,
+        'fnum_ch6': 15, 'vol_ch6': 16, 'fnum_ch7': 17, 'vol_ch7': 18, 'fnum_ch8': 19, 'vol_ch8': 20
+    }
+    segments: dict[int, list] = {}
+    max_ch = -1
+    with open(trace_path, newline='') as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        if header[0].startswith('#'):
+            header = next(reader)
+        for row in reader:
+            if not row or row[0].startswith('#'):
                 continue
-            parts = line.rstrip().split(',')
-            if len(parts) < 9:
-                continue
-            try:
-                ch    = int(parts[_COL_CH])
-                ticks = int(parts[_COL_TICKS])
-                keyon = int(parts[_COL_KEYON])
-                fnum  = int(parts[_COL_FNUM])
-                block = int(parts[_COL_BLOCK])
-                inst  = int(parts[_COL_INST])
-                vol   = int(parts[_COL_VOL])
-            except Exception:
-                continue
-            ch_events[ch].append((ticks, keyon, fnum, block, inst, vol))
+            typ = row[FIELD_INDICES['type']]
+            def get_int(idx, default=0):
+                try:
+                    v = row[idx]
+                    if v == '' or v is None:
+                        return default
+                    return int(float(v))
+                except Exception:
+                    return default
+            ch    = get_int(FIELD_INDICES['ch'], -1)
+            ticks = get_int(FIELD_INDICES['ticks'])
+            if ch > max_ch:
+                max_ch = ch
 
-    # 3. Tick grouping/final-state evaluation → build segments per channel
-    segments = {ch: [] for ch in range(NUM_CH)}
-    for ch in range(NUM_CH):
-        events = ch_events[ch]
-        if not events:
-            continue
-        state = None
-        cur_seg = None
-        i = 0
-        n = len(events)
-        while i < n:
-            tick = events[i][0]
-            # Group by tick (for OPLL final-state trick)
-            j = i
-            while j < n and events[j][0] == tick:
-                j += 1
-            # Final state in group:
-            _, keyon, fnum, block, inst, vol = events[j-1]
-            if cur_seg is None:
-                cur_seg = _Segment(tick, keyon, fnum, block, inst, vol)
-            else:
-                changed = (
-                    cur_seg.keyon != keyon or cur_seg.fnum != fnum or
-                    cur_seg.block != block or cur_seg.inst != inst or cur_seg.vol != vol
-                )
-                if changed:
-                    cur_seg.tick_end = tick
-                    segments[ch].append(cur_seg)
-                    cur_seg = _Segment(tick, keyon, fnum, block, inst, vol)
+            if typ == 'NOTE':
+                is_ryt = get_int(FIELD_INDICES['is_ryt'])
+                # Melody determination
+                if 0 <= ch <= 5:
+                    has_melody = True
+                elif 6 <= ch <= 8:
+                    has_melody = (is_ryt == 0)
                 else:
-                    cur_seg.tick_end = tick
-            # Attach rhythm fields (grab latest prev)
-            if rhythm_time_map:
-                ticks_list = [k for k in rhythm_time_map if k <= tick]
-                if ticks_list:
-                    last_tick = max(ticks_list)
-                    rytvals = rhythm_time_map[last_tick]
-                    (cur_seg.is_ryt, cur_seg.bd, cur_seg.sd,
-                     cur_seg.tom, cur_seg.tc, cur_seg.hh) = rytvals
-            i = j
-        if cur_seg:
-            cur_seg.tick_end = events[-1][0]
-            segments[ch].append(cur_seg)
-    return segments, NUM_CH
+                    has_melody = False
+                seg = _Segment(
+                    tick_start = ticks,
+                    keyon      = get_int(FIELD_INDICES['keyon']),
+                    fnum       = get_int(FIELD_INDICES['fnum']),
+                    block      = get_int(FIELD_INDICES['block']),
+                    inst       = get_int(FIELD_INDICES['inst']),
+                    vol        = get_int(FIELD_INDICES['vol']),
+                    is_ryt     = is_ryt,
+                    bd         = get_int(FIELD_INDICES['bd']),
+                    sd         = get_int(FIELD_INDICES['sd']),
+                    tom        = get_int(FIELD_INDICES['tom']),
+                    tc         = get_int(FIELD_INDICES['tc']),
+                    hh         = get_int(FIELD_INDICES['hh']),
+                    fnum_ch6   = get_int(FIELD_INDICES['fnum_ch6']),
+                    vol_ch6    = get_int(FIELD_INDICES['vol_ch6']),
+                    fnum_ch7   = get_int(FIELD_INDICES['fnum_ch7']),
+                    vol_ch7    = get_int(FIELD_INDICES['vol_ch7']),
+                    fnum_ch8   = get_int(FIELD_INDICES['fnum_ch8']),
+                    vol_ch8    = get_int(FIELD_INDICES['vol_ch8']),
+                    has_melody = has_melody,
+                    has_rhythm = False,
+                )
+                segments.setdefault(ch, []).append(seg)
 
+            elif typ == 'rhythm':
+                is_ryt = get_int(FIELD_INDICES['is_ryt'])
+                base_ticks = ticks
+                # Rhythm trigger only if is_ryt==1, for each instrument with a value
+                if is_ryt == 1:
+                    f6, v6 = get_int(FIELD_INDICES['fnum_ch6']), get_int(FIELD_INDICES['vol_ch6'])
+                    if f6 or v6:
+                        seg = _Segment(
+                            tick_start = base_ticks, keyon=1, fnum=f6, block=0, inst=0, vol=v6,
+                            is_ryt=is_ryt, bd=1, sd=0, tom=0, tc=0, hh=0,
+                            fnum_ch6=f6, vol_ch6=v6,
+                            fnum_ch7=0, vol_ch7=0,
+                            fnum_ch8=0, vol_ch8=0,
+                            has_melody=False, has_rhythm=(is_ryt == 1),
+                        )
+                        segments.setdefault(6, []).append(seg)
+                    f7, v7 = get_int(FIELD_INDICES['fnum_ch7']), get_int(FIELD_INDICES['vol_ch7'])
+                    if f7 or v7:
+                        seg = _Segment(
+                            tick_start = base_ticks, keyon=1, fnum=f7, block=0, inst=0, vol=v7,
+                            is_ryt=is_ryt, bd=0, sd=1, tom=0, tc=0, hh=1,
+                            fnum_ch6=0, vol_ch6=0,
+                            fnum_ch7=f7, vol_ch7=v7,
+                            fnum_ch8=0, vol_ch8=0,
+                            has_melody=False, has_rhythm=(is_ryt == 1),
+                        )
+                        segments.setdefault(7, []).append(seg)
+                    f8, v8 = get_int(FIELD_INDICES['fnum_ch8']), get_int(FIELD_INDICES['vol_ch8'])
+                    if f8 or v8:
+                        seg = _Segment(
+                            tick_start = base_ticks, keyon=1, fnum=f8, block=0, inst=0, vol=v8,
+                            is_ryt=is_ryt, bd=0, sd=0, tom=1, tc=1, hh=0,
+                            fnum_ch6=0, vol_ch6=0,
+                            fnum_ch7=0, vol_ch7=0,
+                            fnum_ch8=f8, vol_ch8=v8,
+                            has_melody=False, has_rhythm=(is_ryt == 1),
+                        )
+                        segments.setdefault(8, []).append(seg)
+                # is_ryt==0: off/control, no rhythm segments generated
 
+    # Assign tick_end for all segments in each channel
+    for ch, segs in segments.items():
+        segs.sort(key=lambda seg: seg.tick_start)
+        n = len(segs)
+        for i, seg in enumerate(segs):
+            next_tick = segs[i+1].tick_start if i+1 < n else (seg.tick_start + 1)
+            seg.tick_end = next_tick
+
+    num_ch = max_ch + 1 if max_ch >= 0 else 9
+    return segments, num_ch
 # ---------------------------------------------------------------------------
 # Voice table: voice CSV columns
 # ---------------------------------------------------------------------------
@@ -441,7 +523,7 @@ def _assign_voice_ids(segments: dict,
     warned_no_voice_csv = False
     warned_no_patch_events = False
     for ch in range(NUM_CH):
-        for seg in segments[ch]:
+        for seg in segments.get(ch, []):
             if seg.inst != 0:
                 key = ('preset', seg.inst)
                 seg.at_token = f'@{seg.inst}'
@@ -811,7 +893,7 @@ def process_opll_csv(trace_path, output_dir, stem=None,
         with open(seg_path, 'w', newline='\n') as fh:
             fh.write('#ch,tick_start,tick_end,keyon,fnum,block,inst,vol,voice_id,at_token\n')
             for ch in range(NUM_CH):
-                for seg in segments[ch]:
+                for seg in segments.get(ch, []):
                     fh.write(f'{ch},{seg.tick_start},{seg.tick_end},'
                              f'{seg.keyon},{seg.fnum},{seg.block},'
                              f'{seg.inst},{seg.vol},{seg.voice_id},{seg.at_token}\n')
