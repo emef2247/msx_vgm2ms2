@@ -193,11 +193,11 @@ NUM_CH = 18  # ch=0~17
 
 # rhythmチャンネル mapping
 RHYTHM_CH_MAP = {
-    "bd": 10,  # Bass Drum
-    "sd": 11,  # Snare Drum
-    "tom": 12, # Tom
-    "tc": 13,  # Top Cymbal
-    "hh": 14,  # Hi-Hat
+    "bd": 9,  # Bass Drum
+    "sd": 10,  # Snare Drum
+    "tom": 11, # Tom
+    "tc": 12,  # Top Cymbal
+    "hh": 13,  # Hi-Hat
 }
 
 RHYTHM_VOICE_ID_MAP = {
@@ -224,150 +224,6 @@ class Segment:
     def __repr__(self):
         return (f"Seg(ch={self.ch}, tick={self.tick_start}-{self.tick_end}, keyon={self.keyon}, "
                 f"fnum={self.fnum}, block={self.block}, inst={self.inst}, vol={self.vol}, sus={self.sus}, voice_id={self.voice_id})")
-def _build_segments(trace_csv_path):
-    """
-    Create MS2 channel segments from extended opll trace.csv.
-    Melody channels 0..8 are segmented using the legacy "tick-based final-state + retrigger" approach for accurate note grouping.
-    Rhythm channels (BD/SD/TOM/TC/HH) are expanded (multi-channel) using the modern/new-style approach: each rhythm event is decoded and mapped to the correct output channel.
-
-    Assumes columns: ch, ticks, keyon, fnum, block, inst, vol, sus, and optionally rhythm fields.
-    RHYTHM_CH_MAP example: dict(bd=13, sd=14, tom=15, tc=16, hh=17)
-    RHYTHM_VOICE_ID_MAP example: dict(bd=xx, sd=yy, ...) for mapping to instrument table.
-    """
-
-    # --- Maintain per-channel melody event lists (for channels 0-8) ---
-    # This separates melodic content from rhythm for accurate note grouping.
-    melody_events = {ch: [] for ch in range(9)}
-
-    # --- All-channel segment output, including rhythm channels ---
-    events_by_ch = {ch: [] for ch in range(NUM_CH)}
-
-    # --- Local state tracker for melody channel logic ---
-    class _ChState:
-        def __init__(self):
-            self.keyon = 0
-            self.fnum = 0
-            self.block = 0
-            self.inst = 0
-            self.vol = 0
-        def copy(self):
-            x = _ChState()
-            x.keyon = self.keyon; x.fnum = self.fnum; x.block = self.block
-            x.inst = self.inst; x.vol = self.vol
-            return x
-
-    state = [ _ChState() for _ in range(9) ]
-
-    # --- Rhythm channel helpers ---
-    # For each rhythm key (bd, sd, tom, etc) track last seen state
-    RHYTHM_KEYS = list(RHYTHM_CH_MAP.keys()) if RHYTHM_CH_MAP else []
-    rhythm_last = {k: dict(tick=0, on=0, fnum=0, vol=0, sus=0) for k in RHYTHM_KEYS}
-
-    # --- 1. Parse trace.csv into melody & rhythm events ---
-    with open(trace_csv_path, "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            typ = row['#type'] if '#type' in row else row.get('type','')
-            ch = int(row['ch'])
-            tick = int(row['ticks'])
-            keyon = int(row['keyon']) if 'keyon' in row and row['keyon'] != '' else 0
-            fnum  = int(row['fnum'])  if 'fnum'  in row and row['fnum']  != '' else 0
-            block = int(row['block']) if 'block' in row and row['block'] != '' else 0
-            inst  = int(row['inst'])  if 'inst'  in row and row['inst']  != '' else 0
-            vol   = int(row['vol'])   if 'vol'   in row and row['vol']   != '' else 0
-            sus   = int(row['sus'])   if 'sus'   in row and row['sus']   != '' else 0
-
-            # --- Melody: use legacy segmentation (extremely robust and legato/attack-friendly) ---
-            if typ != "rhythm" and 0 <= ch < 9:
-                # All per-note/param melody events are grouped tick-wise for legacy state tracking
-                melody_events[ch].append((tick, keyon, fnum, block, inst, vol))
-
-            # --- Rhythm: expand and write segments for each rhythm instrument on change ---
-            elif typ == "rhythm" and int(row.get('is_ryt', 0)) == 1 and RHYTHM_CH_MAP:
-                for trg, chidx in RHYTHM_CH_MAP.items():
-                    # bd_v is the keyon/active ON state for this rhythm instrument
-                    bd_v = int(row.get(trg, '0'))
-                    # Additional parameters for rhythm: fnum, vol, sus may be per-instrument or per-ch
-                    fnumX = int(row.get(f'fnum_ch{6+(trg=="sd")+(trg=="tom" or trg=="tc")}', '0'))
-                    volX  = int(row.get(f'vol_ch{6+(trg=="sd")+(trg=="tom" or trg=="tc")}', '0'))
-                    susX  = int(row.get(f'sus_ch{6+(trg=="sd")+(trg=="tom" or trg=="tc")}', '0'))
-                    prev = rhythm_last[trg]
-                    voice_id = RHYTHM_VOICE_ID_MAP[trg] if RHYTHM_VOICE_ID_MAP else 0
-                    changed = (
-                        prev['on'] != bd_v or
-                        prev['fnum'] != fnumX or
-                        prev['vol'] != volX or
-                        prev['sus'] != susX
-                    )
-                    if changed:
-                        # If parameters changed, previous segment ends at this tick.
-                        if events_by_ch[chidx]:
-                            events_by_ch[chidx][-1].tick_end = tick
-                        # Start a new segment for this rhythm instrument.
-                        seg = Segment(prev['tick'], tick, chidx, bd_v, fnumX, 0, voice_id, volX, susX, voice_id)
-                        events_by_ch[chidx].append(seg)
-                    # Always update last seen state for rhythm key.
-                    prev.update(dict(tick=tick, on=bd_v, fnum=fnumX, vol=volX, sus=susX))
-
-    # --- 2. Segmentation for melody channels (tick-based + hidden retrigger) ---
-    # For every channel, group events that share a tick before evaluation to ensure correct legato.
-    # Segments are cut for keyon/keyoff, pitch, instrument or volume changes, or whenever a "hidden retrigger" is detected:
-    # (i.e., a keyoff and keyon in the same tick). In this case, a zero-length keyoff segment is inserted.
-    for ch in range(9):
-        events = melody_events[ch]
-        if not events:
-            continue
-        cur_seg = None
-        i = 0
-        n = len(events)
-        state_ch = _ChState()
-        while i < n:
-            tick = events[i][0]
-            # Collect all events at this tick
-            j = i
-            while j < n and events[j][0] == tick:
-                j += 1
-            tick_has_keyoff = any(ev[1] == 0 for ev in events[i:j])
-            for _, keyon, fnum, block, inst, vol in events[i:j]:
-                state_ch.keyon = keyon
-                state_ch.fnum = fnum
-                state_ch.block = block
-                state_ch.inst = inst
-                state_ch.vol = vol
-            if cur_seg is None:
-                # First event always starts new segment
-                cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, 0, 0)
-            else:
-                # "Hidden retrigger" handling: if previous segment was ON but there is both a keyoff and keyon,
-                # we must cut a zero-length keyoff segment for MS2/MGS compatibility and faithful replay.
-                hidden_retrigger = (cur_seg.keyon == 1 and tick_has_keyoff and state_ch.keyon == 1)
-                keyon_edge   = (state_ch.keyon == 1 and cur_seg.keyon == 0)
-                keyoff_edge  = (state_ch.keyon == 0 and cur_seg.keyon == 1)
-                pitch_change = ((state_ch.fnum, state_ch.block) != (cur_seg.fnum, cur_seg.block) and state_ch.keyon == 1)
-                inst_change  = (state_ch.inst != cur_seg.inst and state_ch.keyon == 1)
-                vol_change   = (state_ch.vol != cur_seg.vol and state_ch.keyon == 1)
-                if hidden_retrigger:
-                    cur_seg.tick_end = tick
-                    events_by_ch[ch].append(cur_seg)
-                    # Insert zero-length keyoff to match VGM/MS2 retrigger semantics
-                    off_seg = Segment(tick, tick, ch, 0, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, 0, 0)
-                    events_by_ch[ch].append(off_seg)
-                    cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, 0, 0)
-                elif keyon_edge or keyoff_edge or pitch_change or inst_change or vol_change:
-                    cur_seg.tick_end = tick
-                    events_by_ch[ch].append(cur_seg)
-                    cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, 0, 0)
-                else:
-                    # Continue current segment
-                    cur_seg.tick_end = tick
-            i = j
-        if cur_seg is not None:
-            if cur_seg.tick_end is None:
-                # Final segment closes at last event's tick
-                cur_seg.tick_end = events[-1][0]
-            events_by_ch[ch].append(cur_seg)
-
-    return events_by_ch  # Output: dict{ch: [Segment, ...]} for all channels
 
 def _build_segments(trace_csv_path):
     """
