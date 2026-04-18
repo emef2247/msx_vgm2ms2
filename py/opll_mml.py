@@ -328,40 +328,56 @@ def _build_segments(trace_csv_path):
             j = i
             while j < n and events[j][0] == tick:
                 j += 1
+                
+            # Detect whether this tick group contains a keyoff event.
+            # Used below to identify hidden keyoff→keyon retriggers.
             tick_has_keyoff = any(ev[1] == 0 for ev in events[i:j])
+            
+            # Apply all events in this tick group (final-state evaluation).
+            # INST/VOL writes that arrive after KeyOn at the same tick are
+            # intentionally captured this way (Requirement 1).                
             for _, keyon, fnum, block, inst, vol in events[i:j]:
                 state_ch.keyon = keyon
                 state_ch.fnum = fnum
                 state_ch.block = block
                 state_ch.inst = inst
                 state_ch.vol = vol
+                
+            # Evaluate state at end of this tick group
             if cur_seg is None:
                 # First event always starts new segment
-                cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, 0, 0)
+                cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, 0, 0)                
             else:
-                # "Hidden retrigger" handling: if previous segment was ON but there is both a keyoff and keyon,
-                # we must cut a zero-length keyoff segment for MS2/MGS compatibility and faithful replay.
+                # Hidden retrigger: previous segment was ON, this tick group
+                # contains a keyoff event, but the final state is also ON.
+                # The intermediate keyoff would be lost by final-state
+                # evaluation, so we force an explicit zero-length keyoff
+                # segment as a retrigger boundary (Requirement 2).                
                 hidden_retrigger = (cur_seg.keyon == 1 and tick_has_keyoff and state_ch.keyon == 1)
-                keyon_edge   = (state_ch.keyon == 1 and cur_seg.keyon == 0)
-                keyoff_edge  = (state_ch.keyon == 0 and cur_seg.keyon == 1)
-                pitch_change = ((state_ch.fnum, state_ch.block) != (cur_seg.fnum, cur_seg.block) and state_ch.keyon == 1)
-                inst_change  = (state_ch.inst != cur_seg.inst and state_ch.keyon == 1)
-                vol_change   = (state_ch.vol != cur_seg.vol and state_ch.keyon == 1)
                 if hidden_retrigger:
                     cur_seg.tick_end = tick
                     events_by_ch[ch].append(cur_seg)
-                    # Insert zero-length keyoff to match VGM/MS2 retrigger semantics
+                    # Zero-length keyoff marker (tick_start == tick_end == tick)
                     off_seg = Segment(tick, tick, ch, 0, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, 0, 0)
                     events_by_ch[ch].append(off_seg)
                     cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, 0, 0)
-                elif keyon_edge or keyoff_edge or pitch_change or inst_change or vol_change:
-                    cur_seg.tick_end = tick
-                    events_by_ch[ch].append(cur_seg)
-                    cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, 0, 0)
                 else:
-                    # Continue current segment
-                    cur_seg.tick_end = tick
+                    # Check for normal state change that requires a new segment
+                    keyon_edge   = (state_ch.keyon == 1 and cur_seg.keyon == 0)
+                    keyoff_edge  = (state_ch.keyon == 0 and cur_seg.keyon == 1)
+                    pitch_change = ((state_ch.fnum, state_ch.block) != (cur_seg.fnum, cur_seg.block) and state_ch.keyon == 1)
+                    inst_change  = (state_ch.inst != cur_seg.inst and state_ch.keyon == 1)
+                    vol_change   = (state_ch.vol != cur_seg.vol   and state_ch.keyon == 1)
+                    
+                    if keyon_edge or keyoff_edge or pitch_change or inst_change or vol_change:
+                        cur_seg.tick_end = tick
+                        events_by_ch[ch].append(cur_seg)
+                        cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, 0, 0)
+                    else:
+                        # Continue current segment
+                        cur_seg.tick_end = tick
             i = j
+        # Close the last segment
         if cur_seg is not None:
             if cur_seg.tick_end is None:
                 # Final segment closes at last event's tick
