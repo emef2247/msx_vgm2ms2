@@ -202,7 +202,8 @@ def main():
 
     # ── Build OPLL segments ───────────────────────────────────────────────
     print("Building OPLL segments …")
-    segments, num_ch = _build_segments(opll_trace_csv)
+    num_ch = 18
+    segments = _build_segments(opll_trace_csv)
     n_segs = sum(len(v) for v in segments.values())
     print(f"  {n_segs} segments across {num_ch} channels")
     

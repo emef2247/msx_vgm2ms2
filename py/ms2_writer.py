@@ -48,7 +48,7 @@ OPLL_ROM_PATCHES: dict[int, bytes] = {
     12: bytes([0x32, 0x21, 0x15, 0x00, 0xf6, 0xaa, 0x00, 0x00]),  # Vibraphone
     13: bytes([0x01, 0x02, 0x1d, 0x07, 0xf3, 0xf5, 0x00, 0x00]),  # Synth Bass
     14: bytes([0x21, 0x22, 0x08, 0x00, 0xf6, 0xf3, 0x00, 0x00]),  # Acoustic Bass
-    15: bytes([0x21, 0x62, 0x1b, 0x07, 0xf5, 0xf6, 0x00, 0x00]),  # Electric Guitar
+    15: bytes([0x21, 0x62, 0x1b, 0x07, 0xf5, 0xf6, 0x00, 0x00]),  # Electric Guitar  
 }
 
 OPLL_PRESET_NAMES: dict[int, str] = {
@@ -70,6 +70,42 @@ OPLL_PRESET_NAMES: dict[int, str] = {
     15: 'Electric Guitar',
 }
 
+MS2_TUNINIG = [
+(0,'Equal Temp.',[0, 128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280, 1408]),
+(1,'MB Amiga detune',[-3, 125, 255, 381, 514, 640, 768, 898, 1026, 1152, 1279, 1413]),
+(2,'MB turboR detune',[0, 128, 256, 384, 511, 640, 767, 896, 1024, 1152, 1279, 1408]),
+(3,'MB FM Editor T-3',[-46, 80, 212, 342, 470, 600, 732, 862, 990, 1120, 1250, 1380]),
+(4,'MB FM Editor T-2',[-34, 92, 222, 352, 480, 610, 742, 870, 998, 1128, 1258, 1386]),
+(5,'MB FM Editor T-1',[-20, 106, 236, 364, 490, 620, 752, 880, 1006, 1136, 1264, 1392]),
+(6,'MB FM Editor T+0',[-8, 118, 246, 374, 500, 630, 760, 888, 1014, 1144, 1272, 1400]),
+(7,'MB FM Editor T+1',[4, 130, 258, 384, 510, 640, 770, 896, 1022, 1152, 1280, 1406]),
+(8,'MB FM Editor T+2',[16, 142, 268, 396, 522, 648, 778, 904, 1030, 1158, 1286, 1412]),
+(9,'MB FM Editor T+3',[30, 154, 280, 406, 532, 658, 788, 912, 1038, 1166, 1294, 1420]),
+(10,'MB FM Player T-3',[-40, 86, 218, 348, 476, 606, 738, 866, 994, 1124, 1254, 1382]),
+(11,'MB FM Player T-2',[-28, 98, 228, 358, 486, 616, 746, 874, 1002, 1132, 1262, 1390]),
+(12,'MB FM Player T-1',[-16, 110, 240, 368, 496, 624, 756, 884, 1010, 1140, 1268, 1396]),
+(13,'MB FM Player T+0',[-2, 124, 252, 380, 506, 634, 764, 892, 1018, 1148, 1276, 1404]),
+(14,'MB FM Player T+1',[10, 136, 264, 390, 516, 644, 774, 898, 1026, 1154, 1282, 1408]),
+(15,'MB FM Player T+2',[24, 148, 274, 400, 526, 654, 782, 908, 1034, 1162, 1290, 1416]),
+(16,'MB FM Player T+3',[36, 160, 286, 412, 536, 664, 792, 916, 1042, 1170, 1298, 1424]),
+(17,'MB WAV detune -3',[-13, 104, 232, 362, 491, 620, 749, 878, 1007, 1136, 1266, 1394]),
+(18,'MB WAV detune -2',[-9, 111, 240, 369, 498, 627, 756, 884, 1013, 1142, 1271, 1399]),
+(19,'MB WAV detune -1',[-4, 120, 248, 377, 505, 633, 762, 890, 1018, 1147, 1276, 1403]),
+(20,'MB WAV detune +1',[8, 136, 263, 391, 519, 646, 774, 902, 1029, 1157, 1285, 1412]),
+(21,'MB WAV detune +2',[17, 144, 271, 399, 526, 653, 780, 907, 1034, 1162, 1290, 1417]),
+(22,'MB WAV detune +3',[25, 152, 279, 406, 533, 659, 786, 913, 1040, 1167, 1295, 1422]),
+]
+  
+MS2_RHYTHM_INSTRUMENTS = [
+(15,'Bass Drum 1     ',0,bytes([0x20,0x20,0x09,0x00,0xFA,0xF6,0xFF,0xFF,0x00,0x00,0x00])),
+(16,'Snare Drum      ',0,bytes([0x20,0x00,0x00,0x00,0xF1,0xF7,0x00,0xB8,0x00,0x00,0x0E])),
+(17,'Acid drum       ',0,bytes([0x04,0x00,0x03,0x0D,0xF9,0xF9,0xF9,0xF9,0x00,0x00,0x00])),
+(18,'Closed Hihat    ',0,bytes([0x2F,0x0F,0x00,0x00,0xF1,0x99,0x00,0xB8,0x00,0x00,0x0E])),
+(19,'Cymbal          ',0,bytes([0x02,0x02,0x00,0x00,0x33,0x33,0x73,0x73,0x00,0x00,0x03])),
+]
+
+# 例:
+# build_inst_ms2_from_text(INST_LIST_TEXT, "MyCustomLibrary.MS2")
 # Timer interrupt frequencies used for tempo and quantization calculations.
 # SongSettings+67: 0 = VDP timer (NTSC/PAL), 1 = 50 Hz fixed.
 # SongSettings+68: timer divider (16-bit 8.8 fixed-point), = freq_hz * 3840 / bpm.
@@ -89,7 +125,55 @@ _BPM_TO_DIVIDER: dict[int, int] = {
 STEPS_PER_PATTERN = 16      # MS2 whole-note = 16 steps (16th-note granularity)
 TICKS_PER_STEP_75BPM = 12   # at 60 fps, 75 BPM: 1/16 note = 12 ticks
 
+def build_tunings_chunk_data_from_list(tuning_defs):
+    """
+    tuning_defs: [(idx, name, [offsets12]), ...]
+    """
+    count = len(tuning_defs)
+    buf = struct.pack('<H', count)
+    for idx, name, cents in tuning_defs:
+        tb = bytearray(208)
+        for o in range(96):
+            octave = o // 12
+            note   = o % 12
+            val = cents[note] + octave * 128
+            struct.pack_into('<h', tb, o*2, val)
+        tb[192:208] = (name.encode('ascii', errors='replace') + b' '*16)[:16]
+        buf += tb
+    return buf
 
+def build_2op_instruments_chunk_data_from_list(instlist):
+    """
+    instlist: list of (idx, name, tuning_idx, bytes11)
+    """
+    data = struct.pack('<H', len(instlist))
+    for idx, name, tuning, regbytes in instlist:
+        buf = bytearray(30)
+        buf[0] = tuning   # tuning index
+        # buf[1], buf[2] reserved (0)
+        buf[3:14] = regbytes  # 11バイト
+        name_enc = (name.encode('ascii', 'replace') + b' '*16)[:16]
+        buf[14:30] = name_enc
+        data += buf
+    return data
+    
+def build_tunings_chunk_data_from_defs(defs):
+    """
+    [(name, [offsets12])...]からチャンク2形式バイト列を生成
+    """
+    count = len(defs)
+    buf = struct.pack('<H', count)
+    for name, cents in defs:
+        tb = bytearray(208)
+        for o in range(96):
+            octave = o // 12
+            note   = o % 12
+            val = cents[note] + octave * 128 * 1  # 1=純正律ベースだがMS2仕様による
+            struct.pack_into('<h', tb, o*2, val)
+        tb[192:208] = (name.encode('ascii', errors='replace') + b' '*16)[:16]
+        buf += tb
+    return buf
+    
 # ---------------------------------------------------------------------------
 # YM2413 → OPL4 register mapping
 # ---------------------------------------------------------------------------
@@ -746,6 +830,7 @@ def build_instrument_library_ms2(
         + _sentinel_chunk()
     )
     return ms2_bytes
+ 
 def build_ms2_file(
     segments: dict,
     voice_csv_path: str | None,
@@ -757,156 +842,112 @@ def build_ms2_file(
     debug: bool = False,
     rhythm_instruments: dict | None = None,
 ) -> bytes:
-    """Build a complete MS2 binary from OPLL segment data.
     """
-    from opll_mml import _assign_voice_ids  # noqa: PLC0415
+    MS2ファイル生成: メロディはbase_ms2優先(1～15、index 0～14)、16～はリズム etc.
+    """
+
+    from opll_mml import _assign_voice_ids
     voice_table, user_patches, _warnings = _assign_voice_ids(segments, voice_csv_path)
 
-    # Timing params
+    NUM_CH = 18
+
+    # ==== チューニング/メロディ音色取得 ====
+    if base_ms2 is not None:
+        tunings_data, instruments_data, n_tunings, melody_count = _load_library_from_ms2(
+            base_ms2, max_presets=15  # *index 0～14に15音色がある前提
+        )
+    else:
+        tunings_data, instruments_data, n_tunings, melody_count = _load_reference_library()
+
+    # ==== 既存メロディ音色を抽出 ====
+    # instruments_data: chunk3。先頭2バイトは個数、以下30バイトずつ
+    n_melody = min(melody_count, 15)
+    melody_records = [instruments_data[2+i*30:2+(i+1)*30] for i in range(n_melody)]
+    all_instruments = list(melody_records)
+
+    # ==== リズム/追加音色を11byte→30byte形式へ追記 ====
+    # MS2_RHYTHM_INSTRUMENTS = [(idx, name, tuning_idx, bytes11), ...]
+    for inst in MS2_RHYTHM_INSTRUMENTS:
+        idx, name, tuning_idx, bytes11 = inst
+        buf = bytearray(30)
+        buf[0] = tuning_idx
+        # buf[1:3] ← 0
+        buf[3:14] = bytes11
+        buf[14:30] = (name.encode('ascii', 'replace') + b' ' * 16)[:16]
+        all_instruments.append(bytes(buf))
+
+    n_2op_inst = len(all_instruments)
+
+    # ==== User Patch追記 ====
+    ref_count = n_2op_inst
+    if user_patches:
+        for v_num in sorted(user_patches):
+            patch_bytes = user_patches[v_num]
+            reg = opll_patch_to_opl4(patch_bytes)
+            reg_order = [0x20,0x21,0x40,0x41,0x60,0x61,0x80,0x81,0xE0,0xE1,0xC0]
+            buf = bytearray(30)
+            buf[0] = 0  # tuning
+            buf[3:14] = bytes([reg[r]&0xFF for r in reg_order])
+            name = f'User Patch v{v_num}'
+            buf[14:30] = (name.encode('ascii', 'replace') + b' ' * 16)[:16]
+            all_instruments.append(bytes(buf))
+    n_2op_inst = len(all_instruments)
+
+    # ==== instrumentsチャンク再構築 ====
+    instruments_data = struct.pack('<H', n_2op_inst) + b''.join(all_instruments)
+
+    if debug:
+        print(f"[build_ms2_file] base_ms2={base_ms2} melody_count={melody_count} n2op={n_2op_inst}")
+
+    # ==== テンポ・タイミング ====
     if timer == 1:
         freq_hz = _FREQ_PAL
     elif video == 'pal':
         freq_hz = _FREQ_PAL
     else:
         freq_hz = _FREQ_NTSC
-
-    timer_divider  = int(math.floor(freq_hz * 3840 / bpm))
-    timer_divider  = max(1, min(0xFFFF, timer_divider))
+    timer_divider = int(math.floor(freq_hz * 3840 / bpm))
+    timer_divider = max(1, min(0xFFFF, timer_divider))
     ticks_per_step = max(1, round(freq_hz * 15 / bpm))
 
-    if debug:
-        bpm2 = freq_hz * 3840 / timer_divider
-        print(f"  freq_hz           = {freq_hz}")
-        print(f"  timer_divider_raw = {timer_divider} (0x{timer_divider:04X}, /{256}: {timer_divider / 256:.6f})")
-        print(f"  ticks_per_step    = {ticks_per_step}")
-        print(f"  implied BPM       = {bpm2:.4f}")
-
-    # Compute n_patterns from last note segment end
+    # ==== パターン数自動推定 ====
     last_note_end_tick = 0
-    num_ch = max(segments.keys()) + 1
-    for ch in range(num_ch):
+    for ch in range(NUM_CH):
         for seg in segments.get(ch, []):
             if seg.keyon:
                 last_note_end_tick = max(last_note_end_tick, seg.tick_end)
     if last_note_end_tick == 0:
-        for ch in range(num_ch):
+        for ch in range(NUM_CH):
             for seg in segments.get(ch, []):
                 last_note_end_tick = max(last_note_end_tick, seg.tick_end)
     n_patterns = max(1, math.ceil(last_note_end_tick / (ticks_per_step * STEPS_PER_PATTERN)))
 
-    # Determine active channels (ensure melody_count >= 9 for MS2 output)
-    active_channels = []
-    melody_count = max(num_ch, 9)
-    max_seg_ch = max(list(segments.keys())) if segments else (melody_count - 1)
-    desired_max = max(max_seg_ch, melody_count - 1)
-    if rhythm_instruments:
-        desired_max = max(desired_max, melody_count + 4)
-    desired_max = min(desired_max, 16)
-    for ch in range(desired_max + 1):
-        if rhythm_instruments:
-            active_channels.append(ch)
-        else:
-            if any(seg.keyon for seg in segments.get(ch, [])):
-                active_channels.append(ch)
-    n_channels = max(1, len(active_channels))
+    # ==== starting_instruments配列生成 ====
+    starting_instruments = _get_starting_instruments(
+        segments, NUM_CH, n_2op_inst, ticks_per_step,
+        user_patches=user_patches, ref_count=ref_count
+    )
+    if len(starting_instruments) < NUM_CH:
+        starting_instruments += [0] * (NUM_CH - len(starting_instruments))
 
-    # Load instrument library (reference or base_ms2)
-    if base_ms2 is not None:
-        tunings_data, instruments_data, n_tunings, n_2op_inst = _load_library_from_ms2(base_ms2, max_presets=16)
-    else:
-        tunings_data, instruments_data, n_tunings, n_2op_inst = _load_reference_library()
-
-    # Append user patches (from voice CSV)
-    ref_count = n_2op_inst
-    if user_patches:
-        extra_records = b''
-        for v_num in sorted(user_patches):
-            patch_bytes = user_patches[v_num]
-            opl4 = opll_patch_to_opl4(patch_bytes)
-            name = f'User Patch v{v_num}'
-            extra_records += _build_2op_instrument(opl4, tuning_idx=0, name=name)
-        new_total = ref_count + len(user_patches)
-        instruments_data = struct.pack('<H', new_total) + instruments_data[2:] + extra_records
-        n_2op_inst = new_total
-
-    # Append rhythm instruments if provided
-    rhythm_name_to_idx = {}
-    if rhythm_instruments:
-        extra_rhythm = b''
-        order = ['BD', 'SD', 'TOM', 'TCT', 'HH']
-        appended = 0
-        for name in order:
-            hexstr = rhythm_instruments.get(name)
-            if not hexstr:
-                continue
-            try:
-                regs = bytes.fromhex(hexstr)
-            except Exception:
-                continue
-            regs = (regs + b'\x00' * 11)[:11]
-            reg_order = [0x20, 0x21, 0x40, 0x41, 0x60, 0x61, 0x80, 0x81, 0xE0, 0xE1, 0xC0]
-            opl4 = {reg_order[i]: regs[i] for i in range(len(reg_order))}
-            inst_name = f'R:{name}'
-            extra_rhythm += _build_2op_instrument(opl4, tuning_idx=0, name=inst_name)
-            appended += 1
-        if appended:
-            new_total2 = n_2op_inst + appended
-            instruments_data = struct.pack('<H', new_total2) + instruments_data[2:] + extra_rhythm
-            start_idx = n_2op_inst
-            i = 0
-            for name in order:
-                if name in rhythm_instruments and rhythm_instruments[name]:
-                    rhythm_name_to_idx[name] = start_idx + i
-                    i += 1
-            n_2op_inst = new_total2
-
-    # Remap active channels to contiguous 0-based indices for MS2
-    remapped_segments = { new_ch: segments.get(orig_ch, []) for new_ch, orig_ch in enumerate(active_channels) }
-
-    starting_instruments = _get_starting_instruments(remapped_segments, n_channels, n_2op_inst, ticks_per_step, user_patches=user_patches, ref_count=ref_count)
-
-    # Assign rhythm instruments to their logical channels if appended
-    if rhythm_name_to_idx:
-        for idx, name in enumerate(['BD', 'SD', 'TOM', 'TCT', 'HH']):
-            orig_ch = num_ch + idx
-            if orig_ch in active_channels:
-                out_idx = active_channels.index(orig_ch)
-                inst_idx = rhythm_name_to_idx.get(name)
-                if inst_idx is not None and out_idx < len(starting_instruments):
-                    starting_instruments[out_idx] = inst_idx
-
-    # Ensure minimum channels for OPLL export:
-    melody_min = max(num_ch, 9)
-    if rhythm_instruments:
-        required = melody_min + 5
-        if n_channels < required:
-            n_channels = required
-    else:
-        if n_channels < melody_min:
-            n_channels = melody_min
-
-    # Pad starting_instruments to match n_channels
-    if len(starting_instruments) < n_channels:
-        starting_instruments += [0] * (n_channels - len(starting_instruments))
-
-    # Build pattern data
-    channel_event_lists = segments_to_patterns(remapped_segments, ticks_per_step, n_patterns, n_channels, n_2op_inst, user_patches=user_patches, ref_count=ref_count)
-
-    # Assemble song settings and chunks
-    description = stem[:65]
-
-    song_settings = build_song_settings_data(
-        description     = description,
-        n_patterns      = n_patterns,
-        n_tunings       = n_tunings,
-        n_channels      = n_channels,
-        n_2op_inst      = n_2op_inst,
-        timer           = timer,
-        timer_divider   = timer_divider,
-        starting_instruments = starting_instruments,
+    # ==== パターン(ノート)格納 ====
+    channel_event_lists = segments_to_patterns(
+        segments, ticks_per_step, n_patterns, NUM_CH, n_2op_inst,
+        user_patches=user_patches, ref_count=ref_count
     )
 
-    patterns_data   = build_patterns_chunk_data(channel_event_lists, n_patterns, n_channels)
+    # ==== チャンクまとめ ====
+    song_settings = build_song_settings_data(
+        description=stem[:65],
+        n_patterns=n_patterns,
+        n_tunings=n_tunings,
+        n_channels=NUM_CH,
+        n_2op_inst=n_2op_inst,
+        starting_instruments=starting_instruments,
+        timer=timer,
+        timer_divider=timer_divider,
+    )
+    patterns_data   = build_patterns_chunk_data(channel_event_lists, n_patterns, NUM_CH)
     four_op_data    = build_4op_instruments_chunk_data(1)
     wav_data        = build_wav_instruments_chunk_data(1)
     pitch_env_data  = build_pitch_envelopes_chunk_data(1)
