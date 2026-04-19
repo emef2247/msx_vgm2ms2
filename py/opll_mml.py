@@ -28,6 +28,7 @@ _COL_FNUM   = 5
 _COL_BLOCK  = 6
 _COL_INST   = 7
 _COL_VOL    = 8
+_COL_SUS    = 9 
 
 # -----------------------------------------------------------------------------
 # OPLL Fnum + Block → (octave, scale_name) conversion (for MS2, MIDI, MML等)
@@ -129,18 +130,15 @@ class _Segment:
       - Rhythm trigger events only: type="rhythm" with is_ryt==1 (see below)
     """
     __slots__ = (
-        'tick_start', 'tick_end', 'keyon', 'fnum', 'block', 'inst', 'vol',
-        'voice_id', 'is_ryt', 'bd', 'sd', 'tom', 'tc', 'hh',
-        'fnum_ch6', 'vol_ch6', 'fnum_ch7', 'vol_ch7', 'fnum_ch8', 'vol_ch8',
-        'has_melody', 'has_rhythm',
-        'at_token'
+        'tick_start', 'tick_end', 'keyon', 'fnum', 'block', 'inst', 'vol','sus',
+        'is_ryt', 'bd', 'sd', 'tom', 'tc', 'hh',
+        'fnum_ch6', 'vol_ch6', 'sus_ch6', 'fnum_ch7', 'vol_ch7', 'sus_ch7', 'fnum_ch8', 'vol_ch8', 'sus_ch8',
     )
 
     def __init__(
-        self, tick_start, keyon, fnum, block, inst, vol,
+        self, tick_start, keyon, fnum, block, inst, vol,sus,
         is_ryt=0, bd=0, sd=0, tom=0, tc=0, hh=0,
-        fnum_ch6=0, vol_ch6=0, fnum_ch7=0, vol_ch7=0, fnum_ch8=0, vol_ch8=0,
-        has_melody=False, has_rhythm=False
+        fnum_ch6=0, vol_ch6=0, sus_ch6=0, fnum_ch7=0, vol_ch7=0, sus_ch7=0, fnum_ch8=0, vol_ch8=0, sus_ch8=0,
     ):
         self.tick_start = tick_start
         self.tick_end   = tick_start
@@ -150,9 +148,7 @@ class _Segment:
         self.block      = block
         self.inst       = inst
         self.vol        = vol
-        # Extended fields:
-        self.voice_id   = -1
-        self.at_token   = ''
+        self.sus        = sus
         # Rhythm fields
         self.is_ryt     = is_ryt
         self.bd         = bd
@@ -162,27 +158,15 @@ class _Segment:
         self.hh         = hh
         self.fnum_ch6   = fnum_ch6
         self.vol_ch6    = vol_ch6
+        self.sus_ch6    = sus_ch6
         self.fnum_ch7   = fnum_ch7
         self.vol_ch7    = vol_ch7
+        self.sus_ch7    = sus_ch7
         self.fnum_ch8   = fnum_ch8
         self.vol_ch8    = vol_ch8
-        # Segmentation contents:
-        self.has_melody = has_melody
-        self.has_rhythm = has_rhythm
+        self.sus_ch8    = sus_ch8
 
     def mml_vol(self): return 15 - self.vol
-
-def extract_melody_segments(segments: dict) -> dict:
-    """
-    元のsegments(dict)から has_melody==True のセグメントのみ抽出して返す。
-    出力: ch番号->[has_melody==Trueな_Segmentリスト] のdict
-    """
-    out = {}
-    for ch, seglist in segments.items():
-        melody_segs = [seg for seg in seglist if getattr(seg, "has_melody", False)]
-        if melody_segs:
-            out[ch] = melody_segs
-    return out
     
 # -----------------------------------------------------------------------------
 # Build per-channel segment lists from the trace CSV - with dynamic NUM_CH
@@ -209,7 +193,7 @@ RHYTHM_VOICE_ID_MAP = {
 }
 
 class Segment:
-    def __init__(self, tick_start, tick_end, ch, keyon, fnum, block, inst, vol, sus, voice_id):
+    def __init__(self, tick_start, tick_end, ch, keyon, fnum, block, inst, vol, sus):
         self.tick_start = tick_start
         self.tick_end   = tick_end
         self.ch         = ch
@@ -219,11 +203,10 @@ class Segment:
         self.inst       = inst
         self.vol        = vol
         self.sus        = sus
-        self.voice_id   = voice_id
 
     def __repr__(self):
         return (f"Seg(ch={self.ch}, tick={self.tick_start}-{self.tick_end}, keyon={self.keyon}, "
-                f"fnum={self.fnum}, block={self.block}, inst={self.inst}, vol={self.vol}, sus={self.sus}, voice_id={self.voice_id})")
+                f"fnum={self.fnum}, block={self.block}, inst={self.inst}, vol={self.vol}, sus={self.sus})")
 
 def _build_segments(trace_csv_path):
     """
@@ -251,10 +234,11 @@ def _build_segments(trace_csv_path):
             self.block = 0
             self.inst = 0
             self.vol = 0
+            self.sus = 0
         def copy(self):
             x = _ChState()
             x.keyon = self.keyon; x.fnum = self.fnum; x.block = self.block
-            x.inst = self.inst; x.vol = self.vol
+            x.inst = self.inst; x.vol = self.vol; x.sus = self.sus
             return x
 
     state = [ _ChState() for _ in range(9) ]
@@ -281,7 +265,7 @@ def _build_segments(trace_csv_path):
             # --- Melody: use legacy segmentation (extremely robust and legato/attack-friendly) ---
             if typ != "rhythm" and 0 <= ch < 9:
                 # All per-note/param melody events are grouped tick-wise for legacy state tracking
-                melody_events[ch].append((tick, keyon, fnum, block, inst, vol))
+                melody_events[ch].append((tick, keyon, fnum, block, inst, vol, sus))
 
             # --- Rhythm: expand and write segments for each rhythm instrument on change ---
             elif typ == "rhythm" and int(row.get('is_ryt', 0)) == 1 and RHYTHM_CH_MAP:
@@ -305,7 +289,7 @@ def _build_segments(trace_csv_path):
                         if events_by_ch[chidx]:
                             events_by_ch[chidx][-1].tick_end = tick
                         # Start a new segment for this rhythm instrument.
-                        seg = Segment(prev['tick'], tick, chidx, bd_v, fnumX, 0, voice_id, volX, susX, voice_id)
+                        seg = Segment(prev['tick'], tick, chidx, bd_v, fnumX, 0, voice_id, volX, susX)
                         events_by_ch[chidx].append(seg)
                     # Always update last seen state for rhythm key.
                     prev.update(dict(tick=tick, on=bd_v, fnum=fnumX, vol=volX, sus=susX))
@@ -336,17 +320,18 @@ def _build_segments(trace_csv_path):
             # Apply all events in this tick group (final-state evaluation).
             # INST/VOL writes that arrive after KeyOn at the same tick are
             # intentionally captured this way (Requirement 1).                
-            for _, keyon, fnum, block, inst, vol in events[i:j]:
+            for _, keyon, fnum, block, inst, vol, sus in events[i:j]:
                 state_ch.keyon = keyon
                 state_ch.fnum = fnum
                 state_ch.block = block
                 state_ch.inst = inst
                 state_ch.vol = vol
+                state_ch.sus = sus
                 
             # Evaluate state at end of this tick group
             if cur_seg is None:
                 # First event always starts new segment
-                cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, 0, 0)                
+                cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, state_ch.sus)                
             else:
                 # Hidden retrigger: previous segment was ON, this tick group
                 # contains a keyoff event, but the final state is also ON.
@@ -358,9 +343,9 @@ def _build_segments(trace_csv_path):
                     cur_seg.tick_end = tick
                     events_by_ch[ch].append(cur_seg)
                     # Zero-length keyoff marker (tick_start == tick_end == tick)
-                    off_seg = Segment(tick, tick, ch, 0, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, 0, 0)
+                    off_seg = Segment(tick, tick, ch, 0, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, state_ch.sus)
                     events_by_ch[ch].append(off_seg)
-                    cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, 0, 0)
+                    cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, state_ch.sus)
                 else:
                     # Check for normal state change that requires a new segment
                     keyon_edge   = (state_ch.keyon == 1 and cur_seg.keyon == 0)
@@ -368,11 +353,12 @@ def _build_segments(trace_csv_path):
                     pitch_change = ((state_ch.fnum, state_ch.block) != (cur_seg.fnum, cur_seg.block) and state_ch.keyon == 1)
                     inst_change  = (state_ch.inst != cur_seg.inst and state_ch.keyon == 1)
                     vol_change   = (state_ch.vol != cur_seg.vol   and state_ch.keyon == 1)
-                    
-                    if keyon_edge or keyoff_edge or pitch_change or inst_change or vol_change:
+                    sus_change   = (state_ch.sus != cur_seg.sus   and state_ch.keyon == 1)
+                    if keyoff_edge or pitch_change:
+                    #if keyon_edge or keyoff_edge or pitch_change or inst_change or vol_change:
                         cur_seg.tick_end = tick
                         events_by_ch[ch].append(cur_seg)
-                        cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, 0, 0)
+                        cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, state_ch.sus)
                     else:
                         # Continue current segment
                         cur_seg.tick_end = tick
