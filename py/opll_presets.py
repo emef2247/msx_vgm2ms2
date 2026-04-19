@@ -1,0 +1,628 @@
+"""
+opll_presets.py  –  OPLL-family built-in instrument ROM tables.
+
+Each table is an 18-element list of 8-byte tuples representing the YM2413
+register set R0..R7 for preset instruments 1..18 (only 1..16 are used as
+melodic presets; 16..18 are rhythm entries).
+
+Data sources and license notices
+---------------------------------
+YMVOICE_* tables:
+    Independently reconstructed and estimated by Mitsutaka Okazaki.
+    https://github.com/digital-sound-antiques/ym-voice
+    ISC License:
+    Copyright (c) 2023 Mitsutaka Okazaki and Contributors
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+YMFM_* tables:
+    Independently reconstructed and estimated by David Viens and Hubert Lamontagne.
+    https://github.com/plgDavid/misc/wiki/Copyright-free-OPLL(x)-ROM-patches
+    Released under CC0/Public Domain by the original authors.
+    You may use, copy, modify, and distribute freely, with or without attribution.
+
+EXPERIMENT_* tables:
+    Derived from YMFM_* tables by per-register tuning adjustments.
+    Adaptation by the emeopl3patcher project (emef2247).
+    Same license as YMFM_* (CC0/Public Domain).
+"""
+
+from __future__ import annotations
+
+# ---------------------------------------------------------------------------
+# Type alias: each table is a list of 18 tuples of 8 ints (R0..R7)
+# ---------------------------------------------------------------------------
+_Table = list[tuple[int, ...]]
+
+
+# ---------------------------------------------------------------------------
+# YMVOICE tables (Mitsutaka Okazaki / ISC)
+# ---------------------------------------------------------------------------
+
+YMVOICE_YM2413_VOICES: _Table = [
+    (0x71, 0x61, 0x1E, 0x17, 0xD0, 0x78, 0x00, 0x17),  # 1: Violin
+    (0x13, 0x41, 0x1A, 0x0D, 0xD8, 0xF7, 0x23, 0x13),  # 2: Guitar
+    (0x13, 0x01, 0x99, 0x00, 0xF2, 0xD4, 0x21, 0x23),  # 3: Piano
+    (0x11, 0x61, 0x0E, 0x07, 0x8D, 0x64, 0x70, 0x27),  # 4: Flute
+    (0x32, 0x21, 0x1E, 0x06, 0xE1, 0x76, 0x01, 0x28),  # 5: Clarinet
+    (0x31, 0x22, 0x16, 0x05, 0xE0, 0x71, 0x00, 0x18),  # 6: Oboe
+    (0x21, 0x61, 0x1D, 0x07, 0x82, 0x81, 0x11, 0x07),  # 7: Trumpet
+    (0x33, 0x21, 0x2D, 0x13, 0xB0, 0x70, 0x00, 0x07),  # 8: Organ
+    (0x61, 0x61, 0x1B, 0x06, 0x64, 0x65, 0x10, 0x17),  # 9: Horn
+    (0x41, 0x61, 0x0B, 0x18, 0x85, 0xF0, 0x81, 0x07),  # 10: Synthesizer
+    (0x33, 0x01, 0x83, 0x11, 0xEA, 0xEF, 0x10, 0x04),  # 11: Harpsichord
+    (0x17, 0xC1, 0x24, 0x07, 0xF8, 0xF8, 0x22, 0x12),  # 12: Vibraphone
+    (0x61, 0x50, 0x0C, 0x05, 0xD2, 0xF5, 0x40, 0x42),  # 13: Synth Bass
+    (0x01, 0x01, 0x55, 0x03, 0xE4, 0x90, 0x03, 0x02),  # 14: Acoustic Bass
+    (0x41, 0x41, 0x89, 0x03, 0xF1, 0xE4, 0xC0, 0x13),  # 15: Electric Guitar
+    (0x01, 0x01, 0x18, 0x0F, 0xDF, 0xF8, 0x6A, 0x6D),  # 16: R: Bass Drum
+    (0x01, 0x01, 0x00, 0x00, 0xC8, 0xD8, 0xA7, 0x68),  # 17: R: Hi-Hat(M)/Snare(C)
+    (0x05, 0x01, 0x00, 0x00, 0xF8, 0xAA, 0x59, 0x55),  # 18: R: Tom-tom(M)/Cymbal(C)
+]
+
+YMVOICE_VRC7_VOICES: _Table = [
+    (0x03, 0x21, 0x05, 0x06, 0xE8, 0x81, 0x42, 0x27),  #  1: Bell
+    (0x13, 0x41, 0x14, 0x0D, 0xD8, 0xF6, 0x23, 0x12),  #  2: Guitar
+    (0x11, 0x11, 0x08, 0x08, 0xFA, 0xB2, 0x20, 0x12),  #  3: Piano
+    (0x31, 0x61, 0x0C, 0x07, 0xA8, 0x64, 0x61, 0x27),  #  4: Flute
+    (0x32, 0x21, 0x1E, 0x06, 0xE1, 0x76, 0x01, 0x28),  #  5: Clarinet
+    (0x02, 0x01, 0x06, 0x00, 0xA3, 0xE2, 0xF4, 0xF4),  #  6: Synth Brass
+    (0x21, 0x61, 0x1D, 0x07, 0x82, 0x81, 0x11, 0x07),  #  7: Trumpet
+    (0x23, 0x21, 0x22, 0x17, 0xA2, 0x72, 0x01, 0x17),  #  8: Organ
+    (0x35, 0x11, 0x25, 0x00, 0x40, 0x73, 0x72, 0x01),  #  9: Horn
+    (0xB5, 0x01, 0x0F, 0x0F, 0xA8, 0xA5, 0x51, 0x02),  # 10: Synth
+    (0x17, 0xC1, 0x24, 0x07, 0xF8, 0xF8, 0x22, 0x12),  # 11: Harpsichord
+    (0x71, 0x23, 0x11, 0x06, 0x65, 0x74, 0x18, 0x16),  # 12: Vibraphone
+    (0x01, 0x02, 0xD3, 0x05, 0xC9, 0x95, 0x03, 0x02),  # 13: Acoustic Bass
+    (0x61, 0x63, 0x0C, 0x00, 0x94, 0xC0, 0x33, 0xF6),  # 14: Electric Guitar
+    (0x21, 0x72, 0x0D, 0x00, 0xC1, 0xD5, 0x56, 0x06),  # 15: Bass Synth
+    (0x01, 0x01, 0x18, 0x0F, 0xDF, 0xF8, 0x6A, 0x6D),  # 16: R: Drum kit
+    (0x01, 0x01, 0x00, 0x00, 0xC8, 0xD8, 0xA7, 0x68),  # 17: R: Hi-Hat(M)/Snare(C)
+    (0x05, 0x01, 0x00, 0x00, 0xF8, 0xAA, 0x59, 0x55),  # 18: R: Tom-tom(M)/Cymbal(C)
+]
+
+YMVOICE_YMF281B_VOICES: _Table = [
+    (0x62, 0x21, 0x1A, 0x07, 0xF0, 0x6F, 0x00, 0x16),  # 1: Electric Strings
+    (0x40, 0x10, 0x45, 0x00, 0xF6, 0x83, 0x73, 0x63),  # 2: Bow Wow
+    (0x13, 0x01, 0x99, 0x00, 0xF2, 0xC3, 0x21, 0x23),  # 3: Electric Guitar
+    (0x01, 0x61, 0x0B, 0x0F, 0xF9, 0x64, 0x70, 0x17),  # 4: Organ
+    (0x32, 0x21, 0x1E, 0x06, 0xE1, 0x76, 0x01, 0x28),  # 5: Clarinet
+    (0x60, 0x01, 0x82, 0x0E, 0xF9, 0x61, 0x20, 0x27),  # 6: Saxophone
+    (0x21, 0x61, 0x1C, 0x07, 0x84, 0x81, 0x11, 0x07),  # 7: Trumpet
+    (0x37, 0x32, 0xC9, 0x01, 0x66, 0x64, 0x40, 0x28),  # 8: Street Organ
+    (0x01, 0x21, 0x07, 0x03, 0xA5, 0x71, 0x51, 0x07),  # 9: Synth Brass
+    (0x06, 0x01, 0x5E, 0x07, 0xF3, 0xF3, 0xF6, 0x13),  # 10: Electric Piano
+    (0x00, 0x00, 0x18, 0x06, 0xF5, 0xF3, 0x20, 0x23),  # 11: Bass
+    (0x17, 0xC1, 0x24, 0x07, 0xF8, 0xF8, 0x22, 0x12),  # 12: Vibraphone
+    (0x35, 0x64, 0x00, 0x00, 0xFF, 0xF3, 0x77, 0xF5),  # 13: Chimes
+    (0x11, 0x31, 0x00, 0x07, 0xDD, 0xF3, 0xFF, 0xFB),  # 14: Tom Tom II
+    (0x3A, 0x21, 0x00, 0x07, 0x80, 0x84, 0x0F, 0xF5),  # 15: Noise
+    (0x01, 0x01, 0x18, 0x0F, 0xDF, 0xF8, 0x6A, 0x6D),  # 16: R: Bass Drum
+    (0x01, 0x01, 0x00, 0x00, 0xC8, 0xD8, 0xA7, 0x68),  # 17: R: Hi-Hat(M)/Snare(C)
+    (0x05, 0x01, 0x00, 0x00, 0xF8, 0xAA, 0x59, 0x55),  # 18: R: Tom-tom(M)/Cymbal(C)
+]
+
+
+# ---------------------------------------------------------------------------
+# YMFM tables (David Viens & Hubert Lamontagne / CC0 Public Domain)
+# ---------------------------------------------------------------------------
+
+YMFM_YM2413_VOICES: _Table = [
+    (0x71, 0x61, 0x1E, 0x17, 0xEF, 0x7F, 0x00, 0x17),  #  1. Violin
+    (0x13, 0x41, 0x1A, 0x0D, 0xF8, 0xF7, 0x23, 0x13),  #  2. Guitar
+    (0x13, 0x01, 0x99, 0x00, 0xF2, 0xC4, 0x11, 0x23),  #  3. Piano
+    (0x31, 0x61, 0x0E, 0x07, 0x98, 0x64, 0x70, 0x27),  #  4. Flute
+    (0x22, 0x21, 0x1E, 0x06, 0xBF, 0x76, 0x00, 0x28),  #  5. Clarinet
+    (0x31, 0x22, 0x16, 0x05, 0xE0, 0x71, 0x0F, 0x18),  #  6. Oboe
+    (0x21, 0x61, 0x1D, 0x07, 0x82, 0x8F, 0x10, 0x07),  #  7. Trumpet
+    (0x23, 0x21, 0x2D, 0x14, 0xFF, 0x7F, 0x00, 0x07),  #  8. Organ
+    (0x41, 0x61, 0x1B, 0x06, 0x64, 0x65, 0x10, 0x17),  #  9. Horn
+    (0x61, 0x61, 0x0B, 0x18, 0x85, 0xFF, 0x81, 0x07),  # 10. Synthesizer
+    (0x13, 0x01, 0x83, 0x11, 0xFA, 0xE4, 0x10, 0x04),  # 11. Harpsichord
+    (0x17, 0x81, 0x23, 0x07, 0xF8, 0xF8, 0x22, 0x12),  # 12. Vibraphone
+    (0x61, 0x50, 0x0C, 0x05, 0xF2, 0xF5, 0x29, 0x42),  # 13. Synth Bass
+    (0x01, 0x01, 0x54, 0x03, 0xC3, 0x92, 0x03, 0x02),  # 14. Acoustic Bass
+    (0x41, 0x41, 0x89, 0x03, 0xF1, 0xE5, 0x11, 0x13),  # 15. Electric Guitar
+    (0x01, 0x01, 0x18, 0x0F, 0xDF, 0xF8, 0x6A, 0x6D),  # 16. rhythm 1
+    (0x01, 0x01, 0x00, 0x00, 0xC8, 0xD8, 0xA7, 0x48),  # 17. rhythm 2
+    (0x05, 0x01, 0x00, 0x00, 0xF8, 0xAA, 0x59, 0x55),  # 18. rhythm 3
+]
+
+YMFM_VRC7_VOICES: _Table = [
+    (0x03, 0x21, 0x05, 0x06, 0xC8, 0x81, 0x42, 0x27),  # 1. Buzzy Bell
+    (0x13, 0x41, 0x14, 0x0D, 0xF8, 0xF7, 0x23, 0x12),  # 2. Guitar
+    (0x31, 0x11, 0x08, 0x08, 0xFA, 0xC2, 0x28, 0x22),  # 3. Wurly
+    (0x31, 0x61, 0x0C, 0x07, 0xF8, 0x64, 0x60, 0x27),  # 4. Flute
+    (0x22, 0x21, 0x1E, 0x06, 0xFF, 0x76, 0x00, 0x28),  # 5. Clarinet
+    (0x02, 0x01, 0x05, 0x00, 0xAC, 0xF2, 0x03, 0x02),  # 6. Synth
+    (0x21, 0x61, 0x1D, 0x07, 0x82, 0x8F, 0x10, 0x07),  # 7. Trumpet
+    (0x23, 0x21, 0x22, 0x17, 0xFF, 0x73, 0x00, 0x17),  # 8. Organ
+    (0x15, 0x11, 0x25, 0x00, 0x41, 0x71, 0x00, 0xF1),  # 9. Bells
+    (0x95, 0x01, 0x10, 0x0F, 0xB8, 0xAA, 0x50, 0x02),  # 10. Vibes
+    (0x17, 0xC1, 0x5E, 0x07, 0xFA, 0xF8, 0x22, 0x12),  # 11. Vibraphone
+    (0x71, 0x23, 0x11, 0x06, 0x65, 0x74, 0x10, 0x16),  # 12. Tutti
+    (0x01, 0x02, 0xD3, 0x05, 0xF3, 0x92, 0x83, 0xF2),  # 13. Fretless
+    (0x61, 0x63, 0x0C, 0x00, 0xA4, 0xFF, 0x30, 0x06),  # 14. Synth Bass
+    (0x21, 0x62, 0x0D, 0x00, 0xA1, 0xFF, 0x50, 0x08),  # 15. Sweep
+    (0x01, 0x01, 0x00, 0x00, 0xC8, 0xD8, 0xA7, 0x48),  # 16-17. rhythm 2 (no rhythm 1 in VRC7)
+    (0x01, 0x01, 0x00, 0x00, 0xC8, 0xD8, 0xA7, 0x48),  # 17. rhythm 2
+    (0x05, 0x01, 0x00, 0x00, 0xF8, 0xAA, 0x59, 0x55),  # 18. rhythm 3
+]
+
+YMFM_YMF281B_VOICES: _Table = [
+    (0x72, 0x21, 0x1A, 0x07, 0xF6, 0x64, 0x01, 0x16),  #  1. Clarinet / Electric String
+    (0x00, 0x10, 0x45, 0x00, 0xF6, 0x83, 0x73, 0x63),  #  2. Synth Bass / Bow wow
+    (0x13, 0x01, 0x96, 0x00, 0xF1, 0xF4, 0x31, 0x23),  #  3. Piano / Electric Guitar
+    (0x71, 0x21, 0x0B, 0x0F, 0xF9, 0x64, 0x70, 0x17),  #  4. Flute / Organ
+    (0x02, 0x21, 0x1E, 0x06, 0xF9, 0x76, 0x00, 0x28),  #  5. Square Wave / Clarinet
+    (0x00, 0x61, 0x82, 0x0E, 0xF9, 0x61, 0x20, 0x27),  #  6. Space Oboe / Saxophone
+    (0x21, 0x61, 0x1B, 0x07, 0x84, 0x8F, 0x10, 0x07),  #  7. Trumpet
+    (0x37, 0x32, 0xCA, 0x02, 0x66, 0x64, 0x47, 0x29),  #  8. Wow Bell / Street Organ
+    (0x41, 0x41, 0x07, 0x03, 0xF5, 0x70, 0x51, 0xF5),  #  9. Electric Guitar / Synth Brass
+    (0x36, 0x01, 0x5E, 0x07, 0xF2, 0xF3, 0xF7, 0xF7),  # 10. Vibes / Electric Piano
+    (0x00, 0x00, 0x18, 0x06, 0xC5, 0xF3, 0x20, 0xF2),  # 11. Bass
+    (0x17, 0x81, 0x25, 0x07, 0xF7, 0xF3, 0x21, 0xF7),  # 12. Vibraphone
+    (0x35, 0x64, 0x00, 0x00, 0xFF, 0xF3, 0x77, 0xF5),  # 13. Vibrato Bell / Chime
+    (0x11, 0x31, 0x00, 0x07, 0xDD, 0xF3, 0xFF, 0xFB),  # 14. Click Sine / Tom Tom II
+    (0x3A, 0x21, 0x00, 0x07, 0x95, 0x84, 0x0F, 0xF5),  # 15. Noise and Tone
+    (0x01, 0x01, 0x18, 0x0F, 0xDF, 0xF8, 0x6A, 0x6D),  # 16. rhythm 1
+    (0x01, 0x01, 0x00, 0x00, 0xC8, 0xD8, 0xA7, 0x48),  # 17. rhythm 2
+    (0x05, 0x01, 0x00, 0x00, 0xF8, 0xAA, 0x59, 0x55),  # 18. rhythm 3
+]
+
+YMFM_YM2423_VOICES: _Table = [
+    (0x61, 0x61, 0x1B, 0x07, 0x94, 0x5F, 0x10, 0x06),  # 1:  Strings
+    (0x93, 0xB1, 0x51, 0x04, 0xF3, 0xF2, 0x70, 0xFB),  # 2:  Guitar
+    (0x41, 0x21, 0x11, 0x85, 0xF2, 0xF2, 0x70, 0x75),  # 3:  Electric Guitar
+    (0x93, 0xB2, 0x28, 0x07, 0xF3, 0xF2, 0x70, 0xB4),  # 4:  Electric Piano 2
+    (0x72, 0x31, 0x97, 0x05, 0x51, 0x6F, 0x60, 0x09),  # 5:  Flute
+    (0x13, 0x30, 0x18, 0x06, 0xF7, 0xF4, 0x50, 0x85),  # 6:  Marimba
+    (0x51, 0x31, 0x1C, 0x07, 0x51, 0x71, 0x20, 0x26),  # 7:  Trumpet
+    (0x41, 0xF4, 0x1B, 0x07, 0x74, 0x34, 0x00, 0x06),  # 8:  Harmonica
+    (0x50, 0x30, 0x4D, 0x03, 0x42, 0x65, 0x20, 0x06),  # 9:  Tuba
+    (0x40, 0x20, 0x10, 0x85, 0xF3, 0xF5, 0x20, 0x04),  # 10: Synth Brass 2
+    (0x61, 0x61, 0x1B, 0x07, 0xC5, 0x96, 0xF3, 0xF6),  # 11: Short Saw
+    (0xF9, 0xF1, 0xDC, 0x00, 0xF5, 0xF3, 0x77, 0xF2),  # 12: Vibraphone
+    (0x60, 0xA2, 0x91, 0x03, 0x94, 0xC1, 0xF7, 0xF7),  # 13: Electric Guitar 2
+    (0x30, 0x30, 0x17, 0x06, 0xF3, 0xF1, 0xB7, 0xFC),  # 14: Synth Bass 2
+    (0x31, 0x36, 0x0D, 0x05, 0xF2, 0xF4, 0x27, 0x9C),  # 15: Sitar
+    (0x01, 0x01, 0x18, 0x0F, 0xDF, 0xF8, 0x6A, 0x6D),  # 16: rhythm 1
+    (0x01, 0x01, 0x00, 0x00, 0xC8, 0xD8, 0xA7, 0x48),  # 17: rhythm 2
+    (0x05, 0x01, 0x00, 0x00, 0xF8, 0xAA, 0x59, 0x55),  # 18: rhythm 3
+]
+
+
+# ---------------------------------------------------------------------------
+# EXPERIMENT preset generation helpers (CC0 / Public Domain)
+# Translated from eseopl3patcher opll2opl3_conv.c
+# ---------------------------------------------------------------------------
+
+def _u8(v: int) -> int:
+    """Wrap value to unsigned 8-bit range."""
+    return v & 0xFF
+
+
+def _make_exp_table(ymfm: _Table, modify_fn) -> _Table:
+    """Apply per-instrument modification function to a copy of *ymfm*."""
+    exp = [bytearray(r) for r in ymfm]
+    modify_fn(ymfm, exp)
+    return [tuple(row) for row in exp]
+
+
+def _mod_ym2413(ymfm: _Table, exp: list) -> None:
+    # 1: Violin
+    exp[0][4] = _u8((ymfm[0][4] & 0x0F) | 0xD0)
+    exp[0][5] = _u8((ymfm[0][5] & 0xF0) | 0x08)
+    # 2: Guitar
+    exp[1][4] = _u8((ymfm[1][4] & 0xF8) | 0xD8)
+    # 3: Piano
+    exp[2][5] = _u8(ymfm[2][5] + 0x10)
+    exp[2][6] = _u8((ymfm[2][6] & 0xF0) | 0x21)
+    # 4: Flute
+    exp[3][0] = _u8((ymfm[3][0] & 0xF0) | 0x11)
+    exp[3][4] = _u8((ymfm[3][4] & 0xF0) | 0x8D)
+    # 5: Clarinet
+    exp[4][0] = _u8((ymfm[4][0] & 0xF0) | 0x32)
+    exp[4][4] = _u8((ymfm[4][4] & 0xE0) | 0xE1)
+    exp[4][6] = _u8((ymfm[4][6] & 0xF0) | 0x01)
+    # 6: Oboe
+    exp[5][6] = _u8(ymfm[5][6] & 0xF0)
+    # 7: Trumpet
+    exp[6][5] = _u8(ymfm[6][5] & ~0x0E)
+    exp[6][6] = _u8((ymfm[6][6] & 0xF0) | 0x11)
+    # 8: Organ
+    exp[7][0] = _u8((ymfm[7][0] & 0xF0) | 0x33)
+    exp[7][3] = _u8((ymfm[7][3] & 0xF0) | 0x13)
+    exp[7][4] = _u8((ymfm[7][4] & 0xF0) | 0xB0)
+    exp[7][5] = _u8((ymfm[7][5] & 0xF0) | 0x70)
+    # 9: Horn
+    exp[8][0] = _u8((ymfm[8][0] & 0xF0) | 0x61)
+    # 10: Synthesizer
+    exp[9][5] = _u8((ymfm[9][5] & 0xF0) | 0xF0)
+    # 11: Harpsichord
+    exp[10][0] = _u8((ymfm[10][0] & 0xF0) | 0x33)
+    exp[10][4] = _u8((ymfm[10][4] & 0xF0) | 0xEA)
+    exp[10][5] = _u8((ymfm[10][5] & 0xF0) | 0xEF)
+    # 12: Vibraphone
+    exp[11][1] = _u8((ymfm[11][1] & 0xC0) | 0xC1)
+    exp[11][2] = _u8(ymfm[11][2] & ~((1 << 1) | (1 << 2) | (1 << 5)))
+    # 13: Synth Bass
+    exp[12][4] = _u8((ymfm[12][4] & 0xF0) | 0xD2)
+    exp[12][6] = _u8((ymfm[12][6] & 0xF0) | 0x40)
+    # 14: Acoustic Bass
+    exp[13][2] = _u8((ymfm[13][2] & 0xF0) | 0x55)
+    exp[13][4] = _u8((ymfm[13][4] & 0x0F) | 0xE4)
+    exp[13][5] = _u8((ymfm[13][5] & 0xF0) | 0x90)
+    # 15: Electric Guitar
+    exp[14][4] = _u8((ymfm[14][4] & 0xF0) | 0xF1)
+    exp[14][5] = _u8((ymfm[14][5] & 0xF0) | 0xE4)
+    exp[14][6] = _u8((ymfm[14][6] & 0xF0) | 0xC0)
+    # 17: Rhythm2
+    exp[16][7] = _u8((ymfm[16][7] & 0xF0) | 0x68)
+
+
+def _mod_vrc7(ymfm: _Table, exp: list) -> None:
+    # 1: Bell
+    exp[0][4] = _u8(ymfm[0][4] + 0x20)
+    # 2: Guitar
+    exp[1][4] = _u8(ymfm[1][4] - 0x20)
+    exp[1][5] = _u8(ymfm[1][5] - 1)
+    # 3: Piano
+    exp[2][0] = _u8((ymfm[2][0] & 0xF0) | 0x11)
+    exp[2][1] = _u8((ymfm[2][1] & 0xF0) | 0x11)
+    exp[2][5] = _u8(ymfm[2][5] - 0x10)
+    exp[2][6] = _u8((ymfm[2][6] & 0xF0) | 0x20)
+    exp[2][7] = _u8((ymfm[2][7] & 0xF0) | 0x12)
+    # 4: Flute
+    exp[3][4] = _u8(ymfm[3][4] - 0x50)
+    exp[3][6] = _u8((ymfm[3][6] & 0xF0) | 0x61)
+    # 5: Clarinet
+    exp[4][0] = _u8((ymfm[4][0] & 0xF0) | 0x32)
+    exp[4][4] = _u8(ymfm[4][4] & 0xE1)
+    exp[4][6] = _u8(ymfm[4][6] | 0x01)
+    # 6: Synth Brass
+    exp[5][2] = _u8(ymfm[5][2] + 1)
+    exp[5][4] = _u8(ymfm[5][4] - 0x09)
+    exp[5][5] = _u8(ymfm[5][5] - 0x10)
+    exp[5][6] = 0xF4
+    exp[5][7] = 0xF4
+    # 7: Trumpet
+    exp[6][5] = _u8(ymfm[6][5] & ~0x0E)
+    exp[6][6] = _u8((ymfm[6][6] & 0xF0) | 0x11)
+    # 8: Organ
+    exp[7][4] = 0xA2 if ymfm[7][4] == 0xFF else ymfm[7][4]
+    exp[7][5] = _u8((ymfm[7][5] & 0xF0) | 0x72)
+    exp[7][6] = _u8((ymfm[7][6] & 0xF0) | 0x01)
+    # 9: Horn
+    exp[8][0] = _u8((ymfm[8][0] & 0xF0) | 0x35)
+    exp[8][4] = _u8((ymfm[8][4] & 0xF0) | 0x40)
+    exp[8][5] = _u8((ymfm[8][5] & 0xF0) | 0x73)
+    exp[8][6] = _u8((ymfm[8][6] & 0xF0) | 0x72)
+    exp[8][7] = _u8((ymfm[8][7] & 0xF0) | 0x01)
+    # 10: Synth
+    exp[9][0] = _u8((ymfm[9][0] & 0xF0) | 0xB5)
+    exp[9][2] = _u8((ymfm[9][2] & 0xF0) | 0x0F)
+    exp[9][3] = _u8((ymfm[9][3] & 0xF0) | 0x0F)
+    exp[9][4] = _u8((ymfm[9][4] & 0xF0) | 0xA8)
+    exp[9][5] = _u8((ymfm[9][5] & 0xF0) | 0xA5)
+    exp[9][6] = _u8((ymfm[9][6] & 0xF0) | 0x51)
+    # 11: Harpsichord
+    exp[10][2] = _u8(ymfm[10][2] & ~((1 << 1) | (1 << 2) | (1 << 5)))
+    # 12: Vibraphone
+    exp[11][6] = _u8((ymfm[11][6] & 0xF0) | 0x18)
+    # 13: Acoustic Bass
+    exp[12][4] = _u8((ymfm[12][4] & ~0x3A) | 0xC9)
+    exp[12][5] = _u8((ymfm[12][5] & 0xF0) | 0x95)
+    exp[12][6] = _u8(ymfm[12][6] & 0x0F)
+    exp[12][7] = _u8(ymfm[12][7] & 0x0F)
+    # 14: Electric Guitar
+    exp[13][4] = _u8(ymfm[13][4] - 0x10)
+    exp[13][5] = _u8(ymfm[13][5] & ~0x3F)
+    exp[13][6] = _u8(ymfm[13][6] | 0x03)
+    exp[13][7] = _u8(ymfm[13][7] | 0xF0)
+    # 15: Bass Synth
+    exp[14][1] = _u8((ymfm[14][1] & 0xF0) | 0x72)
+    exp[14][4] = _u8(ymfm[14][4] | 0x20)
+    exp[14][5] = _u8(ymfm[14][5] & 0xF5)
+    exp[14][6] = _u8(ymfm[14][6] | 0x06)
+    exp[14][7] = _u8(ymfm[14][7] & 0xFE)
+    # 16: Drum kit
+    exp[15][2] = _u8(ymfm[15][2] | 0x18)
+    exp[15][3] = _u8(ymfm[15][3] | 0x0F)
+    exp[15][4] = _u8(ymfm[15][4] | 0x1F)
+    exp[15][5] = _u8(ymfm[15][5] | 0x18)
+    exp[15][6] = _u8(ymfm[15][6] & 0x7A)
+    exp[15][7] = _u8(ymfm[15][7] | 0x05)
+    # 17: Rhythm2
+    exp[16][7] = _u8((ymfm[16][7] & 0xF0) | 0x68)
+
+
+def _mod_ymf281b(ymfm: _Table, exp: list) -> None:
+    # 1: Bell
+    exp[0][0] = _u8((ymfm[0][0] & 0xF0) | 0x03)
+    exp[0][4] = _u8((ymfm[0][4] & 0x0F) | 0xE8)
+    exp[0][5] = _u8((ymfm[0][5] & 0x0F) | 0x81)
+    exp[0][6] = _u8((ymfm[0][6] & 0xF0) | 0x42)
+    # 2: Guitar
+    exp[1][0] = _u8((ymfm[1][0] & 0xF0) | 0x13)
+    exp[1][4] = _u8((ymfm[1][4] & 0x0F) | 0xD8)
+    exp[1][5] = _u8((ymfm[1][5] & 0x0F) | 0xF6)
+    exp[1][6] = _u8((ymfm[1][6] & 0xF0) | 0x23)
+    exp[1][7] = _u8((ymfm[1][7] & 0xF0) | 0x12)
+    # 3: Piano
+    exp[2][0] = _u8((ymfm[2][0] & 0xF0) | 0x11)
+    exp[2][1] = _u8((ymfm[2][1] & 0xF0) | 0x11)
+    exp[2][4] = _u8((ymfm[2][4] & 0xF0) | 0xFA)
+    exp[2][5] = _u8((ymfm[2][5] & 0xF0) | 0xB2)
+    exp[2][6] = _u8((ymfm[2][6] & 0xF0) | 0x20)
+    exp[2][7] = _u8((ymfm[2][7] & 0xF0) | 0x12)
+    # 4: Flute
+    exp[3][4] = _u8((ymfm[3][4] & 0xF0) | 0xA8)
+    exp[3][6] = _u8((ymfm[3][6] & 0xF0) | 0x61)
+    # 5: Clarinet
+    exp[4][0] = _u8((ymfm[4][0] & 0xF0) | 0x32)
+    exp[4][4] = _u8((ymfm[4][4] & 0xE0) | 0xE1)
+    exp[4][6] = _u8((ymfm[4][6] & 0xF0) | 0x01)
+    # 6: Synth Brass
+    exp[5][0] = _u8((ymfm[5][0] & 0xF0) | 0x02)
+    exp[5][1] = _u8((ymfm[5][1] & 0xF0) | 0x01)
+    exp[5][2] = _u8((ymfm[5][2] & 0xF0) | 0x06)
+    exp[5][4] = _u8((ymfm[5][4] & 0xF0) | 0xA3)
+    exp[5][5] = _u8((ymfm[5][5] & 0xF0) | 0xE2)
+    exp[5][6] = _u8((ymfm[5][6] & 0xF0) | 0xF4)
+    exp[5][7] = _u8((ymfm[5][7] & 0xF0) | 0xF4)
+    # 7: Trumpet
+    exp[6][2] = _u8((ymfm[6][2] & 0xF0) | 0x1D)
+    exp[6][4] = _u8((ymfm[6][4] & 0xF0) | 0x82)
+    exp[6][5] = _u8((ymfm[6][5] & 0xF0) | 0x81)
+    exp[6][6] = _u8((ymfm[6][6] & 0xF0) | 0x11)
+    # 8: Organ
+    exp[7][0] = _u8((ymfm[7][0] & 0xF0) | 0x23)
+    exp[7][2] = _u8((ymfm[7][2] & 0xF0) | 0x22)
+    exp[7][4] = _u8((ymfm[7][4] & 0xF0) | 0xA2)
+    exp[7][5] = _u8((ymfm[7][5] & 0xF0) | 0x72)
+    exp[7][6] = _u8((ymfm[7][6] & 0xF0) | 0x01)
+    # 9: Horn
+    exp[8][0] = _u8((ymfm[8][0] & 0xF0) | 0x35)
+    exp[8][1] = _u8((ymfm[8][1] & 0xF0) | 0x11)
+    exp[8][2] = _u8((ymfm[8][2] & 0xF0) | 0x25)
+    exp[8][4] = _u8((ymfm[8][4] & 0xF0) | 0x40)
+    exp[8][5] = _u8((ymfm[8][5] & 0xF0) | 0x73)
+    exp[8][6] = _u8((ymfm[8][6] & 0xF0) | 0x72)
+    exp[8][7] = _u8((ymfm[8][7] & 0xF0) | 0x01)
+    # 10: Synth
+    exp[9][0] = _u8((ymfm[9][0] & 0xF0) | 0xB5)
+    exp[9][2] = _u8((ymfm[9][2] & 0xF0) | 0x0F)
+    exp[9][3] = _u8((ymfm[9][3] & 0xF0) | 0x0F)
+    exp[9][4] = _u8((ymfm[9][4] & 0x0F) | 0xA0)
+    exp[9][5] = _u8((ymfm[9][5] & 0x0F) | 0xA0)
+    exp[9][6] = _u8((ymfm[9][6] & 0xF0) | 0x51)
+    # 11: Harpsichord
+    exp[10][2] = _u8(ymfm[10][2] & ~((1 << 1) | (1 << 2) | (1 << 5)))
+    exp[10][4] = _u8(ymfm[10][4] | 0x08)
+    exp[10][5] = _u8(ymfm[10][5] | 0x08)
+    # 12: Vibraphone
+    exp[11][6] = _u8(ymfm[11][6] | 0x08)
+    # 13: Acoustic Bass (Chimes in YMF281B)
+    exp[12][4] = _u8((ymfm[12][4] & ~0x3A) | 0xC9)
+    exp[12][5] = _u8((ymfm[12][5] | 0x03) & 0x95)  # set bits 1,0; then keep bits 7,4,2,0 (direct port from C)
+    exp[12][6] = _u8(ymfm[12][6] & 0x0F)
+    exp[12][7] = _u8(ymfm[12][7] & 0x0F)
+    # 14: Electric Guitar (Tom Tom II)
+    exp[13][4] = _u8(ymfm[13][4] - 0x10)
+    exp[13][5] = _u8(ymfm[13][5] & ~0x3F)
+    exp[13][6] = _u8(ymfm[13][6] | 0x03)
+    exp[13][7] = _u8(ymfm[13][7] | 0xF0)
+    # 15: Bass Synth (Noise)
+    exp[14][1] = _u8((ymfm[14][1] & 0xF0) | 0x72)
+    exp[14][4] = _u8(ymfm[14][4] | 0x20)
+    exp[14][5] = _u8(ymfm[14][5] & 0xF5)
+    exp[14][6] = _u8(ymfm[14][6] | 0x06)
+    exp[14][7] = _u8(ymfm[14][7] & 0xFE)
+    # 16: Drum kit
+    exp[15][2] = _u8(ymfm[15][2] | 0x18)
+    exp[15][3] = _u8(ymfm[15][3] | 0x0F)
+    exp[15][4] = _u8(ymfm[15][4] | 0x1F)
+    exp[15][5] = _u8(ymfm[15][5] | 0x18)
+    exp[15][6] = _u8(ymfm[15][6] & 0x7A)
+    exp[15][7] = _u8(ymfm[15][7] | 0x05)
+    # 17: Rhythm2
+    exp[16][7] = _u8((ymfm[16][7] & 0xF0) | 0x68)
+
+
+def _make_exp_ym2423(ymfm: _Table) -> _Table:
+    """Build EXPERIMENT_YM2423 from YMFM (no initial copy - starts from zeros).
+
+    The C source initializes the output array to zero (static), so unset bytes
+    remain 0.  Rows 16-18 (rhythm) are copied from ymfm element by element.
+    """
+    exp = [bytearray(8) for _ in range(18)]
+
+    # Voice 1: Violin
+    exp[0][0] = _u8((ymfm[0][0] & 0xF0) | 0x11)
+    exp[0][1] = _u8((ymfm[0][1] & 0xF0) | 0x61)
+    exp[0][2] = _u8((ymfm[0][2] & 0xF0) | 0x1E)
+    exp[0][3] = _u8((ymfm[0][3] & 0xF0) | 0x17)
+    exp[0][4] = _u8((ymfm[0][4] & 0x0F) | 0xD0)
+    exp[0][5] = _u8((ymfm[0][5] & 0xF0) | 0x78)
+    exp[0][6] = _u8((ymfm[0][6] & 0xF0) | 0x00)
+    exp[0][7] = _u8((ymfm[0][7] & 0xF0) | 0x17)
+    # Voice 2: Guitar
+    exp[1][0] = _u8((ymfm[1][0] & 0xF0) | 0x13)
+    exp[1][1] = _u8((ymfm[1][1] & 0xF0) | 0x41)
+    exp[1][2] = _u8((ymfm[1][2] & 0xF0) | 0x1A)
+    exp[1][3] = _u8((ymfm[1][3] & 0xF0) | 0x0D)
+    exp[1][4] = _u8((ymfm[1][4] & 0x0F) | 0xD0 | 0x08)
+    exp[1][5] = _u8((ymfm[1][5] & 0xF0) | 0xF7)
+    exp[1][6] = _u8((ymfm[1][6] & 0xF0) | 0x23)
+    exp[1][7] = _u8((ymfm[1][7] & 0xF0) | 0x13)
+    # Voice 3: Piano
+    exp[2][0] = _u8((ymfm[2][0] & 0xF0) | 0x13)
+    exp[2][1] = _u8((ymfm[2][1] & 0xF0) | 0x01)
+    exp[2][2] = _u8((ymfm[2][2] & 0xF0) | 0x99)
+    exp[2][3] = _u8((ymfm[2][3] & 0xF0) | 0x00)
+    exp[2][4] = _u8((ymfm[2][4] & 0xF0) | 0xF2)
+    exp[2][5] = _u8((ymfm[2][5] & 0xF0) | 0xD4)
+    exp[2][6] = _u8((ymfm[2][6] & 0xF0) | 0x21)
+    exp[2][7] = _u8((ymfm[2][7] & 0xF0) | 0x23)
+    # Voice 4: Flute
+    exp[3][0] = _u8((ymfm[3][0] & 0xF0) | 0x11)
+    exp[3][1] = _u8((ymfm[3][1] & 0xF0) | 0x61)
+    exp[3][2] = _u8((ymfm[3][2] & 0xF0) | 0x0E)
+    exp[3][3] = _u8((ymfm[3][3] & 0xF0) | 0x07)
+    exp[3][4] = _u8((ymfm[3][4] & 0x0F) | 0x8D)
+    exp[3][5] = _u8((ymfm[3][5] & 0xF0) | 0x64)
+    exp[3][6] = _u8((ymfm[3][6] & 0xF0) | 0x70)
+    exp[3][7] = _u8((ymfm[3][7] & 0xF0) | 0x27)
+    # Voice 5: Clarinet
+    exp[4][0] = _u8((ymfm[4][0] & 0xF0) | 0x32)
+    exp[4][1] = _u8((ymfm[4][1] & 0xF0) | 0x21)
+    exp[4][2] = _u8((ymfm[4][2] & 0xF0) | 0x1E)
+    exp[4][3] = _u8((ymfm[4][3] & 0xF0) | 0x06)
+    exp[4][4] = _u8((ymfm[4][4] & 0x0F) | 0xE0 | 0x01)
+    exp[4][5] = _u8((ymfm[4][5] & 0xF0) | 0x76)
+    exp[4][6] = _u8((ymfm[4][6] & 0xF0) | 0x01)
+    exp[4][7] = _u8((ymfm[4][7] & 0xF0) | 0x28)
+    # Voice 6: Oboe/Marimba
+    exp[5][0] = _u8((ymfm[5][0] & 0xF0) | 0x31)
+    exp[5][1] = _u8((ymfm[5][1] & 0xF0) | 0x22)
+    exp[5][2] = _u8((ymfm[5][2] & 0xF0) | 0x16)
+    exp[5][3] = _u8((ymfm[5][3] & 0xF0) | 0x05)
+    exp[5][4] = _u8((ymfm[5][4] & 0x0F) | 0xE0)
+    exp[5][5] = _u8((ymfm[5][5] & 0xF0) | 0x71)
+    exp[5][6] = _u8((ymfm[5][6] & 0xF0) | 0x00)
+    exp[5][7] = _u8((ymfm[5][7] & 0xF0) | 0x18)
+    # Voice 7: Trumpet
+    exp[6][0] = _u8((ymfm[6][0] & 0xF0) | 0x21)
+    exp[6][1] = _u8((ymfm[6][1] & 0xF0) | 0x61)
+    exp[6][2] = _u8((ymfm[6][2] & 0xF0) | 0x1D)
+    exp[6][3] = _u8((ymfm[6][3] & 0xF0) | 0x07)
+    exp[6][4] = _u8((ymfm[6][4] & 0x0F) | 0x82)
+    exp[6][5] = _u8((ymfm[6][5] & 0xF0) | 0x81)
+    exp[6][6] = _u8((ymfm[6][6] & 0xF0) | 0x11)
+    exp[6][7] = _u8((ymfm[6][7] & 0xF0) | 0x07)
+    # Voice 8: Organ/Harmonica
+    exp[7][0] = _u8((ymfm[7][0] & 0xF0) | 0x33)
+    exp[7][1] = _u8((ymfm[7][1] & 0xF0) | 0x21)
+    exp[7][2] = _u8((ymfm[7][2] & 0xF0) | 0x2D)
+    exp[7][3] = _u8((ymfm[7][3] & 0xF0) | 0x13)
+    exp[7][4] = _u8((ymfm[7][4] & 0x0F) | 0xB0)
+    exp[7][5] = _u8((ymfm[7][5] & 0xF0) | 0x70)
+    exp[7][6] = _u8((ymfm[7][6] & 0xF0) | 0x00)
+    exp[7][7] = _u8((ymfm[7][7] & 0xF0) | 0x07)
+    # Voice 9: Horn/Tuba
+    exp[8][0] = _u8((ymfm[8][0] & 0xF0) | 0x61)
+    exp[8][1] = _u8((ymfm[8][1] & 0xF0) | 0x61)
+    exp[8][2] = _u8((ymfm[8][2] & 0xF0) | 0x1B)
+    exp[8][3] = _u8((ymfm[8][3] & 0xF0) | 0x06)
+    exp[8][4] = _u8((ymfm[8][4] & 0x0F) | 0x64)
+    exp[8][5] = _u8((ymfm[8][5] & 0xF0) | 0x65)
+    exp[8][6] = _u8((ymfm[8][6] & 0xF0) | 0x10)
+    exp[8][7] = _u8((ymfm[8][7] & 0xF0) | 0x17)
+    # Voice 10: Synthesizer/Synth Brass 2
+    exp[9][0] = _u8((ymfm[9][0] & 0xF0) | 0x41)
+    exp[9][1] = _u8((ymfm[9][1] & 0xF0) | 0x61)
+    exp[9][2] = _u8((ymfm[9][2] & 0xF0) | 0x0B)
+    exp[9][3] = _u8((ymfm[9][3] & 0xF0) | 0x18)
+    exp[9][4] = _u8((ymfm[9][4] & 0x0F) | 0x85)
+    exp[9][5] = _u8((ymfm[9][5] & 0xF0) | 0xF0)
+    exp[9][6] = _u8((ymfm[9][6] & 0xF0) | 0x81)
+    exp[9][7] = _u8((ymfm[9][7] & 0xF0) | 0x07)
+    # Voice 11: Harpsichord/Short Saw
+    exp[10][0] = _u8((ymfm[10][0] & 0xF0) | 0x33)
+    exp[10][1] = _u8((ymfm[10][1] & 0xF0) | 0x01)
+    exp[10][2] = _u8((ymfm[10][2] & 0xF0) | 0x83)
+    exp[10][3] = _u8((ymfm[10][3] & 0xF0) | 0x11)
+    exp[10][4] = _u8((ymfm[10][4] & 0x0F) | 0xEA)
+    exp[10][5] = _u8((ymfm[10][5] & 0xF0) | 0xEF)
+    exp[10][6] = _u8((ymfm[10][6] & 0xF0) | 0x10)
+    exp[10][7] = _u8((ymfm[10][7] & 0xF0) | 0x04)
+    # Voice 12: Vibraphone
+    exp[11][0] = _u8((ymfm[11][0] & 0xF0) | 0x17)
+    exp[11][1] = _u8((ymfm[11][1] & 0xF0) | 0xC1)
+    exp[11][2] = _u8((ymfm[11][2] & 0xF0) | 0x24)
+    exp[11][3] = _u8((ymfm[11][3] & 0xF0) | 0x07)
+    exp[11][4] = _u8((ymfm[11][4] & 0x0F) | 0xF8)
+    exp[11][5] = _u8((ymfm[11][5] & 0xF0) | 0xF8)
+    exp[11][6] = _u8((ymfm[11][6] & 0xF0) | 0x22)
+    exp[11][7] = _u8((ymfm[11][7] & 0xF0) | 0x12)
+    # Voice 13: Synth Bass / Electric Guitar 2
+    exp[12][0] = _u8((ymfm[12][0] & 0xF0) | 0x61)
+    exp[12][1] = _u8((ymfm[12][1] & 0xF0) | 0x50)
+    exp[12][2] = _u8((ymfm[12][2] & 0xF0) | 0x0C)
+    exp[12][3] = _u8((ymfm[12][3] & 0xF0) | 0x05)
+    exp[12][4] = _u8((ymfm[12][4] & 0x0F) | 0xD2)
+    exp[12][5] = _u8((ymfm[12][5] & 0xF0) | 0xF5)
+    exp[12][6] = _u8((ymfm[12][6] & 0xF0) | 0x40)
+    exp[12][7] = _u8((ymfm[12][7] & 0xF0) | 0x42)
+    # Voice 14: Acoustic Bass / Synth Bass 2
+    exp[13][0] = _u8((ymfm[13][0] & 0xF0) | 0x01)
+    exp[13][1] = _u8((ymfm[13][1] & 0xF0) | 0x01)
+    exp[13][2] = _u8((ymfm[13][2] & 0xF0) | 0x55)
+    exp[13][3] = _u8((ymfm[13][3] & 0xF0) | 0x03)
+    exp[13][4] = _u8((ymfm[13][4] & 0x0F) | 0xE4)
+    exp[13][5] = _u8((ymfm[13][5] & 0xF0) | 0x90)
+    exp[13][6] = _u8((ymfm[13][6] & 0xF0) | 0x03)
+    # byte 7 not set → remains 0
+    # Voice 15: Electric Guitar / Sitar
+    exp[14][0] = _u8((ymfm[14][0] & 0xF0) | 0x41)
+    exp[14][1] = _u8((ymfm[14][1] & 0xF0) | 0x41)
+    exp[14][2] = _u8((ymfm[14][2] & 0xF0) | 0x89)
+    exp[14][3] = _u8((ymfm[14][3] & 0xF0) | 0x03)
+    exp[14][4] = _u8((ymfm[14][4] & 0x0F) | 0xF1)
+    exp[14][5] = _u8((ymfm[14][5] & 0xF0) | 0xE4)
+    exp[14][6] = _u8((ymfm[14][6] & 0xF0) | 0xC0)
+    exp[14][7] = _u8((ymfm[14][7] & 0xF0) | 0x13)
+    # Rhythm 1 (index 15): copy from ymfm
+    for j in range(8):
+        exp[15][j] = ymfm[15][j]
+    # Rhythm 2 (index 16): copy from ymfm, modify byte 7
+    for j in range(8):
+        exp[16][j] = ymfm[16][j]
+    exp[16][7] = _u8((ymfm[16][7] & 0xF0) | 0x68)
+    # Rhythm 3 (index 17): copy from ymfm
+    for j in range(8):
+        exp[17][j] = ymfm[17][j]
+
+    return [tuple(row) for row in exp]
+
+
+# ---------------------------------------------------------------------------
+# Compute EXPERIMENT presets at module import time
+# ---------------------------------------------------------------------------
+
+EXPERIMENT_YM2413_PRESET: _Table = _make_exp_table(YMFM_YM2413_VOICES, _mod_ym2413)
+EXPERIMENT_VRC7_PRESET:   _Table = _make_exp_table(YMFM_VRC7_VOICES,   _mod_vrc7)
+EXPERIMENT_YMF281B_PRESET: _Table = _make_exp_table(YMFM_YMF281B_VOICES, _mod_ymf281b)
+EXPERIMENT_YM2423_PRESET:  _Table = _make_exp_ym2423(YMFM_YM2423_VOICES)
+
+
+# ---------------------------------------------------------------------------
+# Instrument-only MS2 export table
+# Maps internal preset key → (table, output_filename_8dot3)
+# ---------------------------------------------------------------------------
+
+#: Preset name → (patch_table, output_filename)
+#: The patch_table has 18 entries; use the first 16 (indices 0..15) for the
+#: melodic presets (OPLL inst 1..16); entries 16..17 are rhythm and unused.
+PRESET_LIBRARY_MAP: dict[str, tuple[_Table, str]] = {
+    'YMVOICE_YM2413_VOICES':    (YMVOICE_YM2413_VOICES,   'YMVOPLL.MS2'),
+    'YMVOICE_VRC7_VOICES':      (YMVOICE_VRC7_VOICES,     'YMVVRC7.MS2'),
+    'YMVOICE_YMF281B_VOICES':   (YMVOICE_YMF281B_VOICES,  'YMVOPLLP.MS2'),
+    'YMFM_YM2413_VOICES':       (YMFM_YM2413_VOICES,      'YMFOPLL.MS2'),
+    'YMFM_VRC7_VOICES':         (YMFM_VRC7_VOICES,        'YMFVRC7.MS2'),
+    'YMFM_YMF281B_VOICES':      (YMFM_YMF281B_VOICES,     'YMFOPLLP.MS2'),
+    'YMFM_YM2423_VOICES':       (YMFM_YM2423_VOICES,      'YMFOPLLX.MS2'),
+    'EXPERIMENT_YM2413_PRESET': (EXPERIMENT_YM2413_PRESET, 'EXPOPLL.MS2'),
+    'EXPERIMENT_VRC7_PRESET':   (EXPERIMENT_VRC7_PRESET,  'EXPVRC7.MS2'),
+    'EXPERIMENT_YMF281B_PRESET':(EXPERIMENT_YMF281B_PRESET,'EXPOPLLP.MS2'),
+    'EXPERIMENT_YM2423_PRESET': (EXPERIMENT_YM2423_PRESET, 'EXPOPLLX.MS2'),
+}

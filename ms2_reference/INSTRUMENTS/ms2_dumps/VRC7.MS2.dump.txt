@@ -1,0 +1,149 @@
+File: ./VRC7.MS2  (3842 bytes)
+Signature: 4d53c2b20d0a001a  (OK)
+
+[0x0008] Chunk type 1 (Song Settings)  version=0  size=291
+  Description:     'MS2 instrument library: Konami VRC7 (OPLL alternative)'
+  Song length:      0 patterns
+  Loop pattern:     0
+  Timer:            0 (VDP)
+  Timer divider:    6.0000 (0x0600)
+  Modulation depth: 0xC0
+  Channels:         1 total  (1 2OP + 0 4OP + 0 WAV)
+  Channel types:    [1]  (1 enabled)
+  Start instruments:[0]
+  Tunings:          1
+  2OP instruments:  107
+  4OP instruments:  1
+  WAV instruments:  1
+  Patterns:         1
+  Pitch envelopes:  1
+
+[0x012f] Chunk type 2 (Tunings)  version=0  size=210
+  Count: 1
+  Tuning 0: 'Equal Temp.'  offsets[0..11]=[0, 128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280, 1408]
+
+[0x0205] Chunk type 3 (2OP Instruments)  version=0  size=3212
+  Count: 107
+  Inst  0: 'VRC7 Buzzy Bell ' tuning=0  regs=03 21 05 00 E8 81 42 27 00 00 0C
+  Inst  1: 'VRC7 Guitar     ' tuning=0  regs=13 41 14 00 D8 F6 23 12 01 00 0A
+  Inst  2: 'VRC7 Wurly      ' tuning=0  regs=11 11 08 00 FA B2 20 12 01 00 00
+  Inst  3: 'VRC7 Flute      ' tuning=0  regs=31 61 0C 00 A8 64 61 27 00 00 0E
+  Inst  4: 'VRC7 Clarinet   ' tuning=0  regs=32 21 1E 00 E1 76 01 28 00 00 0C
+  Inst  5: 'VRC7 Synth      ' tuning=0  regs=02 01 06 00 A3 E2 F4 F4 00 00 00
+  Inst  6: 'VRC7 Trumpet    ' tuning=0  regs=21 61 1D 00 82 81 11 07 00 00 0E
+  Inst  7: 'VRC7 Organ      ' tuning=0  regs=23 21 22 00 A2 72 01 17 00 01 0E
+  Inst  8: 'VRC7 Bells      ' tuning=0  regs=35 11 25 00 40 73 72 01 00 00 00
+  Inst  9: 'VRC7 Vibes      ' tuning=0  regs=B5 01 0F 00 A8 A5 51 02 01 00 0E
+  Inst 10: 'VRC7 Vibraphone ' tuning=0  regs=17 C1 24 00 F8 F8 22 12 00 00 0E
+  Inst 11: 'VRC7 Tutti      ' tuning=0  regs=71 23 11 00 65 74 18 16 00 00 0C
+  Inst 12: 'VRC7 Fretless   ' tuning=0  regs=01 02 D3 00 C9 95 03 02 00 00 0A
+  Inst 13: 'VRC7 Synth Bass ' tuning=0  regs=61 63 0C 00 94 C0 33 F6 00 00 00
+  Inst 14: 'VRC7 Sweep      ' tuning=0  regs=21 72 0D 00 C1 D5 56 06 00 00 00
+  Inst 15: 'LagrangePoint 1 ' tuning=0  regs=25 A1 23 00 65 81 25 25 00 01 0E
+  Inst 16: 'LagrangePoint 2 ' tuning=0  regs=61 A1 0A 00 76 51 12 33 00 00 02
+  Inst 17: 'LagrangePoint 3 ' tuning=0  regs=B9 01 20 00 A8 A5 51 02 00 01 0E
+  Inst 18: 'LagrangePoint 4 ' tuning=0  regs=88 81 25 00 F0 C2 10 23 01 01 0A
+  Inst 19: 'LagrangePoint 5 ' tuning=0  regs=21 67 0A 00 93 90 74 45 00 00 04
+  Inst 20: 'LagrangePoint 6 ' tuning=0  regs=01 02 CF 00 C3 86 11 12 00 00 08
+  Inst 21: 'LagrangePoint 7 ' tuning=0  regs=03 21 0C 00 E8 E1 32 25 00 00 0C
+  Inst 22: 'LagrangePoint 8 ' tuning=0  regs=03 21 12 00 E6 81 32 03 00 00 0E
+  Inst 23: 'LagrangePoint 9 ' tuning=0  regs=03 21 0B 00 E7 81 32 27 00 00 0E
+  Inst 24: 'LagrangePoint 10' tuning=0  regs=23 21 20 00 41 73 71 13 00 01 0E
+  Inst 25: 'LagrangePoint 11' tuning=0  regs=21 61 1B 00 93 81 12 06 00 00 0E
+  Inst 26: 'LagrangePoint 12' tuning=0  regs=02 01 12 00 E2 81 10 11 00 00 06
+  Inst 27: 'LagrangePoint 13' tuning=0  regs=04 01 1E 00 80 73 10 33 00 00 06
+  Inst 28: 'LagrangePoint 14' tuning=0  regs=04 01 23 00 80 80 00 02 00 00 0E
+  Inst 29: 'LagrangePoint 15' tuning=0  regs=02 01 12 00 E2 E2 10 10 00 00 06
+  Inst 30: 'LagrangePoint 16' tuning=0  regs=03 01 15 00 E6 82 21 63 00 00 0E
+  Inst 31: 'LagrangePoint 17' tuning=0  regs=01 01 00 00 E0 E0 00 00 00 00 0C
+  Inst 32: 'LagrangePoint 18' tuning=0  regs=32 21 1E 00 E1 72 01 48 00 00 0C
+  Inst 33: 'LagrangePoint 19' tuning=0  regs=23 61 16 00 64 81 21 06 00 01 0A
+  Inst 34: 'LagrangePoint 20' tuning=0  regs=23 61 1B 00 64 91 51 06 00 00 0C
+  Inst 35: 'LagrangePoint 21' tuning=0  regs=61 A2 10 00 76 62 12 25 00 00 08
+  Inst 36: 'LagrangePoint 22' tuning=0  regs=31 A1 0C 00 76 70 41 04 00 00 00
+  Inst 37: 'LagrangePoint 23' tuning=0  regs=21 23 0E 00 93 79 66 07 00 00 06
+  Inst 38: 'LagrangePoint 24' tuning=0  regs=03 00 9A 00 E2 E2 10 10 00 00 06
+  Inst 39: 'LagrangePoint 25' tuning=0  regs=33 25 17 00 43 83 14 17 00 00 00
+  Inst 40: 'LagrangePoint 26' tuning=0  regs=B9 01 15 00 A8 A5 51 02 00 01 0E
+  Inst 41: 'LagrangePoint 27' tuning=0  regs=01 01 06 00 FA B4 30 63 01 00 00
+  Inst 42: 'LagrangePoint 28' tuning=0  regs=61 A1 0A 00 76 52 12 23 00 00 02
+  Inst 43: 'LagrangePoint 29' tuning=0  regs=63 21 18 00 34 52 32 23 00 00 0E
+  Inst 44: 'LagrangePoint 30' tuning=0  regs=61 A3 08 00 82 42 43 04 00 00 04
+  Inst 45: 'LagrangePoint 31' tuning=0  regs=32 61 1A 00 91 66 01 26 00 00 0C
+  Inst 46: 'LagrangePoint 32' tuning=0  regs=01 06 14 00 92 94 43 34 00 00 08
+  Inst 47: 'LagrangePoint 33' tuning=0  regs=11 51 0A 00 D8 F4 23 46 01 00 0A
+  Inst 48: 'LagrangePoint 34' tuning=0  regs=13 41 08 00 D6 F6 31 00 01 00 0A
+  Inst 49: 'LagrangePoint 35' tuning=0  regs=13 41 0A 00 D8 F6 22 12 01 00 0A
+  Inst 50: 'LagrangePoint 36' tuning=0  regs=61 63 02 00 92 90 74 45 00 00 02
+  Inst 51: 'LagrangePoint 37' tuning=0  regs=A1 04 13 00 54 B9 11 02 00 00 06
+  Inst 52: 'LagrangePoint 38' tuning=0  regs=A5 42 07 00 54 E9 31 02 01 00 00
+  Inst 53: 'LagrangePoint 39' tuning=0  regs=00 02 0C 00 E4 E4 23 12 01 00 00
+  Inst 54: 'LagrangePoint 40' tuning=0  regs=03 61 0B 00 E8 81 42 47 00 00 0E
+  Inst 55: 'LagrangePoint 41' tuning=0  regs=21 61 1A 00 74 A3 42 17 00 00 0E
+  Inst 56: 'LagrangePoint 42' tuning=0  regs=23 28 16 00 92 84 50 36 00 00 06
+  Inst 57: 'LagrangePoint 43' tuning=0  regs=21 04 0C 00 73 74 41 43 00 00 00
+  Inst 58: 'LagrangePoint 44' tuning=0  regs=31 34 18 00 63 46 1A 16 00 00 0E
+  Inst 59: 'LagrangePoint 45' tuning=0  regs=14 82 0F 00 C5 F4 11 22 00 00 0A
+  Inst 60: 'LagrangePoint 46' tuning=0  regs=21 26 14 00 42 88 30 14 00 00 04
+  Inst 61: 'LagrangePoint 47' tuning=0  regs=02 08 D3 00 C4 C4 23 26 00 00 0A
+  Inst 62: 'LagrangePoint 48' tuning=0  regs=01 25 0C 00 23 62 42 37 00 00 06
+  Inst 63: 'LagrangePoint 49' tuning=0  regs=03 21 0A 00 E7 84 32 37 00 00 0E
+  Inst 64: 'LagrangePoint 50' tuning=0  regs=01 05 0C 00 80 D2 02 33 00 00 04
+  Inst 65: 'LagrangePoint 51' tuning=0  regs=21 26 0E 00 42 84 62 15 00 00 0C
+  Inst 66: 'LagrangePoint 52' tuning=0  regs=0B 01 0E 00 C6 A3 32 14 00 00 0A
+  Inst 67: 'LagrangePoint 53' tuning=0  regs=21 21 15 00 12 31 52 23 00 00 08
+  Inst 68: 'LagrangePoint 54' tuning=0  regs=01 06 04 00 86 A3 23 32 00 01 08
+  Inst 69: 'LagrangePoint 55' tuning=0  regs=01 06 04 00 86 A3 42 34 00 01 08
+  Inst 70: 'LagrangePoint 56' tuning=0  regs=1A 81 8B 00 C6 A4 23 23 00 00 0A
+  Inst 71: 'LagrangePoint 57' tuning=0  regs=0D 81 8E 00 C6 A4 23 23 00 00 0E
+  Inst 72: 'LagrangePoint 58' tuning=0  regs=03 21 0C 00 86 93 33 15 00 00 08
+  Inst 73: 'LagrangePoint 59' tuning=0  regs=21 41 09 00 DD 8F 4A 05 00 00 00
+  Inst 74: 'LagrangePoint 60' tuning=0  regs=01 07 11 00 D2 84 F4 F5 00 00 00
+  Inst 75: 'LagrangePoint 61' tuning=0  regs=01 01 11 00 C0 B4 01 F6 00 00 00
+  Inst 76: 'LagrangePoint 62' tuning=0  regs=F9 F1 24 00 95 D1 E5 F2 00 00 00
+  Inst 77: 'LagrangePoint 63' tuning=0  regs=02 11 0E 00 CA E6 44 24 00 00 00
+  Inst 78: 'LagrangePoint 64' tuning=0  regs=E0 F4 1B 00 11 F0 04 08 00 00 00
+  Inst 79: 'LagrangePoint 65' tuning=0  regs=FF 70 19 00 50 1F 05 01 00 00 00
+  Inst 80: 'LagrangePoint 66' tuning=0  regs=13 11 11 00 FA F2 21 F4 00 00 00
+  Inst 81: 'LagrangePoint 67' tuning=0  regs=A5 41 10 00 FB B9 11 02 00 00 00
+  Inst 82: 'LagrangePoint 68' tuning=0  regs=41 32 09 00 C7 F9 14 04 00 00 00
+  Inst 83: 'LagrangePoint 69' tuning=0  regs=41 43 0B 00 94 B0 33 F6 00 00 00
+  Inst 84: 'LagrangePoint 70' tuning=0  regs=01 03 0B 00 BA D9 26 06 00 00 00
+  Inst 85: 'LagrangePoint 71' tuning=0  regs=41 01 00 00 FA D9 37 04 00 00 00
+  Inst 86: 'LagrangePoint 72' tuning=0  regs=02 03 09 00 CB FF 39 06 00 00 00
+  Inst 87: 'LagrangePoint 73' tuning=0  regs=18 11 09 00 F8 F5 26 26 00 00 00
+  Inst 88: 'LagrangePoint 74' tuning=0  regs=0B 04 09 00 F0 F5 01 27 00 00 00
+  Inst 89: 'LagrangePoint 75' tuning=0  regs=40 40 07 00 D0 D6 01 27 00 00 00
+  Inst 90: 'LagrangePoint 76' tuning=0  regs=00 01 07 00 CB E3 36 25 00 00 00
+  Inst 91: 'LagrangePoint 77' tuning=0  regs=11 11 08 00 FA B2 20 F4 00 00 00
+  Inst 92: 'LagrangePoint 78' tuning=0  regs=11 11 11 00 C0 B2 01 F4 00 00 00
+  Inst 93: 'LagrangePoint 79' tuning=0  regs=17 51 15 00 E7 95 21 03 00 00 00
+  Inst 94: 'LagrangePoint 80' tuning=0  regs=31 71 19 00 42 62 26 24 00 00 00
+  Inst 95: 'LagrangePoint 81' tuning=0  regs=62 71 25 00 64 43 12 26 00 00 00
+  Inst 96: 'LagrangePoint 82' tuning=0  regs=21 03 0B 00 90 D4 02 F5 00 00 00
+  Inst 97: 'LagrangePoint 83' tuning=0  regs=01 03 0A 00 90 A4 03 F5 00 00 00
+  Inst 98: 'LagrangePoint 84' tuning=0  regs=42 52 0E 00 90 D4 02 F5 00 00 00
+  Inst 99: 'LagrangePoint 85' tuning=0  regs=35 31 26 00 50 30 76 06 00 00 00
+  Inst 100: 'LagrangePoint 86' tuning=0  regs=72 32 9A 00 99 F5 14 15 00 00 00
+  Inst 101: 'LagrangePoint 87' tuning=0  regs=72 12 16 00 F9 F5 33 03 00 00 00
+  Inst 102: 'LagrangePoint 88' tuning=0  regs=61 21 11 00 86 54 23 06 00 00 0C
+  Inst 103: 'LagrangePoint 89' tuning=0  regs=63 70 1B 00 75 4B 45 15 00 00 00
+  Inst 104: 'LagrangePoint 90' tuning=0  regs=61 A1 0A 00 76 54 12 07 00 00 00
+  Inst 105: 'LagrangePoint 91' tuning=0  regs=61 78 0D 00 85 F2 14 03 00 00 00
+  Inst 106: 'LagrangePoint 92' tuning=0  regs=31 71 15 00 B6 F9 03 26 00 00 00
+
+[0x0e95] Chunk type 4 (4OP Instruments)  version=0  size=43
+
+[0x0ec4] Chunk type 5 (WAV Instruments)  version=0  size=38
+
+[0x0eee] Chunk type 6 (Patterns)  version=0  size=3
+  Count: 1 patterns, 1 channels each
+  --- Pattern 0 ---
+    CH 0: cum=16  [t16]
+         raw: 90
+
+[0x0ef5] Chunk type 8 (Pitch Envelopes)  version=0  size=5
+
+[0x0efe] Chunk type 0 (Sentinel)  version=0  size=0
+  (end of file)
+
