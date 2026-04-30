@@ -127,13 +127,16 @@ class _Segment:
         'time',         # VGM 経過時間（秒 or サンプル）
         'ch',           # ch               
         'l',            # 音価（前 Segment からの tick 差）
+        'ms2_len',      # MS2 の 1 グリッド（grid_sz beat）を何個並べるか
+        'beat_sz',      # beatは何ticksか
+        'grid_sz',      # 「何分音符にするか」
         'o',            # オクターブ（block を MML 用に変換した値）
         'scale',        # 音階（0–11）
         'odiff',        # 音価（前 Segment からの o 差）
         'vdiff',        # 音価（前 Segment からの v 差）
         # 既存フィールド
-        'tick_start', 'tick_end', 'keyon', 'fnum', 'block', 'inst', 'vol', 'sus',
-        'fl', 'kl', 'vf',
+        'beat_start', 'beat_end', 'keyon', 'fnum', 'block', 'inst', 'vol', 'sus',
+        'beat', 'fb', 'kb', 'vb',
         'is_ryt', 'bd', 'sd', 'tom', 'tc', 'hh',
         'fnum_ch6', 'vol_ch6', 'sus_ch6',
         'fnum_ch7', 'vol_ch7', 'sus_ch7',
@@ -149,8 +152,8 @@ class _Segment:
     def __init__(
         self,
         reg_type, time,ch,
-        tick_start, keyon, fnum, block, inst, vol, sus,
-        fl=0, kl=0, vf=0,
+        beat_start, keyon, fnum, block, inst, vol, sus,
+        beat=0,fb=0, kb=0, vb=0,
         is_ryt=0, bd=0, sd=0, tom=0, tc=0, hh=0,
         fnum_ch6=0, vol_ch6=0, sus_ch6=0,
         fnum_ch7=0, vol_ch7=0, sus_ch7=0,
@@ -161,14 +164,17 @@ class _Segment:
         self.time     = time
         self.ch       = ch
         self.l        = 0          # 後で _build_segments() 側で計算して埋める
+        self.ms2_len  = 0
+        self.beat_sz  = 0
+        self.grid_sz  = 0
         self.o        = block      # とりあえず block をそのまま入れる（後で MML 用に変換）
         self.scale    = -1         # fnum → 音階変換で後から埋める
         self.odiff    = 0
         self.vdiff    = 0
 
         # 既存
-        self.tick_start = tick_start
-        self.tick_end   = tick_start
+        self.beat_start = beat_start
+        self.beat_end   = beat_start
 
         self.keyon      = keyon
         self.fnum       = fnum
@@ -177,9 +183,10 @@ class _Segment:
         self.vol        = vol
         self.sus        = sus
 
-        self.fl         = fl
-        self.kl         = kl
-        self.vf         = vf
+        self.beat       = beat
+        self.fb         = fb
+        self.kb         = kb
+        self.vb         = vb
 
         self.is_ryt     = is_ryt
         self.bd         = bd
@@ -218,7 +225,7 @@ def dump_segments(segments):
     print("HEADER,ch," + header)
 
     for ch in sorted(segments.keys()):
-        segs = sorted(segments[ch], key=lambda s: s.tick_start)
+        segs = sorted(segments[ch], key=lambda s: s.beat_start)
 
         for i, seg in enumerate(segs):
             values = []
@@ -598,119 +605,7 @@ def pass3_dump_csv(events, trace_csv_path):
         for ev in events:
             writer.writerow(ev)
 
-    print(f"[PASS2] Debug CSV written: {out_csv_path}")
-
-def pass4_compute_beats_old(events):
-    """
-    PASS 4:
-      - beat = int(l / min_l) ただし min_l は keyon=1 の最小 l
-      - fb/kb/vb は beat 単位の累積カウンタ
-      - keyon=0 → fb/kb/vb = 0
-      - keyon=0→1 の変化で fb/kb/vb = beat
-    """
-
-    from collections import defaultdict
-
-    def _ival(v, default=0):
-        if v is None or v == "":
-            return default
-        try:
-            return int(v)
-        except:
-            return default
-
-    # --- min_l を keyon=1 のイベントだけから求める ---
-    min_l = None
-    for ev in events:
-        l     = _ival(ev.get("l"))
-        keyon = _ival(ev.get("keyon"))
-        if keyon == 1 and l > 0:
-            if min_l is None or l < min_l:
-                min_l = l
-
-    if min_l is None:
-        return events  # keyon=1 が無い場合は何もしない
-
-    # --- beat を計算 ---
-    for ev in events:
-        l = _ival(ev.get("l"))
-        ev["beat"] = int(l / min_l) if l > 0 else 0
-
-    # --- ch ごとに fb/kb/vb を計算 ---
-    ch_events = defaultdict(list)
-    for ev in events:
-        ch = _ival(ev.get("ch"), -1)
-        ch_events[ch].append(ev)
-
-    for ch, buf in ch_events.items():
-        buf.sort(key=lambda e: _ival(e.get("ticks")))
-
-        fb_acc = 0
-        kb_acc = 0
-        vb_acc = 0
-
-        fl_prev = 0
-        kl_prev = 0
-        vl_prev = 0
-        keyon_prev = 0
-
-        for ev in buf:
-            beat = _ival(ev.get("beat"))
-            fl   = _ival(ev.get("fl"))
-            kl   = _ival(ev.get("kl"))
-            vl   = _ival(ev.get("vl"))
-            keyon = _ival(ev.get("keyon"))
-
-            # --- keyon=0 のときは 0 ---
-            if keyon == 0:
-                fb_acc = 0
-                kb_acc = 0
-                vb_acc = 0
-                ev["fb"] = 0
-                ev["kb"] = 0
-                ev["vb"] = 0
-                keyon_prev = keyon
-                fl_prev = fl
-                kl_prev = kl
-                vl_prev = vl
-                continue
-
-            # --- keyon=0 → 1 の変化 ---
-            if keyon_prev == 0 and keyon == 1:
-                fb_acc = beat
-                kb_acc = beat
-                vb_acc = beat
-                ev["fb"] = fb_acc
-                ev["kb"] = kb_acc
-                ev["vb"] = vb_acc
-                keyon_prev = keyon
-                fl_prev = fl
-                kl_prev = kl
-                vl_prev = vl
-                continue
-
-            # --- keyon=1 が続く間 ---
-            if fl > fl_prev:
-                fb_acc += beat
-            if kl > kl_prev:
-                kb_acc += beat
-            if vl > vl_prev:
-                vb_acc += beat
-
-            ev["fb"] = fb_acc
-            ev["kb"] = kb_acc
-            ev["vb"] = vb_acc
-
-            keyon_prev = keyon
-            fl_prev = fl
-            kl_prev = kl
-            vl_prev = vl
-
-    return events
-
-from collections import defaultdict, Counter
-
-from collections import defaultdict, Counter
+    print(f"[PASS3] Debug CSV written: {out_csv_path}")
 
 def pass4_compute_beats(events):
     """
@@ -815,8 +710,7 @@ def pass4_compute_beats(events):
             kl_prev = kl
             vl_prev = vl
 
-    return events
-
+    return events, min_l
 
 def pass4_dump_csv(events, trace_csv_path):
     """
@@ -844,222 +738,217 @@ def pass4_dump_csv(events, trace_csv_path):
         for ev in events:
             writer.writerow(ev)
 
-    print(f"[PASS2] Debug CSV written: {out_csv_path}")
+    print(f"[PASS4] Debug CSV written: {out_csv_path}")
+
+def _opll_vol_to_ms2(vol_opll: int) -> int:
+    """
+    OPLL vol: 0 (max) ... 15 (mute)
+    MS2 vol: 0 (min) ... 63 (max)
+    """
+    if vol_opll >= 15:
+        return 0
+    v = (15 - vol_opll) * 4
+    if v > 63:
+        v = 63
+    return v
+
+def estimate_bpm_from_segments(segments_by_ch, vgm_rate):
+    """
+    segments_by_ch: {ch: [Segment, ...]}
+    vgm_rate: VGM の tick/sec（vgm header の rate）
+    """
+    beat_durations = []
+
+    for ch, segs in segments_by_ch.items():
+        for seg in segs:
+            if seg.l <= 0:
+                continue
+            if seg.fnum == 0:
+                continue  # 休符は除外
+
+            ticks = seg.beat_end - seg.beat_start
+            if ticks <= 0:
+                continue
+
+            ticks_per_beat = ticks / seg.l
+            beat_durations.append(ticks_per_beat)
+
+    if not beat_durations:
+        return None
+
+    # 中央値で外れ値除去
+    beat_durations.sort()
+    ticks_per_beat = beat_durations[len(beat_durations)//2]
+
+    bpm = 60 * vgm_rate / ticks_per_beat
+    return round(bpm)
+
 
 def _build_segments(trace_csv_path):
-    per_ch_tick_state = defaultdict(lambda: defaultdict(dict))
-
     # -----------------------------
-    # 1. CSV → per_ch_tick_state
+    # 1. CSV → events（pass0〜pass4）
     # -----------------------------
-    # Pass 0
     events = pass0_read_csv(trace_csv_path)
 
-    # Pass 1 
-    # events = pass1_compute_l(events) # l のみ
-    events = pass1_compute_l_from_time(events) # lをtimeの差分から再計算
-    # Debug
-    pass1_dump_csv(events,trace_csv_path)
+    # Pass 1: time 差分から l 再計算
+    events = pass1_compute_l_from_time(events)
+    pass1_dump_csv(events, trace_csv_path)
 
-    # Pass 2
-    #events = pass2_filter_l0(events) # l=0 削除
-    events = pass2_filter_and_recalc_l(events) # l=0 削除
+    # Pass 2: l=0 削除＋後続 l 再計算
+    events = pass2_filter_and_recalc_l(events)
     pass2_dump_csv(events, trace_csv_path)
-    
-    # Pass 3
-    events = pass3_update_fl_kl_vl(events)   # fl, kl, vl
+
+    # Pass 3: fl, kl, vl 更新
+    events = pass3_update_fl_kl_vl(events)
     pass3_dump_csv(events, trace_csv_path)
 
-    # Pass 4
-    events = pass4_compute_beats(events)     # beat, fb, kb, vb
+    # Pass 4: beat, fb, kb, vb 計算（min_l は keyon=1 の l から）
+    events, min_l = pass4_compute_beats(events)
     pass4_dump_csv(events, trace_csv_path)
 
     # -----------------------------
-    # 2. Segment 生成
+    # 2. ch ごとにイベントをまとめる
     # -----------------------------
-    melody_events = {ch: [] for ch in range(9)}
-    events_by_ch  = {ch: [] for ch in range(NUM_CH)}
+    events_by_ch = defaultdict(list)
+    for ev in events:
+        ch = int(ev["ch"])
+        events_by_ch[ch].append(ev)
 
-    last_state = {
-        ch: {
-            "tick_fnum": 0,
-            "last_fnum": 0,
-            "tick_keyon": 0,
-            "last_keyon": 0,
-            "last_vol": 15,
-        }
-        for ch in range(9)
-    }
+    for ch in events_by_ch.keys():
+        # time か ticks でソート（どちらでも一貫していれば OK）
+        events_by_ch[ch].sort(key=lambda e: e["ticks"])
 
-    for ch in range(9):
-        if ch not in per_ch_tick_state:
-            continue
+    segments_by_ch = {ch: [] for ch in range(NUM_CH)}
 
-        ticks = sorted(per_ch_tick_state[ch].keys())
-        states = [(t, per_ch_tick_state[ch][t]) for t in ticks]
+    # -----------------------------
+    # 3. beat ベースで Segment 生成
+    # -----------------------------
+    for ch, evs in events_by_ch.items():
+        cur_seg = None
+        cur_beat_pos = 0  # この ch の「beat 上の位置」
+        print(f"[SEG] ch={ch}, num_events={len(evs)}")
 
-        prev_keyon = 0
-        last_keyon_tick = None
-        last_note_fnum = None
-        last_note_block = None
+        for ev in evs:
+            reg_type = ev["#type"]
+            time     = float(ev["time"])
+            ticks    = int(ev["ticks"])
 
-        current_seg = None
+            keyon    = int(ev["keyon"])
+            fnum     = int(ev["fnum"])
+            block    = int(ev["block"])
+            inst     = int(ev["inst"])
+            vol_opll = int(ev["vol"])
+            sus      = int(ev.get("sus", 0))
 
-        for tick, st in states:
-            reg_type = st['reg_type']
-            time     = st['time']
-            keyon    = st['keyon']
-            fnum     = st['fnum']
-            block    = st['block']
-            inst     = st['inst']
-            vol      = st['vol']
-            sus      = st['sus']
+            is_ryt   = int(ev.get("is_ryt", 0))
+            bd       = int(ev.get("bd", 0))
+            sd       = int(ev.get("sd", 0))
+            tom      = int(ev.get("tom", 0))
+            tc       = int(ev.get("tc", 0))
+            hh       = int(ev.get("hh", 0))
+            fnum_ch6 = int(ev.get("fnum_ch6", 0))
+            vol_ch6  = int(ev.get("vol_ch6", 15))
+            fnum_ch7 = int(ev.get("fnum_ch7", 0))
+            vol_ch7  = int(ev.get("vol_ch7", 15))
+            fnum_ch8 = int(ev.get("fnum_ch8", 0))
+            vol_ch8  = int(ev.get("vol_ch8", 15))
 
-            # Rhythm
-            is_ryt   = st['is_ryt']
-            bd       = st['bd']
-            sd       = st['sd']
-            tom      = st['tom']
-            tc       = st['tc']
-            hh       = st['hh']
-            fnum_ch6 = st['fnum_ch6']
-            vol_ch6  = st['vol_ch6']
-            sus_ch6  = st['sus_ch6']
-            fnum_ch7 = st['fnum_ch7']
-            vol_ch7  = st['vol_ch7']
-            sus_ch7  = st['sus_ch7']
-            fnum_ch8 = st['fnum_ch8']
-            vol_ch8  = st['vol_ch8']
-            sus_ch8  = st['sus_ch8']
+            l    = int(ev.get("l", 0))
+            beat = int(ev.get("beat", 0))
+            fb   = int(ev.get("fb", 0))
+            kb   = int(ev.get("kb", 0))
+            vb   = int(ev.get("vb", 0))
 
-            # fl/kl/vf
-            ls = last_state[ch]
+            print(f"[SEG-RAW] ch={ch} ticks={ev['ticks']} keyon={keyon!r} fnum={fnum!r} vol={vol_opll!r} l={l!r} beat={beat!r}")
 
-            if fnum != ls["last_fnum"]:
-                fl = tick - ls["tick_fnum"]
-                ls["tick_fnum"] = tick
-                ls["last_fnum"] = fnum
-            else:
-                fl = 0
+            # NOTE_OFF 条件
+            is_off = (keyon == 0) or (vol_opll == 15) or (fnum == 0)
 
-            if keyon == 1:
-                kl = tick - ls["tick_keyon"]
-                ls["tick_keyon"] = tick
-                ls["last_keyon"] = 1
-            else:
-                kl = 0
-                ls["last_keyon"] = 0
+            # NOTE_ON 条件（メロディ／リズム共通で判定）
+            is_on  = (keyon == 1 and beat > 0 and fnum != 0 and vol_opll != 15)
 
-            if vol != ls["last_vol"]:
-                vf = fnum
-                ls["last_vol"] = vol
-            else:
-                vf = 0
+            # まず NOTE_OFF を処理（今鳴っている音を閉じる）
+            if is_off and cur_seg is not None:
+                cur_seg.beat_end = cur_beat_pos
+                cur_seg.l = cur_seg.beat_end - cur_seg.beat_start
+                segments_by_ch[ch].append(cur_seg)
+                cur_seg = None
 
-            # retrigger 判定
-            keyon_edge  = (prev_keyon == 0 and keyon == 1)
-            keyoff_edge = (prev_keyon == 1 and keyon == 0)
+            # NOTE_ON なら新しい Segment を開始
+            if is_on:
+                # もしまだ開いている Segment があれば閉じてから開始
+                if cur_seg is not None:
+                    cur_seg.beat_end = cur_beat_pos
+                    cur_seg.l = cur_seg.beat_end - cur_seg.beat_start
+                    segments_by_ch[ch].append(cur_seg)
 
-            same_note = (fnum != 0 and
-                         fnum == (last_note_fnum or 0) and
-                         block == (last_note_block or 0))
+                ms2_vol = _opll_vol_to_ms2(vol_opll)
 
-            implicit_retrigger = False
-            if (not keyon_edge) and (not keyoff_edge) and keyon == 1 and same_note and last_keyon_tick is not None:
-                gap = tick - last_keyon_tick
-                if IMPLICIT_RETRIGGER_MIN_GAP <= gap <= IMPLICIT_RETRIGGER_MAX_GAP:
-                    implicit_retrigger = True
-
-            # -----------------------------
-            # Segment 開始
-            # -----------------------------
-            if keyon_edge or implicit_retrigger:
-                if current_seg is not None:
-                    current_seg.tick_end = tick
-                    melody_events[ch].append(current_seg)
-                    events_by_ch[ch].append(current_seg)
-
-                current_seg = _Segment(
-                    reg_type, time, ch,
-                    tick, 1, fnum, block, inst, vol, sus,
-                    fl, kl, vf,
-                    is_ryt, bd, sd, tom, tc, hh,
-                    fnum_ch6, vol_ch6, sus_ch6,
-                    fnum_ch7, vol_ch7, sus_ch7,
-                    fnum_ch8, vol_ch8, sus_ch8,
+                cur_seg = _Segment(
+                    reg_type,
+                    time,
+                    ch,
+                    beat_start=cur_beat_pos,  # ここでは beat を beat_start として使う
+                    keyon=keyon,
+                    fnum=fnum,
+                    block=block,
+                    inst=inst,
+                    vol=ms2_vol,
+                    sus=sus,
+                    beat=beat,                    # ここは好みで fb/kb/vb を入れる
+                    fb=fb,                    # ここは好みで fb/kb/vb を入れる
+                    kb=kb,
+                    vb=vb,
+                    is_ryt=is_ryt,
+                    bd=bd,
+                    sd=sd,
+                    tom=tom,
+                    tc=tc,
+                    hh=hh,
+                    fnum_ch6=fnum_ch6,
+                    vol_ch6=_opll_vol_to_ms2(vol_ch6),
+                    sus_ch6=ev.get("sus_ch6", 0),
+                    fnum_ch7=fnum_ch7,
+                    vol_ch7=_opll_vol_to_ms2(vol_ch7),
+                    sus_ch7=ev.get("sus_ch7", 0),
+                    fnum_ch8=fnum_ch8,
+                    vol_ch8=_opll_vol_to_ms2(vol_ch8),
+                    sus_ch8=ev.get("sus_ch8", 0),
                 )
 
-                # retrigger の場合
-                if implicit_retrigger:
-                    current_seg.retrigger_ticks.append(tick)
+            # beat 位置を進める（NOTE_ON/OFF に関係なく）
+            cur_beat_pos += beat
 
-                last_keyon_tick = tick
-                last_note_fnum = fnum
-                last_note_block = block
+        # ch の最後に開いている Segment があれば閉じる
+        if cur_seg is not None:
+            cur_seg.beat_sz = min_l
+            cur_seg.beat_end = cur_beat_pos
+            cur_seg.l = cur_seg.beat_end - cur_seg.beat_start
+            segments_by_ch[ch].append(cur_seg)
 
-            # -----------------------------
-            # Segment 終了
-            # -----------------------------
-            elif keyoff_edge:
-                if current_seg is not None:
-                    current_seg.tick_end = tick
-                    melody_events[ch].append(current_seg)
-                    events_by_ch[ch].append(current_seg)
-                    current_seg = None
-
-            # -----------------------------
-            # Segment 継続
-            # -----------------------------
-            else:
-                if current_seg is not None:
-                    current_seg.tick_end = tick
-
-            prev_keyon = keyon
-
-        # 最後のセグメント
-        if current_seg is not None:
-            current_seg.tick_end = ticks[-1]
-            melody_events[ch].append(current_seg)
-            events_by_ch[ch].append(current_seg)
-
-        # -----------------------------
-        # 3. l / o / scale を埋める
-        # -----------------------------
-        prev_start = None
-        for seg in melody_events[ch]:
+        # ここで o / scale を埋める（beat ベースでもロジックは同じ）
+        for seg in segments_by_ch[ch]:
             seg.o = get_octave(seg.fnum)
             seg.scale = get_scale(seg.fnum)
 
-            if prev_start is None:
-                seg.l = tick
-            else:
-                seg.l = seg.tick_start - prev_start
+    # -----------------------------
+    # 4. BPM 推定（beat_sz = min_l を使用）
+    # -----------------------------
+    # VGM の tick/sec（例：44100）
+    vgm_rate = events[0].get("vgm_rate", 44100)
 
-            prev_start = seg.tick_start
+    # beat_sz は pass4 の min_l（tick 単位）
+    beat_sz = min_l
 
-        # --- l=0 の Segment を削除して前の Segment に吸収 ---
-        for ch in range(9):
-            new_list = []
-            prev = None
-            for seg in melody_events[ch]:
-                if prev is None:
-                    prev = seg
-                    new_list.append(seg)
-                    continue
+    if beat_sz > 0:
+        bpm = round(60 * vgm_rate / beat_sz)
+    else:
+        bpm = None
 
-                if seg.l == 0:
-                    # tick_start を前の seg に合わせる
-                    seg.tick_start = prev.tick_start
-                    # 前の seg を削除して seg に置き換える
-                    new_list[-1] = seg
-                    prev = seg
-                else:
-                    new_list.append(seg)
-                    prev = seg
+    print(f"[BGM] vgm_rate={vgm_rate} min_l={min_l} beat_sz={beat_sz!r} bpm={bpm!r}")
 
-            events_by_ch[ch] = new_list
+    return segments_by_ch, bpm
 
-    return events_by_ch
 
 # ---------------------------------------------------------------------------
 # Voice table: voice CSV columns
@@ -1194,7 +1083,7 @@ def _assign_voice_ids(segments: dict,
     Voice key definition:
       - inst != 0 : ('preset', inst)
       - inst == 0 : ('user', patch_bytes_tuple)  where patch_bytes is the
-                    8-byte user patch current at the segment's tick_start.
+                    8-byte user patch current at the segment's beat_start.
 
     For preset instruments, ``seg.at_token`` is set to ``'@{inst}'`` (e.g. ``'@5'``).
     For user patches, ``seg.at_token`` is set to ``'@v{N}'`` where N is a
@@ -1285,7 +1174,7 @@ def _assign_voice_ids(segments: dict,
                 seg.at_token = f'@{seg.inst}'
             else:
                 if has_voice_csv:
-                    patch = _get_patch_at_tick(seg.tick_start)
+                    patch = _get_patch_at_tick(seg.beat_start)
                     # Warn once if user patch registers were never written
                     if not has_patch_events and not warned_no_patch_events:
                         warnings.append(
@@ -1367,7 +1256,7 @@ def _generate_mml_impl(segments: dict, stem: str, raw_ticks: bool = False,
         for seg_idx, seg in enumerate(segs):
             if ch >= 6 and getattr(seg, "is_ryt", 0) == 1:
                 continue  
-            length = seg.tick_end - seg.tick_start
+            length = seg.beat_end - seg.beat_start
             if length <= 0:
                 continue
 
@@ -1511,7 +1400,7 @@ def _generate_mml_mgs_pct(segments: dict, stem: str,
         note_cnt = 0
 
         for seg in segs:
-            length = seg.tick_end - seg.tick_start
+            length = seg.beat_end - seg.beat_start
             if length <= 0:
                 continue
 
@@ -1647,10 +1536,10 @@ def process_opll_csv(trace_path, output_dir, stem=None,
         # Emit a simple segment dump for debugging
         seg_path = os.path.join(output_dir, f'{stem}.opll.pass0.csv')
         with open(seg_path, 'w', newline='\n') as fh:
-            fh.write('#ch,tick_start,tick_end,keyon,fnum,block,inst,vol,voice_id,at_token\n')
+            fh.write('#ch,beat_start,beat_end,keyon,fnum,block,inst,vol,voice_id,at_token\n')
             for ch in range(NUM_CH):
                 for seg in segments.get(ch, []):
-                    fh.write(f'{ch},{seg.tick_start},{seg.tick_end},'
+                    fh.write(f'{ch},{seg.beat_start},{seg.beat_end},'
                              f'{seg.keyon},{seg.fnum},{seg.block},'
                              f'{seg.inst},{seg.vol},{seg.voice_id},{seg.at_token}\n')
 
@@ -1792,12 +1681,12 @@ def build_segments_trace_compatible(trace_path, NUM_CH=18,_COL_TYPE=0,_COL_TIME=
                     cur_seg.keyon == 1 and tick_has_keyoff and state.keyon == 1
                 )
                 if hidden_retrigger:
-                    cur_seg.tick_end = tick
+                    cur_seg.beat_end = tick
                     segments[ch].append(cur_seg)
                     # ゼロ長keyoff
                     off_seg = _Segment(tick, 0, state.fnum, state.block,
                                        state.inst, state.vol)
-                    off_seg.tick_end = tick
+                    off_seg.beat_end = tick
                     segments[ch].append(off_seg)
                     cur_seg = _Segment(tick, state.keyon, state.fnum,
                                        state.block, state.vol)
@@ -1808,12 +1697,12 @@ def build_segments_trace_compatible(trace_path, NUM_CH=18,_COL_TYPE=0,_COL_TIME=
                     inst_change  = (state.inst != cur_seg.inst and state.keyon == 1)
                     vol_change   = (state.vol != cur_seg.vol   and state.keyon == 1)
                     if keyon_edge or keyoff_edge or pitch_change or inst_change or vol_change:
-                        cur_seg.tick_end = tick
+                        cur_seg.beat_end = tick
                         segments[ch].append(cur_seg)
                         cur_seg = _Segment(tick, state.keyon, state.fnum,
                                            state.block, state.inst, state.vol)
                     else:
-                        cur_seg.tick_end = tick
+                        cur_seg.beat_end = tick
             i = j
         if cur_seg is not None:
             segments[ch].append(cur_seg)
