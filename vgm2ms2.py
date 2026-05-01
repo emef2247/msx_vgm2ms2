@@ -350,7 +350,7 @@ def main():
         voice_csv_path = opll_voice_csv,
         stem           = base_name,
         bpm            = args.bpm,
-        beat_sz        = 0,
+        beat_sz        = 0,  # min_l not separately returned by _build_segments(); informational only
         timer          = args.timer,
         base_ms2       = args.base_ms2,
         video          = args.video,

@@ -323,6 +323,13 @@ def test_build_ms2_file_user_patch_end_to_end():
         f"Expected instrument count > ref_count ({ref_count}), "
         f"got {n_2op_inst_in_file}"
     )
+    # The generated pattern must reference the user-patch instrument slot (>= ref_count).
+    # ref_count is the melody count from _load_reference_library(); rhythm instruments
+    # and user patches are appended after, so user patch INST index > ref_count.
+    assert any(idx >= ref_count for idx in inst_events), (
+        f"Expected at least one INST event with index >= {ref_count}, "
+        f"got: {inst_events}"
+    )
 
 
 # ---------------------------------------------------------------------------
