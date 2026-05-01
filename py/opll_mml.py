@@ -620,6 +620,16 @@ def pass4_compute_beats(events):
         except:
             return default
 
+    # Timeをfloatに変換
+    for ev in events:
+        # ticks は int
+        ev["ticks"] = _ival(ev.get("ticks"))
+        # time は float
+        try:
+            ev["time"] = float(ev.get("time"))
+        except:
+            ev["time"] = 0.0
+
     # ------------------------------------------------------------
     # 1. min_l を keyon=1 の l の「平均ベース」で決定
     # ------------------------------------------------------------
@@ -639,17 +649,18 @@ def pass4_compute_beats(events):
         min_l = (base * countA + (base + 1) * countB) / (countA + countB)
 
     # ------------------------------------------------------------
-    # 2. beat を計算（下限 1）
+    # 2. beat を ticks の差分から計算（keyon 無関係）
     # ------------------------------------------------------------
-    for ev in events:
-        l = _ival(ev.get("l"))
-        keyon = _ival(ev.get("keyon"))
+    events_sorted = sorted(events, key=lambda e: _ival(e.get("ticks")))
 
-        if keyon == 1 and l > 0:
-            beat = max(1, int(round(l / min_l)))
-        else:
-            beat = 0
+    prev_tick = _ival(events_sorted[0].get("ticks"))
 
+    for ev in events_sorted:
+        tick = _ival(ev.get("ticks"))
+        dt = tick - prev_tick
+        prev_tick = tick
+
+        beat = int(round(dt / min_l))
         ev["beat"] = beat
 
     # ------------------------------------------------------------
@@ -710,7 +721,62 @@ def pass4_compute_beats(events):
             kl_prev = kl
             vl_prev = vl
 
-    return events, min_l
+    # ------------------------------------------------------------
+    # 4. beat_pos を ch ごとに累積
+    # ------------------------------------------------------------
+    ch_events_pos = defaultdict(list)
+    for ev in events:
+        ch_events_pos[_ival(ev.get("ch"), -1)].append(ev)
+
+    for ch, buf in ch_events_pos.items():
+        buf.sort(key=lambda e: _ival(e.get("ticks")))
+        cur_pos = 0
+        for ev in buf:
+            ev["beat_pos"] = cur_pos
+            cur_pos += _ival(ev.get("beat"))
+
+    # ------------------------------------------------------------
+    # 5. beat=0 のイベント削除
+    # ------------------------------------------------------------
+    events = [ev for ev in events if ev["beat"] > 0]
+
+    # ------------------------------------------------------------
+    # ★ BPM 用に ch_events を再構築（別名 ch_events_bpm）
+    # ------------------------------------------------------------
+    ch_events_bpm = defaultdict(list)
+    for ev in events:
+        ch_events_bpm[_ival(ev.get("ch"), -1)].append(ev)
+
+    # ------------------------------------------------------------
+    # 6. BPM を dt から直接推定（beat_pos を使わない）
+    # ------------------------------------------------------------
+    dt_all = []
+
+    for ch, buf in ch_events_bpm.items():
+        buf.sort(key=lambda e: e["time"])
+        for i in range(1, len(buf)):
+            dt = buf[i]["time"] - buf[i-1]["time"]
+            if dt > 0:
+                dt_all.append(dt)
+
+    if not dt_all:
+        print("No dt samples → BPM=None")
+        return events, min_l, None
+
+    # 最小 dt（最小音価）を取得
+    dt_min = min(dt_all)
+
+    # 32分音符 = 1拍の1/8 と仮定して BPM を計算
+    bpm = 60.0 / (dt_min * 8.0)
+
+    print(f"[DEBUG] dt_min={dt_min}, BPM_direct={bpm}")
+
+    # Kentaro の希望：grid_per_beat = 16（l64 解像度）
+    grid_per_beat = 16
+    print(f"[DEBUG] grid_per_beat (fixed) = {grid_per_beat}")
+
+    return events, min_l, bpm
+
 
 def pass4_dump_csv(events, trace_csv_path):
     """
@@ -741,16 +807,12 @@ def pass4_dump_csv(events, trace_csv_path):
     print(f"[PASS4] Debug CSV written: {out_csv_path}")
 
 def _opll_vol_to_ms2(vol_opll: int) -> int:
-    """
+   """
     OPLL vol: 0 (max) ... 15 (mute)
-    MS2 vol: 0 (min) ... 63 (max)
+    MS2 file VOL: 0 (max) ... 63 (mute)  ← OPL4 TL 値そのまま
     """
-    if vol_opll >= 15:
-        return 0
-    v = (15 - vol_opll) * 4
-    if v > 63:
-        v = 63
-    return v
+   v = int(round(max(0, min(15, vol_opll)) * 63 / 15))
+   return v
 
 def estimate_bpm_from_segments(segments_by_ch, vgm_rate):
     """
@@ -802,8 +864,8 @@ def _build_segments(trace_csv_path):
     events = pass3_update_fl_kl_vl(events)
     pass3_dump_csv(events, trace_csv_path)
 
-    # Pass 4: beat, fb, kb, vb 計算（min_l は keyon=1 の l から）
-    events, min_l = pass4_compute_beats(events)
+    # Pass 4: beat_pos, beat, fb, kb, vb 計算. timeとbeat_posからbpmも計算
+    events, min_l, bpm = pass4_compute_beats(events)
     pass4_dump_csv(events, trace_csv_path)
 
     # -----------------------------
@@ -816,7 +878,7 @@ def _build_segments(trace_csv_path):
 
     for ch in events_by_ch.keys():
         # time か ticks でソート（どちらでも一貫していれば OK）
-        events_by_ch[ch].sort(key=lambda e: e["ticks"])
+        events_by_ch[ch].sort(key=lambda e: int(e["ticks"]))
 
     segments_by_ch = {ch: [] for ch in range(NUM_CH)}
 
@@ -930,22 +992,6 @@ def _build_segments(trace_csv_path):
         for seg in segments_by_ch[ch]:
             seg.o = get_octave(seg.fnum)
             seg.scale = get_scale(seg.fnum)
-
-    # -----------------------------
-    # 4. BPM 推定（beat_sz = min_l を使用）
-    # -----------------------------
-    # VGM の tick/sec（例：44100）
-    vgm_rate = events[0].get("vgm_rate", 44100)
-
-    # beat_sz は pass4 の min_l（tick 単位）
-    beat_sz = min_l
-
-    if beat_sz > 0:
-        bpm = round(60 * vgm_rate / beat_sz)
-    else:
-        bpm = None
-
-    print(f"[BGM] vgm_rate={vgm_rate} min_l={min_l} beat_sz={beat_sz!r} bpm={bpm!r}")
 
     return segments_by_ch, bpm
 
