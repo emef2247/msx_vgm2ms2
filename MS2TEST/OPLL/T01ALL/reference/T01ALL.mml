@@ -1,0 +1,99 @@
+;[name=T01ALL lpf=1]
+#opll_mode 0
+#tempo 180
+#title { "YM2413 Rapid Retrigger" }
+
+; 目的: 同一音高の高速な KeyOn/Off 繰り返しで KeyOn エッジ検出と残響処理を確認
+; パターン1: 休符を挟まず連続
+; パターン2: タイ
+; パターン3: スラー
+; パターン4: 小休符入り
+; パターン5: 音量を変えながら高速(レガート: タイでKeyOffを抑える)
+; パターン6: オクターブを変化
+
+
+9abcde o4l32
+9 @1  V15 c c c c c c c c
+9 @1  V15 [r]8
+9 @1  V15 [r]8
+9 @1  V15 [r]8
+9 @1  V15 [r]8
+9 @1  V15 [r]8
+
+a @2  V15 [r]8
+a @2  V15 c^c^c^c^
+a @2  V15 [r]8
+a @2  V15 [r]8
+a @2  V15 [r]8
+a @2  V15 [r]8
+
+b @3  V15 [r]8
+b @3  V15 [r]8
+b @3  V15 c& c& c& c& c& c& c& c&
+b @3  V15 [r]8
+b @3  V15 [r]8
+b @3  V15 [r]8
+
+c @4  V15 [r]8
+c @4  V15 [r]8
+c @4  V15 [r]8
+c @4  V15 c r c r c r c r 
+c @4  V15 [r]8
+c @4  V15 [r]8
+
+d @5  V15 [r]8
+d @5  V15 [r]8
+d @5  V15 [r]8
+d @5  V15 [r]8
+d @5  V15 c& v13 c& v11 c& v9 c& v7 c& v5 c& v3 c& v1 c
+d @5  V15 [r]8
+
+e @6  V15 [r]8
+e @6  V15 [r]8
+e @6  V15 [r]8
+e @6  V15 [r]8
+e @6  V15 [r]8
+e @6  V15 o1c o7c o1c o7c o1c o7c o1c o7c
+
+9abcde o5l8
+9 @1  V15 c c c c c c c c
+9 @1  V15 [r]8
+9 @1  V15 [r]8
+9 @1  V15 [r]8
+9 @1  V15 [r]8
+9 @1  V15 [r]8
+
+a @2  V15 [r]8
+a @2  V15 c^c^c^c^
+a @2  V15 [r]8
+a @2  V15 [r]8
+a @2  V15 [r]8
+a @2  V15 [r]8
+
+b @3  V15 [r]8
+b @3  V15 [r]8
+b @3  V15 c& c& c& c& c& c& c& c&
+b @3  V15 [r]8
+b @3  V15 [r]8
+b @3  V15 [r]8
+
+c @4  V15 [r]8
+c @4  V15 [r]8
+c @4  V15 [r]8
+c @4  V15 c r c r c r c r 
+c @4  V15 [r]8
+c @4  V15 [r]8
+
+d @5  V15 [r]8
+d @5  V15 [r]8
+d @5  V15 [r]8
+d @5  V15 [r]8
+d @5  V15 c& v13 c& v11 c& v9 c& v7 c& v5 c& v3 c& v1 c
+d @5  V15 [r]8
+
+e @6  V15 [r]8
+e @6  V15 [r]8
+e @6  V15 [r]8
+e @6  V15 [r]8
+e @6  V15 [r]8
+e @6  V15 o1c o7c o1c o7c o1c o7c o1c o7c
