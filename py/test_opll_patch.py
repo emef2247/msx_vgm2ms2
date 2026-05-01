@@ -29,12 +29,15 @@ def _make_segments(inst_map: dict) -> dict:
     """Create minimal per-channel segment dicts for testing.
 
     *inst_map* maps ch -> inst (int).  All other fields are set to trivial
-    values; tick_end = tick_start + 1 so segments are non-empty.
+    values; beat_end = beat_start + 1 so segments are non-empty.
     """
     segs: dict = {ch: [] for ch in range(NUM_CH)}
     for ch, inst in inst_map.items():
-        s = _Segment(0, 1, 256, 3, inst, 0)
-        s.tick_end = 1
+        s = _Segment(
+            reg_type='instVol', time=0.0, ch=ch,
+            beat_start=0, keyon=1, fnum=256, block=3, inst=inst, vol=0, sus=0,
+        )
+        s.beat_end = 1
         segs[ch].append(s)
     return segs
 
@@ -191,8 +194,12 @@ def test_assign_voice_ids_multiple_patches():
 
     # ch0 uses inst=0 at tick=0 (patch1), ch1 uses inst=0 at tick=100 (patch2)
     segs: dict = {ch: [] for ch in range(NUM_CH)}
-    s0 = _Segment(0, 1, 256, 3, 0, 0); s0.tick_end = 50
-    s1 = _Segment(100, 1, 256, 3, 0, 0); s1.tick_end = 150
+    s0 = _Segment(reg_type='instVol', time=0.0, ch=0,
+                  beat_start=0, keyon=1, fnum=256, block=3, inst=0, vol=0, sus=0)
+    s0.beat_end = 1
+    s1 = _Segment(reg_type='instVol', time=0.001, ch=1,
+                  beat_start=100, keyon=1, fnum=256, block=3, inst=0, vol=0, sus=0)
+    s1.beat_end = 101
     segs[0].append(s0)
     segs[1].append(s1)
 
@@ -213,8 +220,12 @@ def test_assign_voice_ids_same_patch_deduplication():
     ])
 
     segs: dict = {ch: [] for ch in range(NUM_CH)}
-    s0 = _Segment(0, 1, 256, 3, 0, 0); s0.tick_end = 10
-    s1 = _Segment(0, 1, 256, 3, 0, 0); s1.tick_end = 10
+    s0 = _Segment(reg_type='instVol', time=0.0, ch=0,
+                  beat_start=0, keyon=1, fnum=256, block=3, inst=0, vol=0, sus=0)
+    s0.beat_end = 10
+    s1 = _Segment(reg_type='instVol', time=0.0, ch=1,
+                  beat_start=0, keyon=1, fnum=256, block=3, inst=0, vol=0, sus=0)
+    s1.beat_end = 10
     segs[0].append(s0)
     segs[1].append(s1)
 

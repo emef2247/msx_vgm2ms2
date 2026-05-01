@@ -700,10 +700,13 @@ def segments_to_patterns(
         if not segs:
             continue
 
+        # Sort by beat_start so positions and NOTE_OFF logic are correct
+        segs_sorted = sorted(segs, key=lambda s: s.beat_start)
+
         prev_inst_idx = -1
         prev_vol_ms2 = -1
 
-        for i, seg in enumerate(segs):
+        for i, seg in enumerate(segs_sorted):
             # Skip rhythm segments (handled separately)
             if getattr(seg, 'is_ryt', 0):
                 continue
@@ -753,8 +756,8 @@ def segments_to_patterns(
 
             # NOTE_OFF: only when the next valid segment does not immediately follow
             next_seg = None
-            for j in range(i + 1, len(segs)):
-                candidate = segs[j]
+            for j in range(i + 1, len(segs_sorted)):
+                candidate = segs_sorted[j]
                 if (not getattr(candidate, 'is_ryt', 0)
                         and fnum_block_to_ms2_note(candidate.fnum, candidate.block) is not None):
                     next_seg = candidate
@@ -768,6 +771,9 @@ def segments_to_patterns(
                     channel_event_lists[off_pat][ch].append(
                         (off_step_in_pat, [bytes([0x01])])
                     )
+                    # Reset state so VOL/INST are re-emitted after the gap
+                    prev_vol_ms2 = -1
+                    prev_inst_idx = -1
 
     return channel_event_lists
 

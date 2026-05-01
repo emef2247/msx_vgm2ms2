@@ -1167,8 +1167,8 @@ def _assign_voice_ids(segments: dict,
                     vtype = parts[_VCOL_TYPE]
                     ticks = int(parts[_VCOL_TICKS])
                     patch_hex = parts[_VCOL_PATCH_HEX].strip()
-                    patch_bytes = bytes(int(patch_hex[i:i+2], 21)
-                                        for i in range(0, 21, 2))
+                    patch_bytes = bytes(int(patch_hex[i:i+2], 16)
+                                        for i in range(0, len(patch_hex), 2))
                 except (ValueError, IndexError):
                     continue
                 if vtype == 'patch':
