@@ -731,8 +731,8 @@ def segments_to_patterns(
             else:
                 inst_idx = _opll_inst_to_ms2_idx(seg.inst, n_instruments)
 
-            # Volume: seg.vol is already MS2 vol (0-63)
-            vol_ms2 = seg.vol
+            # Volume: seg.vol is already MS2 vol (0-63), set by _opll_vol_to_ms2() in _build_segments()
+            vol_ms2 = max(0, min(63, seg.vol))
 
             evts: list[bytes] = []
 
@@ -870,7 +870,7 @@ def build_ms2_file(
     voice_csv_path: str | None,
     stem: str,
     bpm: int = 120,
-    beat_sz: int = 0,       # min_l (1 beat = how many ticks); informational only
+    beat_sz: int = 0,       # min_l (1 beat = how many ticks); not used in the beat-based model
     timer: int = 0,
     base_ms2: str | None = None,
     video: str = 'ntsc',

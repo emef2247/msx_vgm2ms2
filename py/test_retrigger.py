@@ -36,7 +36,7 @@ from ms2_writer import (
 _FNUM  = 172
 _BLOCK = 3
 _INST  = 1
-_VOL   = 60  # MS2 vol (0-63); already converted
+_VOL   = 60  # MS2 vol (0-63); 60 = _opll_vol_to_ms2(0) = maximum OPLL volume
 
 
 def _empty_segments() -> dict:
