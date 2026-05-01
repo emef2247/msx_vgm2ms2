@@ -563,58 +563,45 @@ def build_patterns_chunk_data(
 # ---------------------------------------------------------------------------
 # Segment → step grid conversion
 # ---------------------------------------------------------------------------
-def _build_step_grid(segments, ticks_per_step, total_steps):
+def _build_step_grid(segments, total_steps):
+    """Build a step grid mapping (ch, step) → (keyon, ms2_note, inst, vol, retrigger, at_token).
+
+    Beat-based version:
+      - seg.beat_start is the step index directly (no ticks_per_step conversion)
+      - seg.beat_end is the end step
+      - Each retrigger is an independent Segment with keyon=1; retrigger_ticks is not used
+    """
     grid = {}
 
     for ch, segs in segments.items():
         for seg in segs:
-            # メロディだけ対象（is_ryt=0）
+            # Melody only (is_ryt=0)
             if getattr(seg, "is_ryt", 0):
                 continue
 
-            start_step = seg.tick_start // ticks_per_step
-            end_step   = max(start_step, seg.tick_end // ticks_per_step)
+            start_step = seg.beat_start
+            end_step   = max(start_step, seg.beat_end)
 
-            # ノート情報
+            # Note info
             ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
             inst     = seg.inst
             vol      = seg.vol
+            at_token = getattr(seg, 'at_token', '')
 
-            # ① セグメント開始ステップ
+            # ① Segment start step
             if 0 <= start_step < total_steps:
                 key = (ch, start_step)
-                keyon, _, _, _, _, at_token = grid.get(key, (0, 0, 0, 0, False, ''))
-                grid[key] = (1, ms2_note, inst, vol, False, at_token)
+                prev = grid.get(key, (0, 0, 0, 0, False, ''))
+                # retrigger=True when this segment starts at the same step as a previous one
+                retrigger = prev[0] == 1
+                grid[key] = (1, ms2_note, inst, vol, retrigger, at_token)
 
-            # ② セグメント継続ステップ（keyon=1 のまま）
+            # ② Segment continuation steps (keyon=1, no retrigger)
             for step in range(start_step + 1, end_step):
                 if 0 <= step < total_steps:
                     key = (ch, step)
-                    _, _, _, _, _, at_token = grid.get(key, (0, 0, 0, 0, False, ''))
-                    grid[key] = (1, ms2_note, inst, vol, False, at_token)
-
-            # ③ retrigger_ticks を retrigger=True として刻む
-            for rtick in getattr(seg, "retrigger_ticks", []):
-                rstep = rtick // ticks_per_step
-                if 0 <= rstep < total_steps:
-                    key = (ch, rstep)
-                    # すでに keyon=1 のはずだが、念のため上書き
-                    _, _, _, _, _, at_token = grid.get(key, (0, 0, 0, 0, False, ''))
-                    grid[key] = (1, ms2_note, inst, vol, True, at_token)
-
-            # NOTE_OFF は「セグメントの最後に 1 回だけ」
-            # retrigger の tick では絶対に出さない
-            off_step = seg.tick_end // ticks_per_step
-
-            # retrigger の tick_end と同じなら NOTE_OFF を出さない
-            if seg.retrigger_ticks and seg.tick_end in seg.retrigger_ticks:
-                continue
-
-            if off_step < total_steps:
-                off_pat = off_step // STEPS_PER_PATTERN
-                off_step_in_pat = off_step % STEPS_PER_PATTERN
-                channel_event_lists[off_pat][ch].append((off_step_in_pat, [bytes([0x01])]))
-
+                    _, _, _, _, _, prev_at = grid.get(key, (0, 0, 0, 0, False, ''))
+                    grid[key] = (1, ms2_note, inst, vol, False, prev_at or at_token)
 
     return grid
 
@@ -682,22 +669,20 @@ def _get_ms2_inst_idx(
 
 def segments_to_patterns(
     segments: dict,
-    ticks_per_step: int,
     n_patterns: int,
     n_channels: int,
     n_instruments: int,
     user_patches: dict | None = None,
     ref_count: int = 0,
-):
+) -> list[list]:
     """
-    FINAL change-based version:
-      - retrigger を特別扱いしない
-      - keyon=1 または fnum 変化 → NOTE_ON
-      - keyon=0 または fnum=0 → NOTE_OFF
-      - vol 変化 → VOL
-      - inst 変化 → INST
-      - keyon=1 のときは NOTE, VOL, INST を必ず出す
-      - 同一 step 内では NOTE → VOL → INST の順
+    Beat-based version:
+      - seg.beat_start → step position (no ticks_per_step conversion needed)
+      - seg.vol is already MS2 vol (0-63) — do NOT apply opll_vol_to_ms2_vol()
+      - Each retrigger is an independent Segment; no retrigger_ticks loop
+      - NOTE_ON: emitted at seg.beat_start
+      - NOTE_OFF: emitted at seg.beat_end only when next segment's beat_start > seg.beat_end
+      - VOL / INST: on first NOTE_ON or when changed
     """
 
     if user_patches is None:
@@ -715,21 +700,28 @@ def segments_to_patterns(
         if not segs:
             continue
 
-        prev_note = None
         prev_inst_idx = -1
         prev_vol_ms2 = -1
 
-        for seg in segs:
-            # NOTE_ON を出す tick 群（tick_start + retrigger）
-            note_starts = [seg.tick_start] + list(seg.retrigger_ticks)
-            note_starts = sorted(note_starts)
+        for i, seg in enumerate(segs):
+            # Skip rhythm segments (handled separately)
+            if getattr(seg, 'is_ryt', 0):
+                continue
 
-            # MS2 note
+            # MS2 note from fnum + block
             ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
             if ms2_note is None:
                 continue
 
-            # inst index
+            # NOTE_ON step (beat_start is directly the step index)
+            step = seg.beat_start
+            if step >= total_steps:
+                continue
+
+            pat = step // STEPS_PER_PATTERN
+            step_in_pat = step % STEPS_PER_PATTERN
+
+            # Instrument index
             if seg.inst == 0 and user_patches:
                 v_num = _parse_user_v_num(seg.at_token)
                 if v_num is not None and v_num in user_patches:
@@ -739,47 +731,43 @@ def segments_to_patterns(
             else:
                 inst_idx = _opll_inst_to_ms2_idx(seg.inst, n_instruments)
 
-            # volume
-            vol_ms2 = opll_vol_to_ms2_vol(seg.vol)
+            # Volume: seg.vol is already MS2 vol (0-63)
+            vol_ms2 = seg.vol
 
-            # ---------------------------------------------------------
-            # NOTE_ON 群
-            # ---------------------------------------------------------
-            for ns in note_starts:
-                step = ns // ticks_per_step
-                if step >= total_steps:
-                    continue
+            evts: list[bytes] = []
 
-                pat = step // STEPS_PER_PATTERN
-                step_in_pat = step % STEPS_PER_PATTERN
+            # NOTE_ON (always)
+            evts.append(bytes([0x00, ms2_note & 0xFF]))
 
-                evts = []
+            # VOL: on first NOTE_ON or when changed
+            if vol_ms2 != prev_vol_ms2:
+                evts.append(bytes([0x05, vol_ms2 & 0xFF]))
+                prev_vol_ms2 = vol_ms2
 
-                # NOTE_ON（必ず）
-                evts.append(bytes([0x00, ms2_note & 0xFF]))
+            # INST: on first NOTE_ON or when changed
+            if inst_idx != prev_inst_idx:
+                evts.append(bytes([0x04, inst_idx & 0xFF]))
+                prev_inst_idx = inst_idx
 
-                # VOL（keyon=1 のときは必ず / 変化時も）
-                if vol_ms2 != prev_vol_ms2 or True:
-                    evts.append(bytes([0x05, vol_ms2 & 0xFF]))
-                    prev_vol_ms2 = vol_ms2
+            channel_event_lists[pat][ch].append((step_in_pat, evts))
 
-                # INST（keyon=1 のときは必ず / 変化時も）
-                if inst_idx != prev_inst_idx or True:
-                    evts.append(bytes([0x04, inst_idx & 0xFF]))
-                    prev_inst_idx = inst_idx
+            # NOTE_OFF: only when the next valid segment does not immediately follow
+            next_seg = None
+            for j in range(i + 1, len(segs)):
+                candidate = segs[j]
+                if (not getattr(candidate, 'is_ryt', 0)
+                        and fnum_block_to_ms2_note(candidate.fnum, candidate.block) is not None):
+                    next_seg = candidate
+                    break
 
-                channel_event_lists[pat][ch].append((step_in_pat, evts))
-
-                prev_note = ms2_note
-
-            # ---------------------------------------------------------
-            # NOTE_OFF（セグメント最後に 1 回）
-            # ---------------------------------------------------------
-            off_step = seg.tick_end // ticks_per_step
-            if off_step < total_steps:
-                off_pat = off_step // STEPS_PER_PATTERN
-                off_step_in_pat = off_step % STEPS_PER_PATTERN
-                channel_event_lists[off_pat][ch].append((off_step_in_pat, [bytes([0x01])]))
+            off_step = seg.beat_end
+            if next_seg is None or next_seg.beat_start > seg.beat_end:
+                if off_step < total_steps:
+                    off_pat = off_step // STEPS_PER_PATTERN
+                    off_step_in_pat = off_step % STEPS_PER_PATTERN
+                    channel_event_lists[off_pat][ch].append(
+                        (off_step_in_pat, [bytes([0x01])])
+                    )
 
     return channel_event_lists
 
@@ -788,15 +776,13 @@ def _get_segment_inst_idx_at_step(
     segments: dict,
     ch: int,
     step: int,
-    ticks_per_step: int,
     user_patches: dict,
     inst_map: dict,
 ) -> int:
     segs = segments.get(ch, [])
     found = None
     for seg in segs:
-        seg_step = seg.tick_start // ticks_per_step
-        if seg_step <= step:
+        if seg.beat_start <= step:
             found = seg
         else:
             break
@@ -809,7 +795,6 @@ def _get_starting_instruments(
     segments: dict,
     n_channels: int,
     n_instruments: int = 15,
-    ticks_per_step: int = TICKS_PER_STEP_75BPM,
     user_patches: dict | None = None,
     ref_count: int = 0,
 ) -> list[int]:
@@ -885,13 +870,12 @@ def build_ms2_file(
     voice_csv_path: str | None,
     stem: str,
     bpm: int = 120,
+    beat_sz: int = 0,       # min_l (1 beat = how many ticks); informational only
     timer: int = 0,
     base_ms2: str | None = None,
     video: str = 'ntsc',
     debug: bool = False,
     rhythm_instruments: dict | None = None,
-    stats: dict | None = None,   # ← fl/kl 統計を受け取る
-    rhythm_stats: dict | None = None,   # ← Rhythm keyon 統計 統計を受け取る
 ) -> bytes:
     """
     MS2ファイル生成: メロディはbase_ms2優先(1～15、index 0～14)、16～はリズム etc.
@@ -946,41 +930,7 @@ def build_ms2_file(
     if debug:
         print(f"[build_ms2_file] base_ms2={base_ms2} melody_count={melody_count} n2op={n_2op_inst}")
 
-    # =====================================================================
-    # ==== ★ Melody + Rhythm の最小音価から ticks_per_step を決定 ====
-    # =====================================================================
-
-    # Melody fl_min
-    melody_fl_min = None
-    if stats is not None and stats.get("fl") and stats["fl"]["min"] is not None:
-        melody_fl_min = stats["fl"]["min"]
-
-    # Rhythm min 値を収集
-    rhythm_mins = []
-    if rhythm_stats is not None:
-        for key in ["bd", "sd", "tom", "tc", "hh"]:
-            info = rhythm_stats.get(key)
-            if info and info["min"] is not None:
-                rhythm_mins.append(info["min"])
-
-    # Melody + Rhythm の候補をまとめる
-    candidates = []
-    if melody_fl_min is not None:
-        candidates.append(melody_fl_min)
-    candidates.extend(rhythm_mins)
-
-    # 候補が 1 つも無い場合はエラー
-    if not candidates:
-        raise ValueError("Melody も Rhythm も最小音価が取得できませんでした。")
-
-    # ticks_per_step = 最小音価
-    ticks_per_step = min(candidates)
-
-    if debug:
-        print(f"[build_ms2_file] ticks_per_step candidates = {candidates}")
-        print(f"[build_ms2_file] → ticks_per_step = {ticks_per_step}")
-
-    # ==== timer_divider は BPM に依存するので従来通り ====
+    # ==== timer_divider は BPM に依存 ====
     if timer == 1:
         freq_hz = _FREQ_PAL
     elif video == 'pal':
@@ -991,22 +941,28 @@ def build_ms2_file(
     timer_divider = int(math.floor(freq_hz * 3840 / bpm))
     timer_divider = max(1, min(0xFFFF, timer_divider))
 
+    if debug:
+        print(f"[build_ms2_file] beat_sz={beat_sz} bpm={bpm} timer_divider=0x{timer_divider:04X}")
+
     # =====================================================================
-    # ==== パターン数推定（ticks_per_step = fl_min に基づく） ====
+    # ==== パターン数推定（beat_end ベース） ====
     # =====================================================================
-    last_note_end_tick = 0
+    max_beat_end = 0
     for ch in range(NUM_CH):
         for seg in segments.get(ch, []):
-            last_note_end_tick = max(last_note_end_tick, seg.tick_end)
+            max_beat_end = max(max_beat_end, seg.beat_end)
 
     n_patterns = max(
         1,
-        math.ceil(last_note_end_tick / (ticks_per_step * STEPS_PER_PATTERN))
+        math.ceil(max_beat_end / STEPS_PER_PATTERN)
     )
+
+    if debug:
+        print(f"[build_ms2_file] max_beat_end={max_beat_end} n_patterns={n_patterns}")
 
     # ==== starting_instruments ====
     starting_instruments = _get_starting_instruments(
-        segments, NUM_CH, n_2op_inst, ticks_per_step,
+        segments, NUM_CH, n_2op_inst,
         user_patches=user_patches, ref_count=ref_count
     )
     if len(starting_instruments) < NUM_CH:
@@ -1014,7 +970,7 @@ def build_ms2_file(
 
     # ==== パターン生成 ====
     channel_event_lists = segments_to_patterns(
-        segments, ticks_per_step, n_patterns, NUM_CH, n_2op_inst,
+        segments, n_patterns, NUM_CH, n_2op_inst,
         user_patches=user_patches, ref_count=ref_count
     )
 

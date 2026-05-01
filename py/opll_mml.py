@@ -816,7 +816,7 @@ def _build_segments(trace_csv_path):
 
     for ch in events_by_ch.keys():
         # time か ticks でソート（どちらでも一貫していれば OK）
-        events_by_ch[ch].sort(key=lambda e: e["ticks"])
+        events_by_ch[ch].sort(key=lambda e: int(e["ticks"]))
 
     segments_by_ch = {ch: [] for ch in range(NUM_CH)}
 

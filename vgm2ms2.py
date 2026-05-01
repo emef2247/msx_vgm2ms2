@@ -327,54 +327,34 @@ def main():
     # ── Build OPLL segments ───────────────────────────────────────────────
     print("Building OPLL segments …")
     num_ch = 18
-    segments = _build_segments(opll_trace_csv)
+    segments, bpm_detected = _build_segments(opll_trace_csv)
     dump_segments(segments)
 
     n_segs = sum(len(v) for v in segments.values())
     print(f"  {n_segs} segments across {num_ch} channels")
 
-    # ── Melody fl/kl 統計 ───────────────────────────────────────────────
-    stats = analyze_fl_kl(segments)
-    print("FL stats:", stats["fl"])
-    print("KL stats:", stats["kl"])
-
-    # ── Rhythm keyon 間隔統計 ───────────────────────────────────────────
-    rhythm_stats = analyze_rhythm_intervals(segments)
-    print("Rhythm stats:")
-    for k, v in rhythm_stats.items():
-        print(f"  {k}: {v}")
-
-    # Melody + Rhythm の統計から BPM を推定
-    bpm_auto = estimate_bpm(stats, rhythm_stats)
-
-    if bpm_auto is not None:
-        print(f"Estimated BPM = {bpm_auto}")
-        args.bpm = bpm_auto
+    # ── BPM from beat-based segment model ────────────────────────────────
+    if bpm_detected is not None:
+        print(f"Detected BPM = {bpm_detected}")
+        args.bpm = bpm_detected
     else:
-        print("BPM estimation failed → --bpm の値を使用します")
-    
+        print("BPM detection failed → using --bpm value")
+
     # ── Generate MS2 binary ───────────────────────────────────────────────
     print(f"Generating MS2 (BPM={args.bpm}, timer={args.timer}) …")
     if args.base_ms2:
         print(f"  Using base instrument library: {args.base_ms2}")
-
-    # --- Fix retrigger segments: fl=0 but kl>0 → use kl as length ---
-    for ch in segments:
-        for seg in segments[ch]:
-            if seg.fl == 0 and seg.kl > 0:
-                seg.fl = seg.kl
 
     ms2_bytes = build_ms2_file(
         segments       = segments,
         voice_csv_path = opll_voice_csv,
         stem           = base_name,
         bpm            = args.bpm,
+        beat_sz        = 0,
         timer          = args.timer,
         base_ms2       = args.base_ms2,
         video          = args.video,
         debug          = args.debug,
-        stats          = stats,          # ← Melody fl/kl 統計
-        rhythm_stats   = rhythm_stats,   # ← Rhythm keyon 統計（新規）
     )
 
     # ── Write output file ─────────────────────────────────────────────────

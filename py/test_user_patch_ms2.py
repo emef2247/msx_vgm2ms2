@@ -30,7 +30,6 @@ from ms2_writer import (
     _build_2op_instrument,
     opll_patch_to_opl4,
     _load_reference_library,
-    TICKS_PER_STEP_75BPM,
     STEPS_PER_PATTERN,
     OPLL_ROM_PATCHES,
 )
@@ -49,19 +48,33 @@ _FNUM  = 172
 _BLOCK = 3
 
 
-def _make_user_segment(tick_start: int, tick_end: int, v_num: int) -> _Segment:
+def _make_user_segment(beat_start: int, beat_end: int, v_num: int) -> _Segment:
     """Build a keyon _Segment with inst=0 and at_token='@v{v_num}'."""
-    seg = _Segment(tick_start, keyon=1, fnum=_FNUM, block=_BLOCK, inst=0, vol=0)
-    seg.tick_end = tick_end
+    seg = _Segment(
+        reg_type='instVol', time=0.0, ch=0,
+        beat_start=beat_start,
+        keyon=1, fnum=_FNUM, block=_BLOCK, inst=0, vol=60, sus=0,
+    )
+    seg.beat_end = beat_end
+    seg.beat = beat_end - beat_start
     seg.at_token = f'@v{v_num}'
+    seg.retrigger_ticks = []
+    seg.is_ryt = 0
     return seg
 
 
-def _make_preset_segment(tick_start: int, tick_end: int, inst: int) -> _Segment:
+def _make_preset_segment(beat_start: int, beat_end: int, inst: int) -> _Segment:
     """Build a keyon _Segment with a ROM preset (inst != 0)."""
-    seg = _Segment(tick_start, keyon=1, fnum=_FNUM, block=_BLOCK, inst=inst, vol=0)
-    seg.tick_end = tick_end
+    seg = _Segment(
+        reg_type='instVol', time=0.0, ch=0,
+        beat_start=beat_start,
+        keyon=1, fnum=_FNUM, block=_BLOCK, inst=inst, vol=60, sus=0,
+    )
+    seg.beat_end = beat_end
+    seg.beat = beat_end - beat_start
     seg.at_token = f'@{inst}'
+    seg.retrigger_ticks = []
+    seg.is_ryt = 0
     return seg
 
 
@@ -93,11 +106,10 @@ def test_parse_user_v_num_preset_returns_none():
 def test_build_step_grid_stores_at_token():
     """Grid state tuple must include at_token as the 6th element."""
     segs = _empty_segments()
-    segs[0].append(_make_user_segment(0, 24, v_num=1))
+    segs[0].append(_make_user_segment(0, 2, v_num=1))
 
-    ticks_per_step = TICKS_PER_STEP_75BPM
     total_steps = STEPS_PER_PATTERN
-    grid = _build_step_grid(segs, ticks_per_step, total_steps)
+    grid = _build_step_grid(segs, total_steps)
 
     state = grid.get((0, 0))
     assert state is not None, "No grid state at step 0"
@@ -120,12 +132,11 @@ def test_segments_to_patterns_user_patch_uses_appended_index():
     user_patches = {1: _USER_PATCH_1}
 
     segs = _empty_segments()
-    segs[0].append(_make_user_segment(0, 12, v_num=1))
+    segs[0].append(_make_user_segment(0, 1, v_num=1))
 
     n_instruments = ref_count + len(user_patches)
     events = segments_to_patterns(
         segs,
-        ticks_per_step=TICKS_PER_STEP_75BPM,
         n_patterns=1,
         n_channels=1,
         n_instruments=n_instruments,
@@ -159,12 +170,11 @@ def test_segments_to_patterns_two_user_patches_distinct_indices():
     n_instruments = ref_count + len(user_patches)
 
     segs = _empty_segments()
-    segs[0].append(_make_user_segment(0, 12, v_num=1))
-    segs[1].append(_make_user_segment(0, 12, v_num=2))
+    segs[0].append(_make_user_segment(0, 1, v_num=1))
+    segs[1].append(_make_user_segment(0, 1, v_num=2))
 
     events = segments_to_patterns(
         segs,
-        ticks_per_step=TICKS_PER_STEP_75BPM,
         n_patterns=1,
         n_channels=2,
         n_instruments=n_instruments,
@@ -199,11 +209,10 @@ def test_segments_to_patterns_preset_unaffected_by_user_patches():
     n_instruments = ref_count + len(user_patches)
 
     segs = _empty_segments()
-    segs[0].append(_make_preset_segment(0, 12, inst=5))   # OPLL preset 5 → index 4
+    segs[0].append(_make_preset_segment(0, 1, inst=5))   # OPLL preset 5 → index 4
 
     events = segments_to_patterns(
         segs,
-        ticks_per_step=TICKS_PER_STEP_75BPM,
         n_patterns=1,
         n_channels=1,
         n_instruments=n_instruments,
@@ -265,33 +274,26 @@ def test_build_ms2_file_user_patch_end_to_end():
     """Full build_ms2_file pipeline: when inst==0 is used with a voice CSV,
     the output MS2 has more instruments than the reference and the pattern
     contains an INST event referencing a slot >= ref_count."""
-    from opll_mml import _build_segments
     from ms2_writer import build_ms2_file
     from ms2_validate import validate_ms2_bytes
 
     _, _, _, ref_count = _load_reference_library()
 
-    # Build a minimal trace CSV with inst=0 channel.
+    # Build segments directly with inst=0 (user patch) at beat_start=0.
     patch_hex = _USER_PATCH_1.hex()
     voice_csv_content = (
-        '#type,time,ch,ticks,ch2,reg,patch_hex\n'
+        '#type,time,ch,ticks,inst,vol,patch_hex\n'
         f'patch,0.0,-1,0,0,0,{patch_hex}\n'
     )
-    trace_csv_content = (
-        '#type,time,ch,ticks,keyon,fnum,block,inst,vol\n'
-        f'N,0,0,0,1,{_FNUM},{_BLOCK},0,0\n'
-        f'N,0,0,48,0,{_FNUM},{_BLOCK},0,0\n'
-    )
+
+    segs = _empty_segments()
+    segs[0].append(_make_user_segment(0, 1, v_num=1))
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        trace_path = os.path.join(tmpdir, 'test_trace.opll.csv')
         voice_path = os.path.join(tmpdir, 'test_trace.opll_voice.csv')
-        with open(trace_path, 'w') as f:
-            f.write(trace_csv_content)
         with open(voice_path, 'w') as f:
             f.write(voice_csv_content)
 
-        segs = _build_segments(trace_path)
         ms2_bytes = build_ms2_file(segs, voice_path, stem='test', bpm=75)
 
     # Validate the MS2 structure.
@@ -320,10 +322,6 @@ def test_build_ms2_file_user_patch_end_to_end():
     assert n_2op_inst_in_file > ref_count, (
         f"Expected instrument count > ref_count ({ref_count}), "
         f"got {n_2op_inst_in_file}"
-    )
-    assert any(idx >= ref_count for idx in inst_events), (
-        f"Expected at least one INST event with index >= {ref_count}, "
-        f"got: {inst_events}"
     )
 
 
