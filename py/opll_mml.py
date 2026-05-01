@@ -741,15 +741,11 @@ def pass4_dump_csv(events, trace_csv_path):
     print(f"[PASS4] Debug CSV written: {out_csv_path}")
 
 def _opll_vol_to_ms2(vol_opll: int) -> int:
-    """
+   """
     OPLL vol: 0 (max) ... 15 (mute)
-    MS2 vol: 0 (min) ... 63 (max)
+    MS2 file VOL: 0 (max) ... 63 (mute)  ← OPL4 TL 値そのまま
     """
-    if vol_opll >= 15:
-        return 0
-    v = (15 - vol_opll) * 4
-    if v > 63:
-        v = 63
+    v = int(round(max(0, min(15, vol_opll)) * 63 / 15))
     return v
 
 def estimate_bpm_from_segments(segments_by_ch, vgm_rate):
