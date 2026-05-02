@@ -20,7 +20,7 @@ import tempfile
 _this_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _this_dir)
 
-from opll_mml import _Segment, NUM_CH
+from opll_mml import _Segment, Segment, NUM_CH
 from ms2_writer import (
     _build_step_grid,
     _parse_user_v_num,
@@ -49,18 +49,16 @@ _FNUM  = 172
 _BLOCK = 3
 
 
-def _make_user_segment(tick_start: int, tick_end: int, v_num: int) -> _Segment:
-    """Build a keyon _Segment with inst=0 and at_token='@v{v_num}'."""
-    seg = _Segment(tick_start, keyon=1, fnum=_FNUM, block=_BLOCK, inst=0, vol=0)
-    seg.tick_end = tick_end
+def _make_user_segment(tick_start: int, tick_end: int, v_num: int) -> Segment:
+    """Build a keyon Segment with inst=0 and at_token='@v{v_num}'."""
+    seg = Segment(tick_start, tick_end, 0, keyon=1, fnum=_FNUM, block=_BLOCK, inst=0, vol=0, sus=0)
     seg.at_token = f'@v{v_num}'
     return seg
 
 
-def _make_preset_segment(tick_start: int, tick_end: int, inst: int) -> _Segment:
-    """Build a keyon _Segment with a ROM preset (inst != 0)."""
-    seg = _Segment(tick_start, keyon=1, fnum=_FNUM, block=_BLOCK, inst=inst, vol=0)
-    seg.tick_end = tick_end
+def _make_preset_segment(tick_start: int, tick_end: int, inst: int) -> Segment:
+    """Build a keyon Segment with a ROM preset (inst != 0)."""
+    seg = Segment(tick_start, tick_end, 0, keyon=1, fnum=_FNUM, block=_BLOCK, inst=inst, vol=0, sus=0)
     seg.at_token = f'@{inst}'
     return seg
 

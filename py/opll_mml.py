@@ -130,13 +130,14 @@ class _Segment:
       - Rhythm trigger events only: type="rhythm" with is_ryt==1 (see below)
     """
     __slots__ = (
-        'tick_start', 'tick_end', 'keyon', 'fnum', 'block', 'inst', 'vol','sus',
+        'tick_start', 'tick_end', 'keyon', 'fnum', 'block', 'inst', 'vol', 'sus',
         'is_ryt', 'bd', 'sd', 'tom', 'tc', 'hh',
         'fnum_ch6', 'vol_ch6', 'sus_ch6', 'fnum_ch7', 'vol_ch7', 'sus_ch7', 'fnum_ch8', 'vol_ch8', 'sus_ch8',
+        'at_token', 'voice_id',  # added for _assign_voice_ids compatibility
     )
 
     def __init__(
-        self, tick_start, keyon, fnum, block, inst, vol,sus,
+        self, tick_start, keyon, fnum, block, inst, vol, sus=0,
         is_ryt=0, bd=0, sd=0, tom=0, tc=0, hh=0,
         fnum_ch6=0, vol_ch6=0, sus_ch6=0, fnum_ch7=0, vol_ch7=0, sus_ch7=0, fnum_ch8=0, vol_ch8=0, sus_ch8=0,
     ):
@@ -165,6 +166,9 @@ class _Segment:
         self.fnum_ch8   = fnum_ch8
         self.vol_ch8    = vol_ch8
         self.sus_ch8    = sus_ch8
+        # Voice assignment fields (set by _assign_voice_ids)
+        self.at_token   = ''
+        self.voice_id   = 0
 
     def mml_vol(self): return 15 - self.vol
     
@@ -354,8 +358,7 @@ def _build_segments(trace_csv_path):
                     inst_change  = (state_ch.inst != cur_seg.inst and state_ch.keyon == 1)
                     vol_change   = (state_ch.vol != cur_seg.vol   and state_ch.keyon == 1)
                     sus_change   = (state_ch.sus != cur_seg.sus   and state_ch.keyon == 1)
-                    if keyoff_edge or pitch_change:
-                    #if keyon_edge or keyoff_edge or pitch_change or inst_change or vol_change:
+                    if keyon_edge or keyoff_edge or pitch_change:
                         cur_seg.tick_end = tick
                         events_by_ch[ch].append(cur_seg)
                         cur_seg = Segment(tick, None, ch, state_ch.keyon, state_ch.fnum, state_ch.block, state_ch.inst, state_ch.vol, state_ch.sus)
@@ -543,8 +546,8 @@ def _assign_voice_ids(segments: dict,
                     vtype = parts[_VCOL_TYPE]
                     ticks = int(parts[_VCOL_TICKS])
                     patch_hex = parts[_VCOL_PATCH_HEX].strip()
-                    patch_bytes = bytes(int(patch_hex[i:i+2], 21)
-                                        for i in range(0, 21, 2))
+                    patch_bytes = bytes(int(patch_hex[i:i+2], 16)
+                                        for i in range(0, 16, 2))
                 except (ValueError, IndexError):
                     continue
                 if vtype == 'patch':

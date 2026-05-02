@@ -33,7 +33,7 @@ def _make_segments(inst_map: dict) -> dict:
     """
     segs: dict = {ch: [] for ch in range(NUM_CH)}
     for ch, inst in inst_map.items():
-        s = _Segment(0, 1, 256, 3, inst, 0)
+        s = _Segment(0, 1, 256, 3, inst, 0, 0)
         s.tick_end = 1
         segs[ch].append(s)
     return segs
@@ -191,8 +191,8 @@ def test_assign_voice_ids_multiple_patches():
 
     # ch0 uses inst=0 at tick=0 (patch1), ch1 uses inst=0 at tick=100 (patch2)
     segs: dict = {ch: [] for ch in range(NUM_CH)}
-    s0 = _Segment(0, 1, 256, 3, 0, 0); s0.tick_end = 50
-    s1 = _Segment(100, 1, 256, 3, 0, 0); s1.tick_end = 150
+    s0 = _Segment(0, 1, 256, 3, 0, 0, 0); s0.tick_end = 50
+    s1 = _Segment(100, 1, 256, 3, 0, 0, 0); s1.tick_end = 150
     segs[0].append(s0)
     segs[1].append(s1)
 
@@ -213,8 +213,8 @@ def test_assign_voice_ids_same_patch_deduplication():
     ])
 
     segs: dict = {ch: [] for ch in range(NUM_CH)}
-    s0 = _Segment(0, 1, 256, 3, 0, 0); s0.tick_end = 10
-    s1 = _Segment(0, 1, 256, 3, 0, 0); s1.tick_end = 10
+    s0 = _Segment(0, 1, 256, 3, 0, 0, 0); s0.tick_end = 10
+    s1 = _Segment(0, 1, 256, 3, 0, 0, 0); s1.tick_end = 10
     segs[0].append(s0)
     segs[1].append(s1)
 

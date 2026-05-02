@@ -561,6 +561,28 @@ def build_patterns_chunk_data(
 
 
 # ---------------------------------------------------------------------------
+# Beat-based field assignment
+# ---------------------------------------------------------------------------
+
+def _assign_beat_fields(segments: dict, ticks_per_step: int) -> None:
+    """Pre-compute beat_start and ms2_len for every segment.
+
+    beat_start = tick_start // ticks_per_step  (absolute MS2 step index, 0-based)
+    ms2_len    = max(1, ceil((tick_end - tick_start) / ticks_per_step))
+                 (note duration in steps; at least 1 step)
+
+    These fields let _build_step_grid() place notes directly by step position
+    without further tick arithmetic, which fixes note placement when tick_start
+    values already encode beat positions (e.g. after beat-based quantisation).
+    """
+    for ch_segs in segments.values():
+        for seg in ch_segs:
+            seg.beat_start = seg.tick_start // ticks_per_step
+            dur_ticks = max(0, (seg.tick_end or seg.tick_start) - seg.tick_start)
+            seg.ms2_len = max(1, (dur_ticks + ticks_per_step - 1) // ticks_per_step)
+
+
+# ---------------------------------------------------------------------------
 # Segment → step grid conversion
 # ---------------------------------------------------------------------------
 
@@ -583,11 +605,17 @@ def _build_step_grid(
         for seg in segs:
             if seg.keyon:
                 continue
-            start_step = seg.tick_start // ticks_per_step
+            # Use pre-computed beat_start when available; fall back to tick computation.
+            start_step = getattr(seg, 'beat_start', None)
+            if start_step is None:
+                start_step = seg.tick_start // ticks_per_step
             if start_step < total_steps:
                 keyoff_steps.add(start_step)
         for seg in segs:
-            start_step = seg.tick_start // ticks_per_step
+            # Use pre-computed beat_start when available; fall back to tick computation.
+            start_step = getattr(seg, 'beat_start', None)
+            if start_step is None:
+                start_step = seg.tick_start // ticks_per_step
             if start_step >= total_steps:
                 continue
             at_token = getattr(seg, 'at_token', '')
@@ -910,17 +938,24 @@ def build_ms2_file(
     timer_divider = max(1, min(0xFFFF, timer_divider))
     ticks_per_step = max(1, round(freq_hz * 15 / bpm))
 
-    # ==== パターン数自動推定 ====
-    last_note_end_tick = 0
+    # ==== Beat-based field assignment ====
+    # Pre-compute beat_start (absolute step index) and ms2_len (duration in steps)
+    # for every segment so that _build_step_grid() can use them directly.
+    _assign_beat_fields(segments, ticks_per_step)
+
+    # ==== パターン数自動推定 (beat-based) ====
+    # Use beat_start + ms2_len for keyon segments to find the last occupied step.
+    last_beat_end = 0
     for ch in range(NUM_CH):
         for seg in segments.get(ch, []):
             if seg.keyon:
-                last_note_end_tick = max(last_note_end_tick, seg.tick_end)
-    if last_note_end_tick == 0:
+                last_beat_end = max(last_beat_end, seg.beat_start + seg.ms2_len)
+    if last_beat_end == 0:
+        # Fallback: use all segments (keyon and keyoff)
         for ch in range(NUM_CH):
             for seg in segments.get(ch, []):
-                last_note_end_tick = max(last_note_end_tick, seg.tick_end)
-    n_patterns = max(1, math.ceil(last_note_end_tick / (ticks_per_step * STEPS_PER_PATTERN)))
+                last_beat_end = max(last_beat_end, seg.beat_start + seg.ms2_len)
+    n_patterns = max(1, math.ceil(last_beat_end / STEPS_PER_PATTERN))
 
     # ==== starting_instruments配列生成 ====
     starting_instruments = _get_starting_instruments(
