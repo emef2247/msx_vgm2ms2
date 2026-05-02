@@ -140,7 +140,8 @@ def test_note_off_cross_pattern():
 
 def test_note_off_not_emitted_when_next_note_is_legato():
     """When the next note starts exactly at beat_start + ms2_len (legato), no NOTE_OFF
-    is emitted between the two notes."""
+    is emitted between the two notes.  A single NOTE_OFF is still emitted for the
+    final note (since there is no following segment)."""
     segs = _empty_segments()
     # Note 1: steps 0-3 (ms2_len=4), Note 2: starts at step 4 (legato)
     segs[0].append(_make_seg(beat_start=0, ms2_len=4))
@@ -149,12 +150,15 @@ def test_note_off_not_emitted_when_next_note_is_legato():
     events = segments_to_patterns(segs, n_patterns=1, n_channels=1, n_instruments=15)
     all_events = _collect_events(events, 0)
 
-    # There should be 2 NOTE_ONs and only 1 NOTE_OFF (for the final note).
+    # There should be 2 NOTE_ONs and only 1 NOTE_OFF (for the final note only;
+    # no NOTE_OFF between the legato pair).
     note_ons  = [s for s, op in all_events if op == 0x00]
     note_offs = [s for s, op in all_events if op == 0x01]
 
     assert len(note_ons)  == 2, f"Expected 2 NOTE_ONs, got {note_ons}"
-    assert len(note_offs) == 1, f"Expected 1 NOTE_OFF (legato), got {note_offs}"
+    assert len(note_offs) == 1, (
+        f"Expected 1 NOTE_OFF (final only, none between legato notes), got {note_offs}"
+    )
     assert note_offs[0]   == 8, f"Final NOTE_OFF should be at step 8, got {note_offs[0]}"
 
 
@@ -250,23 +254,33 @@ def test_ms2_output_valid_with_beat_segments():
 
 def test_retrigger_ticks_ignored_for_beat_based():
     """retrigger_ticks must not affect output: two segments with same beat_start
-    each emit their own NOTE_ON without relying on retrigger_ticks."""
-    segs = _empty_segments()
-    # Two segments at the same beat_start (retrigger)
-    s1 = _make_seg(beat_start=2, ms2_len=2)
-    s2 = _make_seg(beat_start=2, ms2_len=2)
-    # Ensure retrigger_ticks is present but should be ignored
-    s1.retrigger_ticks = [100]
-    s2.retrigger_ticks = []
-    segs[0].append(s1)
-    segs[0].append(s2)
+    each emit their own NOTE_ON independent of retrigger_ticks values.
+    Verify that the result is identical whether retrigger_ticks is empty or not."""
+    def _run_with_retrigger_ticks(ticks_value):
+        segs = _empty_segments()
+        s1 = _make_seg(beat_start=2, ms2_len=2)
+        s2 = _make_seg(beat_start=2, ms2_len=2)
+        s1.retrigger_ticks = ticks_value
+        s2.retrigger_ticks = []
+        segs[0].append(s1)
+        segs[0].append(s2)
+        return segments_to_patterns(segs, n_patterns=1, n_channels=1, n_instruments=15)
 
-    events = segments_to_patterns(segs, n_patterns=1, n_channels=1, n_instruments=15)
-    note_ons = [(s, op) for s, op in _collect_events(events, 0) if op == 0x00]
+    events_with    = _collect_events(_run_with_retrigger_ticks([100]), 0)
+    events_without = _collect_events(_run_with_retrigger_ticks([]),    0)
 
-    # Both segments are at the same step; we expect at least one NOTE_ON at step 2.
-    assert any(s == 2 for s, _ in note_ons), (
-        f"Expected at least one NOTE_ON at step 2, got {note_ons}"
+    # Output must be identical regardless of retrigger_ticks content.
+    assert events_with == events_without, (
+        f"retrigger_ticks should not affect output.\n"
+        f"  with ticks: {events_with}\n"
+        f"  without:    {events_without}"
+    )
+
+    # Both segments are at the same step; we expect exactly one NOTE_ON at step 2
+    # (segments_to_patterns deduplicates via the grid; at least one must appear).
+    note_ons_at_2 = [s for s, op in events_with if op == 0x00 and s == 2]
+    assert note_ons_at_2, (
+        f"Expected NOTE_ON(s) at step 2, got events: {events_with}"
     )
 
 
