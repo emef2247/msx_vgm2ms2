@@ -676,13 +676,11 @@ def segments_to_patterns(
     ref_count: int = 0,
 ) -> list[list]:
     """
-    Beat-based version:
-      - seg.beat_start → step position (no ticks_per_step conversion needed)
-      - seg.vol is already MS2 vol (0-63) — do NOT apply opll_vol_to_ms2_vol()
-      - Each retrigger is an independent Segment; no retrigger_ticks loop
-      - NOTE_ON: emitted at seg.beat_start
-      - NOTE_OFF: emitted at seg.beat_end only when next segment's beat_start > seg.beat_end
-      - VOL / INST: on first NOTE_ON or when changed
+    beat_pos ベースでグリッドに配置。
+    - NOTE_ON  : seg.beat_start のステップに配置
+    - NOTE_OFF : seg.beat_end   のステップに配置（ギャップ or 最終）
+    - 1 grid = 1 beat
+    - VOL / INST: 最初の NOTE_ON 時または変化時のみ送出。NOTE_OFF 後はリセット。
     """
 
     if user_patches is None:
@@ -700,11 +698,15 @@ def segments_to_patterns(
         if not segs:
             continue
 
-        prev_inst_idx = -1
-        prev_vol_ms2 = -1
+        # beat_start でソート
+        segs_sorted = sorted(segs, key=lambda s: s.beat_start)
 
-        for i, seg in enumerate(segs):
-            # Skip rhythm segments (handled separately)
+        prev_ms2_note = None
+        prev_inst_idx = -1
+        prev_vol      = -1
+
+        for i, seg in enumerate(segs_sorted):
+            # リズムチャンネルはスキップ
             if getattr(seg, 'is_ryt', 0):
                 continue
 
@@ -712,14 +714,6 @@ def segments_to_patterns(
             ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
             if ms2_note is None:
                 continue
-
-            # NOTE_ON step (beat_start is directly the step index)
-            step = seg.beat_start
-            if step >= total_steps:
-                continue
-
-            pat = step // STEPS_PER_PATTERN
-            step_in_pat = step % STEPS_PER_PATTERN
 
             # Instrument index
             if seg.inst == 0 and user_patches:
@@ -731,43 +725,49 @@ def segments_to_patterns(
             else:
                 inst_idx = _opll_inst_to_ms2_idx(seg.inst, n_instruments)
 
-            # Volume: seg.vol is already MS2 vol (0-63), set by _opll_vol_to_ms2() in _build_segments()
+            # seg.vol はすでに _opll_vol_to_ms2() 変換済み → 再変換しない
             vol_ms2 = max(0, min(63, seg.vol))
 
+            # ── NOTE_ON ──
+            step = seg.beat_start
+            if step >= total_steps:
+                continue
+            pat         = step // STEPS_PER_PATTERN
+            step_in_pat = step % STEPS_PER_PATTERN
+
             evts: list[bytes] = []
+            evts.append(bytes([0x00, ms2_note & 0xFF]))   # NOTE_ON
 
-            # NOTE_ON (always)
-            evts.append(bytes([0x00, ms2_note & 0xFF]))
-
-            # VOL: on first NOTE_ON or when changed
-            if vol_ms2 != prev_vol_ms2:
+            # VOL: 最初 or 変化時のみ
+            if vol_ms2 != prev_vol or prev_ms2_note is None:
                 evts.append(bytes([0x05, vol_ms2 & 0xFF]))
-                prev_vol_ms2 = vol_ms2
+                prev_vol = vol_ms2
 
-            # INST: on first NOTE_ON or when changed
-            if inst_idx != prev_inst_idx:
+            # INST: 最初 or 変化時のみ
+            if inst_idx != prev_inst_idx or prev_ms2_note is None:
                 evts.append(bytes([0x04, inst_idx & 0xFF]))
                 prev_inst_idx = inst_idx
 
             channel_event_lists[pat][ch].append((step_in_pat, evts))
+            prev_ms2_note = ms2_note
 
-            # NOTE_OFF: only when the next valid segment does not immediately follow
-            next_seg = None
-            for j in range(i + 1, len(segs)):
-                candidate = segs[j]
-                if (not getattr(candidate, 'is_ryt', 0)
-                        and fnum_block_to_ms2_note(candidate.fnum, candidate.block) is not None):
-                    next_seg = candidate
-                    break
+            # ── NOTE_OFF ──
+            # 次のセグメントとの間にギャップがある、または最後のセグメント
+            next_seg = segs_sorted[i + 1] if i + 1 < len(segs_sorted) else None
+            need_off = (next_seg is None) or (seg.beat_end < next_seg.beat_start)
 
-            off_step = seg.beat_end
-            if next_seg is None or next_seg.beat_start > seg.beat_end:
-                if off_step < total_steps:
-                    off_pat = off_step // STEPS_PER_PATTERN
+            if need_off:
+                off_step = seg.beat_end
+                if 0 <= off_step < total_steps:
+                    off_pat         = off_step // STEPS_PER_PATTERN
                     off_step_in_pat = off_step % STEPS_PER_PATTERN
                     channel_event_lists[off_pat][ch].append(
-                        (off_step_in_pat, [bytes([0x01])])
+                        (off_step_in_pat, [bytes([0x01])])  # NOTE_OFF
                     )
+                # NOTE_OFF の後は VOL/INST を次の NOTE_ON で再送
+                prev_ms2_note = None
+                prev_vol      = -1
+                prev_inst_idx = -1
 
     return channel_event_lists
 
