@@ -738,7 +738,7 @@ def pass4_compute_beats(events):
     # ------------------------------------------------------------
     # 5. beat=0 のイベント削除
     # ------------------------------------------------------------
-    events = [ev for ev in events if ev["beat"] > 0]
+    # events = [ev for ev in events if ev["beat"] > 0]
 
     # ------------------------------------------------------------
     # ★ BPM 用に ch_events を再構築（別名 ch_events_bpm）
@@ -777,6 +777,188 @@ def pass4_compute_beats(events):
 
     return events, min_l, bpm
 
+from collections import defaultdict
+from statistics import mode, median
+
+def pass4_compute_beats(events):
+    """
+    PASS4（Kentaro仕様・global_pos 完全撤廃版）
+    - beat は l から計算
+    - beat_pos は ch ごとの累計
+    - time は順序付けにのみ使用
+    """
+
+    def _ival(v, default=0):
+        if v is None or v == "":
+            return default
+        try:
+            return int(v)
+        except:
+            return default
+
+    # ------------------------------------------------------------
+    # 0. ticks/time 正規化
+    # ------------------------------------------------------------
+    for ev in events:
+        ev["ticks"] = _ival(ev.get("ticks"))
+        try:
+            ev["time"] = float(ev.get("time"))
+        except:
+            ev["time"] = 0.0
+
+    # ------------------------------------------------------------
+    # 1. min_l を「最小クラスタ」から決定（Kentaro仕様）
+    # ------------------------------------------------------------
+    ls = [ _ival(ev.get("l")) for ev in events
+           if _ival(ev.get("keyon")) == 1 and _ival(ev.get("l")) > 0 ]
+
+    if not ls:
+        return events, None, None
+
+    ls_sorted = sorted(ls)
+
+    # base は 2 以上の最小値（l=1 の誤差を除外）
+    for v in ls_sorted:
+        if v >= 2:
+            base = v
+            break
+
+    cluster = [l for l in ls_sorted if l == base or l == base + 1]
+    min_l = sum(cluster) / len(cluster)
+
+    print(f"[PASS4] min_l={min_l}, base={base}, cluster={cluster}")
+
+    # ------------------------------------------------------------
+    # 2. beat を l から計算
+    # ------------------------------------------------------------
+    for ev in events:
+        l = _ival(ev.get("l"))
+        if l <= 0:
+            ev["beat"] = 0
+            continue
+
+        b = int(round(l / min_l))
+        if b < 1:
+            b = 1
+
+        ev["beat"] = b
+
+    # ------------------------------------------------------------
+    # 3. fb/kb/vb 計算（前回の完全版と同じ）
+    # ------------------------------------------------------------
+    from collections import defaultdict
+    ch_events = defaultdict(list)
+    for ev in events:
+        ch_events[_ival(ev.get("ch"), -1)].append(ev)
+
+    for ch, buf in ch_events.items():
+        buf.sort(key=lambda e: e["ticks"])
+        fb_acc = kb_acc = vb_acc = 0
+        fl_prev = kl_prev = vl_prev = 0
+        keyon_prev = 0
+
+        for ev in buf:
+            beat  = _ival(ev.get("beat"))
+            fl    = _ival(ev.get("fl"))
+            kl    = _ival(ev.get("kl"))
+            vl    = _ival(ev.get("vl"))
+            keyon = _ival(ev.get("keyon"))
+
+            if keyon == 0:
+                fb_acc = kb_acc = vb_acc = 0
+                ev["fb"] = ev["kb"] = ev["vb"] = 0
+                keyon_prev = keyon
+                fl_prev = fl
+                kl_prev = kl
+                vl_prev = vl
+                continue
+
+            if keyon_prev == 0 and keyon == 1:
+                fb_acc = kb_acc = vb_acc = beat
+                ev["fb"] = fb_acc
+                ev["kb"] = kb_acc
+                ev["vb"] = vb_acc
+                keyon_prev = keyon
+                fl_prev = fl
+                kl_prev = kl
+                vl_prev = vl
+                continue
+
+            if fl > fl_prev:
+                fb_acc += beat
+            if kl > kl_prev:
+                kb_acc += beat
+            if vl > vl_prev:
+                vb_acc += beat
+
+            ev["fb"] = fb_acc
+            ev["kb"] = kb_acc
+            ev["vb"] = vb_acc
+
+            keyon_prev = keyon
+            fl_prev = fl
+            kl_prev = kl
+            vl_prev = vl
+
+    # ------------------------------------------------------------
+    # 4. BPM 推定（min_l クラスタの keyon=1 のみ）
+    # ------------------------------------------------------------
+    from collections import defaultdict
+
+    # ★ これが抜けていたため NameError が出た
+    ch_events_bpm = defaultdict(list)
+    for ev in events:
+        ch_events_bpm[_ival(ev.get("ch"), -1)].append(ev)
+
+    dt_all = []
+
+    for ch, buf in ch_events_bpm.items():
+        buf.sort(key=lambda e: e["time"])
+        prev = None
+        for ev in buf:
+            l = _ival(ev.get("l"))
+            if _ival(ev.get("keyon")) == 1 and l in (base, base+1):
+                if prev is not None:
+                    dt = ev["time"] - prev["time"]
+                    if dt > 0.005:
+                        dt_all.append(dt)
+                prev = ev
+
+    if not dt_all:
+        bpm = None
+    else:
+        from statistics import mode, median
+        try:
+            dt_mode = mode(dt_all)
+        except:
+            dt_mode = median(dt_all)
+
+        # 1 拍 = 8 グリッド（l32 × 8 = 4分音符）
+        bpm = 60.0 / (dt_mode * 8.0)
+
+    # ------------------------------------------------------------
+    # 5. beat_pos（ch ごとの累計）★ global 同期なし ★
+    # ------------------------------------------------------------
+    events_sorted = sorted(events, key=lambda e: e["time"])
+
+    beat_pos = defaultdict(int)
+
+    for ev in events_sorted:
+        ch   = _ival(ev.get("ch"), -1)
+        beat = _ival(ev.get("beat"))
+
+        ev["beat_pos"] = beat_pos[ch]
+        beat_pos[ch] += beat
+
+    # ------------------------------------------------------------
+    # 6. beat=0 & l=0 の瞬間イベントだけ削除
+    # ------------------------------------------------------------
+    events = [
+        ev for ev in events
+        if not (_ival(ev.get("l")) == 0 and _ival(ev.get("beat")) == 0)
+    ]
+
+    return events, min_l, bpm
 
 def pass4_dump_csv(events, trace_csv_path):
     """
@@ -849,9 +1031,11 @@ def estimate_bpm_from_segments(segments_by_ch, vgm_rate):
 def _build_segments(trace_csv_path):
     # pass0〜pass4 を実行して events を得る
     events = pass0_read_csv(trace_csv_path)
-    events = pass1_compute_l_from_time(events)
+    events = pass1_compute_l(events)
+    #events = pass1_compute_l_from_time(events)
     pass1_dump_csv(events, trace_csv_path)
-    events = pass2_filter_and_recalc_l(events)
+    events = pass2_filter_l0(events)
+    #events = pass2_filter_and_recalc_l(events)
     pass2_dump_csv(events, trace_csv_path)
     events = pass3_update_fl_kl_vl(events)
     pass3_dump_csv(events, trace_csv_path)
