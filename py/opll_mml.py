@@ -988,6 +988,28 @@ def pass4_dump_csv(events, trace_csv_path):
 
     print(f"[PASS4] Debug CSV written: {out_csv_path}")
 
+def _int(ev, key, default=0):
+    """空文字列や欠損値を安全に int に変換するヘルパー"""
+    v = ev.get(key, default)
+    if v == '' or v is None:
+        return default
+    try:
+        return int(v)
+    except (ValueError, TypeError):
+        return default
+
+
+def _float(ev, key, default=0.0):
+    """空文字列や欠損値を安全に float に変換するヘルパー"""
+    v = ev.get(key, default)
+    if v == '' or v is None:
+        return default
+    try:
+        return float(v)
+    except (ValueError, TypeError):
+        return default
+
+
 def _opll_vol_to_ms2(vol_opll: int) -> int:
    """
     OPLL vol: 0 (max) ... 15 (mute)
@@ -1054,16 +1076,16 @@ def _build_segments(trace_csv_path):
 
     for ch, evs in events_by_ch.items():
         for ev in evs:
-            keyon    = int(ev.get("keyon", 0))
-            fnum     = int(ev.get("fnum", 0))
-            block    = int(ev.get("block", 0))
-            inst     = int(ev.get("inst", 0))
-            vol_opll = int(ev.get("vol", 15))
-            sus      = int(ev.get("sus", 0))
-            beat_pos = int(ev.get("beat_pos", 0))  # グリッド位置（pass4.csv から直接読む）
-            beat     = int(ev.get("beat", 0))       # グリッド長
+            keyon    = _int(ev, "keyon", 0)
+            fnum     = _int(ev, "fnum", 0)
+            block    = _int(ev, "block", 0)
+            inst     = _int(ev, "inst", 0)
+            vol_opll = _int(ev, "vol", 15)
+            sus      = _int(ev, "sus", 0)
+            beat_pos = _int(ev, "beat_pos", 0)  # グリッド位置（pass4.csv から直接読む）
+            beat     = _int(ev, "beat", 0)       # グリッド長
 
-            is_ryt   = int(ev.get("is_ryt", 0))
+            is_ryt   = _int(ev, "is_ryt", 0)
 
             # NOTE_ON 条件
             is_on = (keyon == 1 and beat > 0 and fnum != 0 and vol_opll != 15)
@@ -1084,24 +1106,24 @@ def _build_segments(trace_csv_path):
                 vol=ms2_vol,
                 sus=sus,
                 beat=beat,
-                fb=int(ev.get("fb", 0)),
-                kb=int(ev.get("kb", 0)),
-                vb=int(ev.get("vb", 0)),
+                fb=_int(ev, "fb", 0),
+                kb=_int(ev, "kb", 0),
+                vb=_int(ev, "vb", 0),
                 is_ryt=is_ryt,
-                bd=int(ev.get("bd", 0)),
-                sd=int(ev.get("sd", 0)),
-                tom=int(ev.get("tom", 0)),
-                tc=int(ev.get("tc", 0)),
-                hh=int(ev.get("hh", 0)),
-                fnum_ch6=int(ev.get("fnum_ch6", 0)),
-                vol_ch6=_opll_vol_to_ms2(int(ev.get("vol_ch6", 15))),
-                sus_ch6=int(ev.get("sus_ch6", 0)),
-                fnum_ch7=int(ev.get("fnum_ch7", 0)),
-                vol_ch7=_opll_vol_to_ms2(int(ev.get("vol_ch7", 15))),
-                sus_ch7=int(ev.get("sus_ch7", 0)),
-                fnum_ch8=int(ev.get("fnum_ch8", 0)),
-                vol_ch8=_opll_vol_to_ms2(int(ev.get("vol_ch8", 15))),
-                sus_ch8=int(ev.get("sus_ch8", 0)),
+                bd=_int(ev, "bd", 0),
+                sd=_int(ev, "sd", 0),
+                tom=_int(ev, "tom", 0),
+                tc=_int(ev, "tc", 0),
+                hh=_int(ev, "hh", 0),
+                fnum_ch6=_int(ev, "fnum_ch6", 0),
+                vol_ch6=_opll_vol_to_ms2(_int(ev, "vol_ch6", 15)),
+                sus_ch6=_int(ev, "sus_ch6", 0),
+                fnum_ch7=_int(ev, "fnum_ch7", 0),
+                vol_ch7=_opll_vol_to_ms2(_int(ev, "vol_ch7", 15)),
+                sus_ch7=_int(ev, "sus_ch7", 0),
+                fnum_ch8=_int(ev, "fnum_ch8", 0),
+                vol_ch8=_opll_vol_to_ms2(_int(ev, "vol_ch8", 15)),
+                sus_ch8=_int(ev, "sus_ch8", 0),
             )
             # beat_end = beat_pos + beat
             seg.beat_end = beat_pos + beat
