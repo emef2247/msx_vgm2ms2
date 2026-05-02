@@ -1,0 +1,15 @@
+#type,time,ch,ticks,inst,vol,patch_hex
+patch,0.0,-1,0,0,0,3400000000000000
+patch,0.0,-1,0,0,0,34f0000000000000
+patch,0.0,-1,0,0,0,34f00f0000000000
+patch,0.0,-1,0,0,0,34f00f0e00000000
+patch,0.0,-1,0,0,0,34f00f0ef5000000
+patch,0.0,-1,0,0,0,34f00f0ef5f00000
+patch,0.0,-1,0,0,0,34f00f0ef5f02800
+patch,0.0,-1,0,0,0,34f00f0ef5f028fc
+instVol,0.0,0,0,3,2,34f00f0ef5f028fc
+instVol,0.0,1,0,14,2,34f00f0ef5f028fc
+instVol,0.0,2,0,3,2,34f00f0ef5f028fc
+instVol,0.0,3,0,3,3,34f00f0ef5f028fc
+instVol,0.0,4,0,3,3,34f00f0ef5f028fc
+instVol,0.0,5,0,0,2,34f00f0ef5f028fc
