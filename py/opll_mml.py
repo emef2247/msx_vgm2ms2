@@ -903,38 +903,64 @@ def pass4_compute_beats(events):
     # ------------------------------------------------------------
     # 4. BPM 推定（min_l クラスタの keyon=1 のみ）
     # ------------------------------------------------------------
-    from collections import defaultdict
+    from collections import defaultdict, Counter
 
-    # ★ これが抜けていたため NameError が出た
     ch_events_bpm = defaultdict(list)
     for ev in events:
         ch_events_bpm[_ival(ev.get("ch"), -1)].append(ev)
 
     dt_all = []
+    beat_list = []
 
     for ch, buf in ch_events_bpm.items():
         buf.sort(key=lambda e: e["time"])
         prev = None
         for ev in buf:
             l = _ival(ev.get("l"))
-            if _ival(ev.get("keyon")) == 1 and l in (base, base+1):
+            keyon = _ival(ev.get("keyon"))
+            is_ryt = _ival(ev.get("is_ryt"))
+            beat = _ival(ev.get("beat"))
+
+            # リズムは除外
+            if is_ryt == 1:
+                continue
+
+            # beat の収集（最小音価クラスタのみ）
+            if keyon == 1 and l in (base, base+1):
+                beat_list.append(beat)
+
                 if prev is not None:
                     dt = ev["time"] - prev["time"]
                     if dt > 0.005:
                         dt_all.append(dt)
                 prev = ev
 
-    if not dt_all:
+    # dt が無い場合
+    if not dt_all or not beat_list:
         bpm = None
     else:
         from statistics import mode, median
+
+        # dt_mode
         try:
             dt_mode = mode(dt_all)
         except:
             dt_mode = median(dt_all)
 
-        # 1 拍 = 8 グリッド（l32 × 8 = 4分音符）
-        bpm = 60.0 / (dt_mode * 8.0)
+        # grid_per_beat 推定
+        # 最小音価(=1)を除いた beat の最頻値
+        beats_gt1 = [b for b in beat_list if b > 1]
+        if beats_gt1:
+            try:
+                grid_per_beat = mode(beats_gt1)
+            except:
+                grid_per_beat = median(beats_gt1)
+        else:
+            grid_per_beat = 1
+
+        # BPM 計算
+        bpm = 60.0 / (dt_mode * grid_per_beat)
+
 
     # ------------------------------------------------------------
     # 5. beat_pos（ch ごとの累計）★ global 同期なし ★
@@ -1069,12 +1095,43 @@ def _build_segments(trace_csv_path):
     for ev in events:
         ch = int(ev["ch"])
         events_by_ch[ch].append(ev)
+
+    # ch ごとに整理
+    events_by_ch = defaultdict(list)
+
+    for ev in events:
+        ch = int(ev["ch"])
+
+        # --- ch 補正（リズム対応） ---
+        if _int(ev, "is_ryt", 0) == 1:
+            if _int(ev, "bd", 0) == 1:
+                ch = 6
+            elif _int(ev, "sd", 0) == 1:
+                ch = 7
+            elif (_int(ev, "tom", 0) == 1 or
+                _int(ev, "tc", 0) == 1 or
+                _int(ev, "hh", 0) == 1):
+                ch = 8
+            else:
+                # rhythm だが種類不明 → 無視
+                continue
+
+        # ★ ch が -1 や範囲外なら無視
+        if ch < 0 or ch >= NUM_CH:
+            continue
+
+        # ★ 補正済み ch を events_by_ch に入れる
+        events_by_ch[ch].append(ev)
+
+    # ticks でソート
     for ch in events_by_ch:
         events_by_ch[ch].sort(key=lambda e: int(e["ticks"]))
 
     segments_by_ch = {ch: [] for ch in range(NUM_CH)}
 
     for ch, evs in events_by_ch.items():
+        prev_seg = None
+
         for ev in evs:
             keyon    = _int(ev, "keyon", 0)
             fnum     = _int(ev, "fnum", 0)
@@ -1082,14 +1139,16 @@ def _build_segments(trace_csv_path):
             inst     = _int(ev, "inst", 0)
             vol_opll = _int(ev, "vol", 15)
             sus      = _int(ev, "sus", 0)
-            beat_pos = _int(ev, "beat_pos", 0)  # グリッド位置（pass4.csv から直接読む）
-            beat     = _int(ev, "beat", 0)       # グリッド長
+            beat_pos = _int(ev, "beat_pos", 0)
+            beat     = _int(ev, "beat", 0)
 
             is_ryt   = _int(ev, "is_ryt", 0)
 
             # NOTE_ON 条件
-            is_on = (keyon == 1 and beat > 0 and fnum != 0 and vol_opll != 15)
-            if not is_on:
+            is_melody_on = (keyon == 1 and beat > 0 and fnum != 0 and vol_opll != 15)
+            is_rhythm_on = (is_ryt == 1 and beat > 0)
+
+            if not (is_melody_on or is_rhythm_on):
                 continue
 
             ms2_vol = _opll_vol_to_ms2(vol_opll)
@@ -1098,7 +1157,7 @@ def _build_segments(trace_csv_path):
                 ev["#type"],
                 float(ev["time"]),
                 ch,
-                beat_start=beat_pos,          # beat_pos をそのまま使う
+                beat_start=beat_pos,
                 keyon=keyon,
                 fnum=fnum,
                 block=block,
@@ -1125,17 +1184,53 @@ def _build_segments(trace_csv_path):
                 vol_ch8=_opll_vol_to_ms2(_int(ev, "vol_ch8", 15)),
                 sus_ch8=_int(ev, "sus_ch8", 0),
             )
-            # beat_end = beat_pos + beat
-            seg.beat_end = beat_pos + beat
-            seg.beat_sz  = min_l
 
+            # beat_end
+            seg.beat_end = beat_pos + beat
+
+            # beat_sz = min_l
+            seg.beat_sz = min_l
+
+            # grid_sz = 1 beat 単位
+            seg.grid_sz = 1
+
+            # ms2_len = beat / grid_sz
+            seg.ms2_len = beat // seg.grid_sz
+
+            # 音階情報
             seg.o     = get_octave(fnum)
             seg.scale = get_scale(fnum)
 
+            # odiff / vdiff
+            if prev_seg:
+                seg.odiff = seg.o - prev_seg.o
+                seg.vdiff = seg.vol - prev_seg.vol
+            else:
+                seg.odiff = 0
+                seg.vdiff = 0
+
+            prev_seg = seg
             segments_by_ch[ch].append(seg)
 
-    return segments_by_ch, bpm
 
+            seg.beat_start = beat_pos
+            seg.beat_end   = beat_pos + beat
+            seg.ms2_len    = beat
+            seg.beat_sz    = min_l
+            seg.grid_sz    = 1
+
+            if is_rhythm_on:
+                seg.o = 0
+                seg.scale = -1
+                seg.odiff = 0
+            else:
+                seg.o = get_octave(fnum)
+                seg.scale = get_scale(fnum)
+                if prev_seg:
+                    seg.odiff = seg.o - prev_seg.o
+                    seg.vdiff = seg.vol - prev_seg.vol
+
+    return segments_by_ch, bpm
 
 # ---------------------------------------------------------------------------
 # Voice table: voice CSV columns
