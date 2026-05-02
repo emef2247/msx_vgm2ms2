@@ -269,7 +269,7 @@ def test_retrigger_produces_two_note_ons():
 # End-to-end: build_ms2_file validates note presence
 # ---------------------------------------------------------------------------
 
-def _write_trace(rows: list[tuple], *, with_sus: bool = True) -> str:
+def _write_trace(rows: list[tuple]) -> str:
     import tempfile
     fh = tempfile.NamedTemporaryFile(
         mode='w', suffix='.csv', delete=False, newline='\n')

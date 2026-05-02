@@ -578,7 +578,10 @@ def _assign_beat_fields(segments: dict, ticks_per_step: int) -> None:
     for ch_segs in segments.values():
         for seg in ch_segs:
             seg.beat_start = seg.tick_start // ticks_per_step
-            dur_ticks = max(0, (seg.tick_end or seg.tick_start) - seg.tick_start)
+            # tick_end may be None for the final segment in a channel before
+            # _build_segments() closes it; treat as zero duration in that case.
+            tick_end = seg.tick_end if seg.tick_end is not None else seg.tick_start
+            dur_ticks = tick_end - seg.tick_start
             seg.ms2_len = max(1, (dur_ticks + ticks_per_step - 1) // ticks_per_step)
 
 
