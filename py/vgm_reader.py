@@ -548,7 +548,7 @@ class _OpllState:
         ticks = get_ticks(t)
         is_ryt, bd, sd, tom, tc, hh = self._decode_rhythm_bits(regval)
         cols = [
-            type_, repr(t), '-1', str(ticks),'','','', '', '', '', '', '', '','','','','','',
+            type_, repr(t), '-1', str(ticks),'','','', '', '', '', '', '', '','','','','','','',
             str(is_ryt), str(bd), str(sd), str(tom), str(tc), str(hh),
             str(self.fnum9(6)), str(self._vol_melody(6)), str(self.sus[6]),
             str(self.fnum9(7)), str(self._vol_melody(7)), str(self.sus[7]),

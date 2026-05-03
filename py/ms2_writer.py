@@ -708,8 +708,9 @@ def segments_to_patterns(
         prev_vol      = -1
 
         for i, seg in enumerate(segs_sorted):
-            # リズムチャンネルはスキップ
-            if getattr(seg, 'is_ryt', 0):
+            # Skip rhythm rest segments (keyon=0); only keyon=1 rhythm hits emit NOTE_ON.
+            # Melody rests (keyon=0, fnum=0) are handled below by ms2_note=None check.
+            if getattr(seg, 'is_ryt', 0) and not seg.keyon:
                 continue
 
             # MS2 note from fnum + block
@@ -758,7 +759,7 @@ def segments_to_patterns(
             # 次のセグメントとの間にギャップがある、または最後のセグメントの場合に送出。
             off_abs_step = seg.beat_start + seg.ms2_len
             next_seg = segs_sorted[i + 1] if i + 1 < len(segs_sorted) else None
-            need_off = (next_seg is None) or (off_abs_step < next_seg.beat_start)
+            need_off = (next_seg is None) or (off_abs_step <= next_seg.beat_start)
 
             if need_off:
                 off_step = off_abs_step

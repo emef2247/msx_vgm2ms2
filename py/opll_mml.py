@@ -951,7 +951,7 @@ def _build_segments(trace_csv_path,
 
         if is_ryt == 0 and 0 <= ch < 9:
             melody_by_ch[ch].append(ev)
-        elif is_ryt == 1:
+        elif ev.get("#type") == "rhythm" and is_ryt == 1:
             rhythm_events.append(ev)
 
     # ------------------------------------------------------------
@@ -1021,6 +1021,24 @@ def _build_segments(trace_csv_path,
     # 2. rhythm segment generation (tick-based → beat-based conversion)
     # ------------------------------------------------------------
     if include_rhythm:
+        # Compute melody step scale so rhythm beat_pos aligns with melody grid.
+        # Melody uses a per-channel sequential beat_pos; to map rhythm ticks
+        # to the same scale, derive ticks_per_step from the melody's max tick
+        # and max beat_pos.  For rhythm-only songs (no melody) fall back to a
+        # BPM-derived value so the patterns chunk stays within the 16384-byte limit.
+        all_melody_evs = [ev for evs in melody_by_ch.values() for ev in evs]
+        if all_melody_evs:
+            mel_max_bp   = max(_int(e, "beat_pos", 0) for e in all_melody_evs)
+            mel_max_tick = max(_int(e, "ticks",    0) for e in all_melody_evs)
+            if mel_max_bp > 0 and mel_max_tick > 0:
+                rhy_ticks_per_step = mel_max_tick / mel_max_bp
+            else:
+                rhy_ticks_per_step = 8.0
+        else:
+            # Rhythm-only song: derive from detected BPM or default to 8
+            _freq = 59.922727  # NTSC VDP interrupt rate used for ticks
+            rhy_ticks_per_step = max(1.0, round(_freq * 15.0 / bpm)) if bpm else 8.0
+
         RHY_KEYS = ["bd", "sd", "tom", "tc", "hh"]
         last = {k: dict(tick=0, on=0, fnum=0, vol=0, sus=0) for k in RHY_KEYS}
 
@@ -1030,16 +1048,18 @@ def _build_segments(trace_csv_path,
         for ev in rhythm_events:
             tick = _int(ev, "ticks", 0)
 
-            # tick → beat_pos に変換
-            beat_pos = _int(ev, "beat_pos", 0)
+            # Map tick to the melody beat grid (avoids per-channel sequential mismatch)
+            beat_pos = max(0, round(tick / rhy_ticks_per_step))
 
             for k in RHY_KEYS:
                 on = _int(ev, k, 0)
 
-                # rhythm fnum/vol/sus は PASS4 の ch6/ch7/ch8 を参照
-                fnumX = _int(ev, "fnum_ch6", 0)
-                volX  = _int(ev, "vol_ch6", 15)
-                susX  = _int(ev, "sus_ch6", 0)
+                # rhythm fnum/vol/sus: bd/hh→ch6, sd→ch7, tom/tc→ch8
+                # (matches OPLL hardware and reference branch formula)
+                rhy_ch_idx = 6 + (k == "sd") + (k == "tom" or k == "tc")
+                fnumX = _int(ev, f"fnum_ch{rhy_ch_idx}", 0)
+                volX  = _int(ev, f"vol_ch{rhy_ch_idx}", 15)
+                susX  = _int(ev, f"sus_ch{rhy_ch_idx}", 0)
 
                 prev = last[k]
                 changed = (
