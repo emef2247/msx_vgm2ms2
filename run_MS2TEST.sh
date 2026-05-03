@@ -29,26 +29,39 @@ python3 py/ms2_dump.py MS2TEST/OPLL/T01P06/T01P06.MS2 > MS2TEST/OPLL/T01P06/T01P
 
 # MSXPlayのサンプル grider.vgmのテスト
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/GRIDER MS2TEST/OPLL/GRIDER/reference/grider.vgm
-python3 py/ms2_dump.py MS2TEST/OPLL/GRIDER/reference/grider.MS2 > MS2TEST/OPLL/GRIDER/reference/grider.MS2.dump
+python3 py/ms2_dump.py MS2TEST/OPLL/GRIDER/grider.MS2 > MS2TEST/OPLL/GRIDER/grider.MS2.dump
 
 #　もう一つのサンプル
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII01.vgm
-python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/reference/GFII01.MS2 > MS2TEST/OPLL/GFIISMS/reference/GFII01.MS2.dump
+python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII01.MS2 > MS2TEST/OPLL/GFIISMS/GFII01.MS2.dump
 
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII02.vgm
-python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/reference/GFII02.MS2 > MS2TEST/OPLL/GFIISMS/reference/GFII02.MS2.dump
+python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII02.MS2 > MS2TEST/OPLL/GFIISMS/GFII02.MS2.dump
 
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII03.vgm
-python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/reference/GFII03.MS2 > MS2TEST/OPLL/GFIISMS/reference/GFII03.MS2.dump
+python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII03.MS2 > MS2TEST/OPLL/GFIISMS/GFII03.MS2.dump
 
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII04.vgm
-python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/reference/GFII04.MS2 > MS2TEST/OPLL/GFIISMS/reference/GFII04.MS2.dump
+python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII04.MS2 > MS2TEST/OPLL/GFIISMS/GFII04.MS2.dump
 
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII05.vgm
-python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/reference/GFII05.MS2 > MS2TEST/OPLL/GFIISMS/reference/GFII05.MS2.dump
+python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII05.MS2 > MS2TEST/OPLL/GFIISMS/GFII05.MS2.dump
 
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII06.vgm
-python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/reference/GFII06.MS2 > MS2TEST/OPLL/GFIISMS/reference/GFII06.MS2.dump
+python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII06.MS2 > MS2TEST/OPLL/GFIISMS/GFII06.MS2.dump
 
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII07.vgm
-python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/reference/GFII07.MS2 > MS2TEST/OPLL/GFIISMS/reference/GFII07.MS2.dump
+python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII07.MS2 > MS2TEST/OPLL/GFIISMS/GFII07.MS2.dump
+
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D01.vgm
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D01.vgm
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D02.vgm
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D03.vgm
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D04.vgm
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D05.vgm
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D06.vgm
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D07.vgm
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D08.vgm
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D09.vgm
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D10.vgm
