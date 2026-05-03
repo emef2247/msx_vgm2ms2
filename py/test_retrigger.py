@@ -53,6 +53,7 @@ def _make_segment(beat_start: int, beat_end: int, keyon: int = 1,
         keyon=keyon, fnum=fnum, block=block, inst=inst, vol=vol, sus=0,
     )
     seg.beat_end = beat_end
+    seg.ms2_len  = beat_end - beat_start
     seg.beat = beat_end - beat_start
     seg.at_token = ''
     seg.retrigger_ticks = []

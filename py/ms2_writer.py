@@ -568,7 +568,7 @@ def _build_step_grid(segments, total_steps):
 
     Beat-based version:
       - seg.beat_start is the step index directly (no ticks_per_step conversion)
-      - seg.beat_end is the end step
+      - seg.ms2_len is the note duration in steps; end_step = beat_start + ms2_len
       - Each retrigger is an independent Segment with keyon=1; retrigger_ticks is not used
     """
     grid = {}
@@ -580,7 +580,7 @@ def _build_step_grid(segments, total_steps):
                 continue
 
             start_step = seg.beat_start
-            end_step   = max(start_step, seg.beat_end)
+            end_step   = start_step + seg.ms2_len
 
             # Note info
             ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
@@ -678,9 +678,11 @@ def segments_to_patterns(
     """
     beat_pos ベースでグリッドに配置。
     - NOTE_ON  : seg.beat_start のステップに配置
-    - NOTE_OFF : seg.beat_end   のステップに配置（ギャップ or 最終）
+    - NOTE_OFF : seg.beat_start + seg.ms2_len のステップに配置（ギャップ or 最終）
     - 1 grid = 1 beat
     - VOL / INST: 最初の NOTE_ON 時または変化時のみ送出。NOTE_OFF 後はリセット。
+    - retrigger_ticks は beat-based モデルでは使用しない。
+      リトリガーは同じ beat_start を持つ独立したセグメントで表現される。
     """
 
     if user_patches is None:
@@ -752,12 +754,14 @@ def segments_to_patterns(
             prev_ms2_note = ms2_note
 
             # ── NOTE_OFF ──
-            # 次のセグメントとの間にギャップがある、または最後のセグメント
+            # NOTE_OFF は seg.beat_start + seg.ms2_len に配置。
+            # 次のセグメントとの間にギャップがある、または最後のセグメントの場合に送出。
+            off_abs_step = seg.beat_start + seg.ms2_len
             next_seg = segs_sorted[i + 1] if i + 1 < len(segs_sorted) else None
-            need_off = (next_seg is None) or (seg.beat_end < next_seg.beat_start)
+            need_off = (next_seg is None) or (off_abs_step < next_seg.beat_start)
 
             if need_off:
-                off_step = seg.beat_end
+                off_step = off_abs_step
                 if 0 <= off_step < total_steps:
                     off_pat         = off_step // STEPS_PER_PATTERN
                     off_step_in_pat = off_step % STEPS_PER_PATTERN
@@ -945,20 +949,20 @@ def build_ms2_file(
         print(f"[build_ms2_file] beat_sz={beat_sz} bpm={bpm} timer_divider=0x{timer_divider:04X}")
 
     # =====================================================================
-    # ==== パターン数推定（beat_end ベース） ====
+    # ==== パターン数推定（beat_start + ms2_len ベース） ====
     # =====================================================================
-    max_beat_end = 0
+    max_end_step = 0
     for ch in range(NUM_CH):
         for seg in segments.get(ch, []):
-            max_beat_end = max(max_beat_end, seg.beat_end)
+            max_end_step = max(max_end_step, seg.beat_start + seg.ms2_len)
 
     n_patterns = max(
         1,
-        math.ceil(max_beat_end / STEPS_PER_PATTERN)
+        math.ceil(max_end_step / STEPS_PER_PATTERN)
     )
 
     if debug:
-        print(f"[build_ms2_file] max_beat_end={max_beat_end} n_patterns={n_patterns}")
+        print(f"[build_ms2_file] max_end_step={max_end_step} n_patterns={n_patterns}")
 
     # ==== starting_instruments ====
     starting_instruments = _get_starting_instruments(

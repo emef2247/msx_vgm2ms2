@@ -56,6 +56,7 @@ def _make_user_segment(beat_start: int, beat_end: int, v_num: int) -> _Segment:
         keyon=1, fnum=_FNUM, block=_BLOCK, inst=0, vol=60, sus=0,
     )
     seg.beat_end = beat_end
+    seg.ms2_len  = beat_end - beat_start
     seg.beat = beat_end - beat_start
     seg.at_token = f'@v{v_num}'
     seg.retrigger_ticks = []
@@ -71,6 +72,7 @@ def _make_preset_segment(beat_start: int, beat_end: int, inst: int) -> _Segment:
         keyon=1, fnum=_FNUM, block=_BLOCK, inst=inst, vol=60, sus=0,
     )
     seg.beat_end = beat_end
+    seg.ms2_len  = beat_end - beat_start
     seg.beat = beat_end - beat_start
     seg.at_token = f'@{inst}'
     seg.retrigger_ticks = []
