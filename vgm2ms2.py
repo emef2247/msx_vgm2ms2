@@ -327,7 +327,8 @@ def main():
     # ── Build OPLL segments ───────────────────────────────────────────────
     print("Building OPLL segments …")
     num_ch = 18
-    segments, bpm_detected = _build_segments(opll_trace_csv)
+    #segments, bpm_detected = _build_segments(opll_trace_csv)
+    segments, bpm_detected = _build_segments(opll_trace_csv, include_rhythm=True)
     dump_segments(segments)
 
     n_segs = sum(len(v) for v in segments.values())

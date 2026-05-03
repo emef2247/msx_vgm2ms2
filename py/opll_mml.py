@@ -247,7 +247,7 @@ def dump_segments(segments):
 # -----------------------------------------------------------------------------
 import csv
 
-NUM_CH = 9 # Melody 0,1,2,3,4,5 Rhythm : 6, 7, 8
+NUM_CH = 18 # Melody 0,1,2,3,4,5 Rhythm : 6, 7, 8
 
 # rhythmチャンネル mapping
 RHYTHM_CH_MAP = {
@@ -809,8 +809,9 @@ def pass4_compute_beats(events):
         except:
             grid_per_beat = int(round(median(beats_gt1)))
     else:
-        grid_per_beat = 1
+        grid_per_beat = 16
 
+    grid_per_beat = 16
     # 生の BPM
     bpm_raw = bpm_per_grid * grid_per_beat
 
@@ -916,66 +917,52 @@ def estimate_bpm_from_segments(segments_by_ch, vgm_rate):
     bpm = 60 * vgm_rate / ticks_per_beat
     return round(bpm)
 
-
 def _build_segments(trace_csv_path,
                     include_rhythm=True,
                     rhythm_reg_timeline=None):
-    # pass0〜pass4 を実行して events を得る
+
+    # ------------------------------------------------------------
+    # PASS0〜PASS4
+    # ------------------------------------------------------------
     events = pass0_read_csv(trace_csv_path)
     events = pass1_compute_l(events)
-    #events = pass1_compute_l_from_time(events)
     pass1_dump_csv(events, trace_csv_path)
+
     events = pass2_compute_fl_kl_vl(events)
     events = pass2_filter_l0(events)
     pass2_dump_csv(events, trace_csv_path)
+
     events = pass3_merge_silent_rests(events)
     pass3_dump_csv(events, trace_csv_path)
+
     events, min_l, bpm = pass4_compute_beats(events)
     pass4_dump_csv(events, trace_csv_path)
 
-    # ch ごとに整理
-    events_by_ch = defaultdict(list)
-    for ev in events:
-        ch = int(ev["ch"])
-        events_by_ch[ch].append(ev)
-
-    # ch ごとに整理
-    events_by_ch = defaultdict(list)
+    # ------------------------------------------------------------
+    # melody: ch=0..8
+    # rhythm: is_ryt=1 → BD/SD/TOM/TC/HH
+    # ------------------------------------------------------------
+    melody_by_ch = {ch: [] for ch in range(9)}
+    rhythm_events = []  # tick ベースで処理するため PASS1 の ticks を使う
 
     for ev in events:
         ch = int(ev["ch"])
+        is_ryt = _int(ev, "is_ryt", 0)
 
-        # --- ch 補正（リズム対応） ---
-        if _int(ev, "is_ryt", 0) == 1:
-            if not include_rhythm:
-                continue
-            # rhythm → ch=6/7/8 に補正
-            if _int(ev, "bd", 0) == 1:
-                ch = 6
-            elif _int(ev, "sd", 0) == 1:
-                ch = 7
-            elif (_int(ev, "tom", 0) == 1 or
-                _int(ev, "tc", 0) == 1 or
-                _int(ev, "hh", 0) == 1):
-                ch = 8
-            else:
-                # rhythm だが種類不明 → 無視
-                continue
+        if is_ryt == 0 and 0 <= ch < 9:
+            melody_by_ch[ch].append(ev)
+        elif is_ryt == 1:
+            rhythm_events.append(ev)
 
-        # ★ ch が -1 や範囲外なら無視
-        if ch < 0 or ch >= NUM_CH:
-            continue
-
-        # ★ 補正済み ch を events_by_ch に入れる
-        events_by_ch[ch].append(ev)
-
-    # ticks でソート
-    for ch in events_by_ch:
-        events_by_ch[ch].sort(key=lambda e: int(e["ticks"]))
-
+    # ------------------------------------------------------------
+    # 1. melody segment generation (beat-based)
+    # ------------------------------------------------------------
     segments_by_ch = {ch: [] for ch in range(NUM_CH)}
 
-    for ch, evs in events_by_ch.items():
+    for ch in range(9):
+        evs = melody_by_ch[ch]
+        evs.sort(key=lambda e: _int(e, "beat_pos", 0))
+
         prev_seg = None
 
         for ev in evs:
@@ -988,17 +975,7 @@ def _build_segments(trace_csv_path,
             beat_pos = _int(ev, "beat_pos", 0)
             beat     = _int(ev, "beat", 0)
 
-            is_ryt   = _int(ev, "is_ryt", 0)
-
-            # NOTE_ON 条件
-            is_melody_on = (keyon == 1 and beat > 0 and fnum != 0 and vol_opll != 15)
-            is_rhythm_on = (is_ryt == 1 and beat > 0)
-
-            if not (is_melody_on or is_rhythm_on):
-                continue
-
-            ms2_vol = _opll_vol_to_ms2(vol_opll)
-
+            # melody は keyon=0 でも休符として Segment を作る
             seg = _Segment(
                 ev["#type"],
                 float(ev["time"]),
@@ -1008,46 +985,28 @@ def _build_segments(trace_csv_path,
                 fnum=fnum,
                 block=block,
                 inst=inst,
-                vol=ms2_vol,
+                vol=_opll_vol_to_ms2(vol_opll),
                 sus=sus,
                 beat=beat,
                 fb=_int(ev, "fb", 0),
                 kb=_int(ev, "kb", 0),
                 vb=_int(ev, "vb", 0),
-                is_ryt=is_ryt,
-                bd=_int(ev, "bd", 0),
-                sd=_int(ev, "sd", 0),
-                tom=_int(ev, "tom", 0),
-                tc=_int(ev, "tc", 0),
-                hh=_int(ev, "hh", 0),
-                fnum_ch6=_int(ev, "fnum_ch6", 0),
-                vol_ch6=_opll_vol_to_ms2(_int(ev, "vol_ch6", 15)),
-                sus_ch6=_int(ev, "sus_ch6", 0),
-                fnum_ch7=_int(ev, "fnum_ch7", 0),
-                vol_ch7=_opll_vol_to_ms2(_int(ev, "vol_ch7", 15)),
-                sus_ch7=_int(ev, "sus_ch7", 0),
-                fnum_ch8=_int(ev, "fnum_ch8", 0),
-                vol_ch8=_opll_vol_to_ms2(_int(ev, "vol_ch8", 15)),
-                sus_ch8=_int(ev, "sus_ch8", 0),
+                is_ryt=0,
+                bd=0, sd=0, tom=0, tc=0, hh=0,
+                fnum_ch6=0, vol_ch6=0, sus_ch6=0,
+                fnum_ch7=0, vol_ch7=0, sus_ch7=0,
+                fnum_ch8=0, vol_ch8=0, sus_ch8=0,
             )
 
-            # beat_end
             seg.beat_end = beat_pos + beat
+            seg.beat_sz  = min_l
+            seg.grid_sz  = 1
+            seg.ms2_len  = beat
 
-            # beat_sz = min_l
-            seg.beat_sz = min_l
-
-            # grid_sz = 1 beat 単位
-            seg.grid_sz = 1
-
-            # ms2_len = beat / grid_sz
-            seg.ms2_len = beat // seg.grid_sz
-
-            # 音階情報
-            seg.o     = get_octave(fnum)
+            # 音階
+            seg.o = get_octave(fnum)
             seg.scale = get_scale(fnum)
 
-            # odiff / vdiff
             if prev_seg:
                 seg.odiff = seg.o - prev_seg.o
                 seg.vdiff = seg.vol - prev_seg.vol
@@ -1058,23 +1017,74 @@ def _build_segments(trace_csv_path,
             prev_seg = seg
             segments_by_ch[ch].append(seg)
 
+    # ------------------------------------------------------------
+    # 2. rhythm segment generation (tick-based → beat-based conversion)
+    # ------------------------------------------------------------
+    if include_rhythm:
+        RHY_KEYS = ["bd", "sd", "tom", "tc", "hh"]
+        last = {k: dict(tick=0, on=0, fnum=0, vol=0, sus=0) for k in RHY_KEYS}
 
-            seg.beat_start = beat_pos
-            seg.beat_end   = beat_pos + beat
-            seg.ms2_len    = beat
-            seg.beat_sz    = min_l
-            seg.grid_sz    = 1
+        # tick 昇順
+        rhythm_events.sort(key=lambda e: _int(e, "ticks", 0))
 
-            if is_rhythm_on:
-                seg.o = 0
-                seg.scale = -1
-                seg.odiff = 0
-            else:
-                seg.o = get_octave(fnum)
-                seg.scale = get_scale(fnum)
-                if prev_seg:
-                    seg.odiff = seg.o - prev_seg.o
-                    seg.vdiff = seg.vol - prev_seg.vol
+        for ev in rhythm_events:
+            tick = _int(ev, "ticks", 0)
+
+            # tick → beat_pos に変換
+            beat_pos = _int(ev, "beat_pos", 0)
+
+            for k in RHY_KEYS:
+                on = _int(ev, k, 0)
+
+                # rhythm fnum/vol/sus は PASS4 の ch6/ch7/ch8 を参照
+                fnumX = _int(ev, "fnum_ch6", 0)
+                volX  = _int(ev, "vol_ch6", 15)
+                susX  = _int(ev, "sus_ch6", 0)
+
+                prev = last[k]
+                changed = (
+                    prev["on"]  != on or
+                    prev["fnum"] != fnumX or
+                    prev["vol"]  != volX or
+                    prev["sus"]  != susX
+                )
+
+                if changed:
+                    chidx = RHYTHM_CH_MAP[k]  # 例: bd→6, sd→7, tom/tc/hh→8
+
+                    # 前の segment を閉じる
+                    if segments_by_ch[chidx]:
+                        prev_seg = segments_by_ch[chidx][-1]
+                        prev_seg.beat_end = beat_pos
+                        prev_seg.ms2_len  = prev_seg.beat_end - prev_seg.beat_start
+
+                    # 新しい segment（beat ベース）
+                    seg = _Segment(
+                        reg_type="rhythm",
+                        time=float(ev["time"]),
+                        ch=chidx,
+                        beat_start=beat_pos,
+                        keyon=on,
+                        fnum=fnumX,
+                        block=0,
+                        inst=RHYTHM_VOICE_ID_MAP[k],
+                        vol=_opll_vol_to_ms2(volX),
+                        sus=susX,
+                        beat=1,  # 1 beat として扱う（後で ms2_len で調整）
+                        fb=beat_pos,
+                        kb=beat_pos,
+                        vb=beat_pos,
+                        is_ryt=1,
+                        bd=1 if k=="bd" else 0,
+                        sd=1 if k=="sd" else 0,
+                        tom=1 if k=="tom" else 0,
+                        tc=1 if k=="tc" else 0,
+                        hh=1 if k=="hh" else 0,
+                    )
+
+                    segments_by_ch[chidx].append(seg)
+
+                prev.update(dict(tick=tick, on=on, fnum=fnumX, vol=volX, sus=susX))
 
     return segments_by_ch, bpm
 

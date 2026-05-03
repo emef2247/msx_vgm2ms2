@@ -888,7 +888,17 @@ def build_ms2_file(
     from opll_mml import _assign_voice_ids
     voice_table, user_patches, _warnings = _assign_voice_ids(segments, voice_csv_path)
 
-    NUM_CH = 18
+    # ==== 実際に使用している ch から NUM_CH を決定 ====
+    used_channels = sorted(ch for ch, segs in segments.items() if segs)
+    if used_channels:
+        max_ch = max(used_channels)
+        # メロディ 0..8 + リズム 9..13 を最低限カバー
+        NUM_CH = max(14, max_ch + 1)
+    else:
+        NUM_CH = 14
+
+    if debug:
+        print(f"[build_ms2_file] used_channels={used_channels} -> NUM_CH={NUM_CH}")
 
     # ==== チューニング/メロディ音色取得 ====
     if base_ms2 is not None:
