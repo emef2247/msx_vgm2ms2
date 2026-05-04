@@ -774,6 +774,29 @@ def segments_to_patterns(
                 prev_vol      = -1
                 prev_inst_idx = -1
 
+    # ----- Post-process: for each pattern/channel, ensure NOTE_OFF (0x01) is ordered after NOTE_ON -----
+    for pat in range(len(channel_event_lists)):
+        for ch in range(len(channel_event_lists[pat])):
+            entries = channel_event_lists[pat][ch]
+            if not entries:
+                continue
+            # Merge entries by step preserving insertion order, then reorder events within each step
+            merged = {}
+            order = []
+            for step, evts in entries:
+                if step not in merged:
+                    merged[step] = []
+                    order.append(step)
+                merged[step].extend(evts)
+            new_entries = []
+            for step in sorted(order):
+                evts = merged[step]
+                # Move any NOTE_OFF (opcode 0x01) to the end of the list for this step
+                non_off = [e for e in evts if len(e) == 0 or e[0] != 0x01]
+                offs     = [e for e in evts if len(e) > 0 and e[0] == 0x01]
+                new_evts = non_off + offs
+                new_entries.append((step, new_evts))
+            channel_event_lists[pat][ch] = new_entries
     return channel_event_lists
 
 
