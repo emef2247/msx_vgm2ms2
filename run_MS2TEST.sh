@@ -54,14 +54,3 @@ python3 vgm2ms2.py --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/
 python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII07.MS2 > MS2TEST/OPLL/GFIISMS/GFII07.MS2.dump
 
 
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D01.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D01.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D02.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D03.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D04.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D05.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D06.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D07.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D08.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D09.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D/ MS2TEST/OPLL/F1SP3D/reference/F1SP3D10.vgm
