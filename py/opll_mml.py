@@ -138,9 +138,9 @@ class _Segment:
         'beat_start', 'beat_end', 'keyon', 'fnum', 'block', 'inst', 'vol', 'sus',
         'beat', 'fb', 'kb', 'vb',
         'is_ryt', 'bd', 'sd', 'tom', 'tc', 'hh',
-        'fnum_ch6', 'vol_ch6', 'sus_ch6',
-        'fnum_ch7', 'vol_ch7', 'sus_ch7',
-        'fnum_ch8', 'vol_ch8', 'sus_ch8',
+        'fnum_ch6', 'vol_ch6', 'sus_ch6', 'block_ch6',
+        'fnum_ch7', 'vol_ch7', 'sus_ch7', 'block_ch7',
+        'fnum_ch8', 'vol_ch8', 'sus_ch8', 'block_ch8',
 
         # MS2 用
         'at_token', 'voice_id',
@@ -155,9 +155,9 @@ class _Segment:
         beat_start, keyon, fnum, block, inst, vol, sus,
         beat=0,fb=0, kb=0, vb=0,
         is_ryt=0, bd=0, sd=0, tom=0, tc=0, hh=0,
-        fnum_ch6=0, vol_ch6=0, sus_ch6=0,
-        fnum_ch7=0, vol_ch7=0, sus_ch7=0,
-        fnum_ch8=0, vol_ch8=0, sus_ch8=0,
+        fnum_ch6=0, vol_ch6=0, sus_ch6=0, block_ch6=0,
+        fnum_ch7=0, vol_ch7=0, sus_ch7=0, block_ch7=0,
+        fnum_ch8=0, vol_ch8=0, sus_ch8=0, block_ch8=0,
     ):
         # 追加フィールド
         self.reg_type = reg_type
@@ -198,14 +198,17 @@ class _Segment:
         self.fnum_ch6   = fnum_ch6
         self.vol_ch6    = vol_ch6
         self.sus_ch6    = sus_ch6
+        self.block_ch6  = block_ch6
 
         self.fnum_ch7   = fnum_ch7
         self.vol_ch7    = vol_ch7
         self.sus_ch7    = sus_ch7
+        self.block_ch7  = block_ch7
 
         self.fnum_ch8   = fnum_ch8
         self.vol_ch8    = vol_ch8
         self.sus_ch8    = sus_ch8
+        self.block_ch8  = block_ch8
 
         self.at_token   = ''
         self.voice_id   = -1
@@ -247,7 +250,7 @@ def dump_segments(segments):
 # -----------------------------------------------------------------------------
 import csv
 
-NUM_CH = 18 # Melody 0,1,2,3,4,5 Rhythm : 6, 7, 8
+NUM_CH = 18  # ch=0~17
 
 # rhythmチャンネル mapping
 RHYTHM_CH_MAP = {
@@ -266,12 +269,15 @@ RHYTHM_VOICE_ID_MAP = {
     "hh": 20,
 }
 
+NUM_CH = 18  # 0-8: OPLL, 13-17: Rhythm など
+
 from collections import defaultdict
 import csv
 import math
 
 IMPLICIT_RETRIGGER_MIN_GAP = 2
 IMPLICIT_RETRIGGER_MAX_GAP = 32
+NUM_CH = 18
 
 def pass0_read_csv(trace_csv_path):
     """
@@ -600,10 +606,9 @@ def pass2_dump_csv(events, trace_csv_path):
 
 def pass3_merge_silent_rests(events):
     """
-    PASS3:
-      - 無音休符（vol=15, keyon=0）を安全にマージする
-      - inst/fnum/block の一致は不要（休符なので意味がない）
-      - retrigger（keyon=1）は絶対にマージしない
+    PASS3（2段階処理）:
+      1. retrigger（keyon=1 & vol!=15）を除外しつつ休符をマージ
+      2. さらに vol=15 の連続イベントを keyon に関係なくマージ
     """
 
     from collections import defaultdict
@@ -623,6 +628,18 @@ def pass3_merge_silent_rests(events):
         ev["ticks_start"] = ev["ticks"]
         ev["ticks_end"]   = ev["ticks"] + ev["l"]
 
+    # --- 休符判定（あなたの仕様） ---
+    def is_rest(ev):
+        return (
+            _ival(ev["vol"]) == 15 or
+            _ival(ev["keyon"]) == 0 or
+            _ival(ev["fnum"]) == 0
+        )
+
+    # --- retrigger 判定（keyon=1 & vol!=15 のときのみ retrigger） ---
+    def is_retrigger(ev):
+        return (_ival(ev["keyon"]) == 1 and _ival(ev["vol"]) != 15)
+
     # チャンネルごとに処理
     ch_events = defaultdict(list)
     for ev in events:
@@ -632,32 +649,47 @@ def pass3_merge_silent_rests(events):
 
     for ch, buf in ch_events.items():
         buf.sort(key=lambda e: e["ticks_start"])
-        merged = []
 
+        # -------------------------
+        # 第1段階：通常の休符マージ
+        # -------------------------
+        stage1 = []
         for ev in buf:
-            if merged:
-                prev = merged[-1]
+            if stage1:
+                prev = stage1[-1]
 
-                # --- 無音休符のマージ条件（最終版） ---
-                is_silent_rest = (
-                    _ival(prev["vol"]) == 15 and
-                    _ival(ev["vol"]) == 15 and
-                    _ival(prev["keyon"]) == 0 and
-                    _ival(ev["keyon"]) == 0
-                )
+                # retrigger は絶対にマージしない
+                if is_retrigger(prev) or is_retrigger(ev):
+                    stage1.append(ev)
+                    continue
 
-                if is_silent_rest:
-                    # ticks_end を更新
+                # 休符同士ならマージ
+                if is_rest(prev) and is_rest(ev):
                     prev["ticks_end"] = ev["ticks_end"]
                     prev["l"] = prev["ticks_end"] - prev["ticks_start"]
                     continue
 
-            merged.append(ev)
+            stage1.append(ev)
 
-        merged_all.extend(merged)
+        # -------------------------
+        # 第2段階：vol=15 のみ追加マージ
+        # -------------------------
+        stage2 = []
+        for ev in stage1:
+            if stage2:
+                prev = stage2[-1]
+
+                # vol=15 同士なら keyon に関係なくマージ
+                if _ival(prev["vol"]) == 15 and _ival(ev["vol"]) == 15:
+                    prev["ticks_end"] = ev["ticks_end"]
+                    prev["l"] = prev["ticks_end"] - prev["ticks_start"]
+                    continue
+
+            stage2.append(ev)
+
+        merged_all.extend(stage2)
 
     return merged_all
-
 
 def pass3_dump_csv(events, trace_csv_path):
     """
@@ -685,13 +717,15 @@ def pass3_dump_csv(events, trace_csv_path):
 
     print(f"[PASS3] Debug CSV written: {out_csv_path}")
 
+
 def pass4_compute_beats(events):
     """
     PASS4:
       1. 最小音価クラスタ(min_l)の推定
-      2. beat_pos, beat, fb, kb, vb の計算
-      3. dt から BPM を推定（grid_per_beat は BPM には使わない）
-         → dt_mode / bpm_raw / bpm_clamped をログ出力
+      2. beat（音価）を min_l から計算
+      3. beat_pos（beat の累積）をチャンネルごとに計算
+      4. fb/kb/vb の計算
+      5. dt から BPM を推定
     """
 
     from collections import defaultdict
@@ -705,25 +739,38 @@ def pass4_compute_beats(events):
         except:
             return default
 
+
     # ------------------------------------------------------------
-    # 1. 最小音価クラスタ(min_l)の推定
+    # 1. 最小音価クラスタ(min_l)の推定（keyon==1 の音符のみ）
     # ------------------------------------------------------------
     l_vals = []
     for ev in events:
+        time  = ev.get("time")
+        ev_type = ev.get("type")
+        ticks  = _ival(ev.get("ticks")) 
+        ch  = _ival(ev.get("ch")) 
         l     = _ival(ev.get("l"))
         keyon = _ival(ev.get("keyon"))
         is_ryt = _ival(ev.get("is_ryt"))
-        if l > 0 and keyon == 1 and is_ryt == 0:
+
+        # ★ keyon==1 の音符だけを対象にする（休符は絶対に含めない）
+        if keyon == 1 and l > 0 and ev_type != "rhythm":
+            print(f"[PASS4] ev_type={ev_type} time={time}, ticks={ticks},ch={ch},keyon={keyon}, is_ryt={is_ryt},l={l}")
             l_vals.append(l)
 
     if not l_vals:
         min_l = 1.0
         base  = 1
         cluster = []
+        print(f"[PASS4] min_l={min_l} base:{base}")
     else:
-        l_vals_sorted = sorted(l_vals)
-        base = l_vals_sorted[0]
+        # ★ 最小値 base（keyon==1 の音符のみ）
+        base = min(l_vals)
+        print(f"[PASS4] base={base}")
+        # ★ base と base+1 のクラスタ（休符は入らない）
         cluster = [lv for lv in l_vals if lv == base or lv == base + 1]
+
+        # ★ min_l は平均（切り捨て不要）
         if cluster:
             min_l = sum(cluster) / len(cluster)
         else:
@@ -731,8 +778,20 @@ def pass4_compute_beats(events):
 
     print(f"[PASS4] min_l={min_l}, base={base}, cluster={cluster[:40]}")
 
+
     # ------------------------------------------------------------
-    # 2. beat_pos, beat, fb, kb, vb の計算（既存ロジック）
+    # 2. beat（音価）を min_l から計算（ceil）
+    # ------------------------------------------------------------
+    for ev in events:
+        l = _ival(ev.get("l"))
+
+        if l > 0:
+            ev["beat"] = max(1, round(l / min_l))
+        else:
+            ev["beat"] = 0  # retrigger or 無音
+
+    # ------------------------------------------------------------
+    # 3. beat_pos（beat の累積）をチャンネルごとに計算
     # ------------------------------------------------------------
     ch_events = defaultdict(list)
     for ev in events:
@@ -745,41 +804,48 @@ def pass4_compute_beats(events):
 
         for ev in buf:
             ev["beat_pos"] = beat_pos
-            ev["beat"]     = beat_pos
-            ev["fb"] = beat_pos
-            ev["kb"] = beat_pos
-            ev["vb"] = beat_pos
-            beat_pos += 1
+            beat_pos += ev["beat"]   # ★ チャンネル独立の Σ beat ★
+
+    # ------------------------------------------------------------
+    # 4. fb/kb/vb を beat に合わせる
+    # ------------------------------------------------------------
+    for ev in events:
+        ev["fb"] = ev["beat"]
+        ev["kb"] = ev["beat"]
+        ev["vb"] = ev["beat"]
 
     # ------------------------------------------------------------
     # 3. BPM 推定（dt ベース）
     # ------------------------------------------------------------
+    from statistics import mode, median
+
+    # --- メロディ判定（新仕様） ---
+    def is_melody(ev):
+        return ev.get("type") != "rhythm"
+
     ch_events_bpm = defaultdict(list)
     for ev in events:
         ch = _ival(ev.get("ch"), -1)
         ch_events_bpm[ch].append(ev)
 
     dt_all = []
-    beat_list = []
+    beat_pos_minl = []   # ★ 1 beat 相当の beat_pos を集める
 
     for ch, buf in ch_events_bpm.items():
         buf.sort(key=lambda e: float(e.get("time", 0.0)))
         prev_ev = None
 
         for ev in buf:
-            l      = _ival(ev.get("l"))
-            keyon  = _ival(ev.get("keyon"))
-            is_ryt = _ival(ev.get("is_ryt"))
-            beat   = _ival(ev.get("beat"))
+            l        = _ival(ev.get("l"))
+            keyon    = _ival(ev.get("keyon"))
+            beat     = _ival(ev.get("beat"))
+            beat_pos = _ival(ev.get("beat_pos"))
 
-            if is_ryt == 1:
+            # ★ 新仕様：type=rhythm のみ除外
+            if not is_melody(ev):
                 continue
 
-            # beat_list は最小音価クラスタのみ
-            if keyon == 1 and (l == base or l == base + 1):
-                beat_list.append(beat)
-
-            # dt_all は keyon=1 の全イベント（retrigger も含む）
+            # --- dt_all: keyon=1 のメロディイベント間隔 ---
             if keyon == 1:
                 if prev_ev is not None:
                     dt = float(ev["time"]) - float(prev_ev["time"])
@@ -787,38 +853,61 @@ def pass4_compute_beats(events):
                         dt_all.append(dt)
                 prev_ev = ev
 
+            # --- 1 beat 相当（min_l クラスタ）の beat_pos を収集 ---
+            if keyon == 1 and (l == base or l == base + 1) and beat == 1:
+                beat_pos_minl.append(beat_pos)
+
     if not dt_all:
         bpm = None
         print("[PASS4] BPM estimation skipped (no dt)")
         return events, min_l, bpm
 
-    # dt_mode
+    # --- dt_mode ---
     try:
         dt_mode = mode(dt_all)
     except:
         dt_mode = median(dt_all)
 
-    # グリッド1個あたりのBPM
     bpm_per_grid = 60.0 / dt_mode
 
-    # grid_per_beat 推定（beat>1 の最頻値）
-    beats_gt1 = [b for b in beat_list if b > 1]
-    if beats_gt1:
-        try:
-            grid_per_beat = mode(beats_gt1)
-        except:
-            grid_per_beat = int(round(median(beats_gt1)))
-    else:
-        grid_per_beat = 16
+    # --------------------------------------------------------
+    # grid_per_beat の推定
+    #   beat_pos_minl の差分から推定する
+    # --------------------------------------------------------
+    grid_per_beat = None
+    if len(beat_pos_minl) >= 2:
+        beat_pos_sorted = sorted(set(beat_pos_minl))
+        intervals = [
+            b - a
+            for a, b in zip(beat_pos_sorted, beat_pos_sorted[1:])
+            if (b - a) > 0
+        ]
+        if intervals:
+            try:
+                grid_per_beat = mode(intervals)
+            except:
+                grid_per_beat = int(round(median(intervals)))
 
-    grid_per_beat = 16
-    # 生の BPM
-    bpm_raw = bpm_per_grid * grid_per_beat
+    # フォールバック（典型値から選ぶ）
+    if not grid_per_beat or grid_per_beat <= 0:
+        candidates = [4, 8, 12, 16]
+        best_g = None
+        best_bpm = None
 
-    # 30〜225 にクランプ
+        for g in candidates:
+            bpm_candidate = bpm_per_grid / g
+            if 30.0 <= bpm_candidate <= 225.0:
+                if best_bpm is None or abs(bpm_candidate - round(bpm_candidate)) < abs(best_bpm - round(best_bpm)):
+                    best_bpm = bpm_candidate
+                    best_g = g
+
+        grid_per_beatls  = best_g if best_g else 16
+
+    # --- 正しい BPM の式 ---
+    bpm_raw = bpm_per_grid / grid_per_beat
+
     bpm_clamped = max(30.0, min(225.0, bpm_raw))
 
-    # ログ出力（検算用）
     print(
         f"[PASS4 BPM] dt_mode={dt_mode:.6f}, "
         f"bpm_per_grid={bpm_per_grid:.3f}, "
@@ -828,6 +917,7 @@ def pass4_compute_beats(events):
     )
 
     return events, min_l, bpm_clamped
+
 
 def pass4_dump_csv(events, trace_csv_path):
     """
@@ -866,6 +956,7 @@ def _int(ev, key, default=0):
         return int(v)
     except (ValueError, TypeError):
         return default
+
 
 def _float(ev, key, default=0.0):
     """空文字列や欠損値を安全に float に変換するヘルパー"""
@@ -917,55 +1008,90 @@ def estimate_bpm_from_segments(segments_by_ch, vgm_rate):
     bpm = 60 * vgm_rate / ticks_per_beat
     return round(bpm)
 
+
 def _build_segments(trace_csv_path,
                     include_rhythm=True,
                     rhythm_reg_timeline=None):
-
-    # ------------------------------------------------------------
-    # PASS0〜PASS4
-    # ------------------------------------------------------------
+    # ------------------------------------------------------
+    # vgmの情報 (trace_csv_path)からevent情報を作成
+    # ------------------------------------------------------
+    # pass0 : <stem>_trace.opll.csvをeventsに読み込む
     events = pass0_read_csv(trace_csv_path)
+
+    # pass1 : ticksの差分から各eventのlを算出
+    # Next eventのticks = ticks + l
     events = pass1_compute_l(events)
     pass1_dump_csv(events, trace_csv_path)
 
+    # pass2 (1): fl, kl, vlの算出
+    # fl : 同じfnumが継続する期間[ticks]
+    # kl : 同じkeyonが継続する期間[ticks]
+    # vl : 同じvolが継続する期間[ticks]
+    # 但しこれらはkeyon 0->1でlと同じ値にリセットされる
     events = pass2_compute_fl_kl_vl(events)
+
+    # pass2 (2): fl,kl,vlを計算した後にl=0のeventを削除
+    # ここで l=0 の keyon 0->1 (retrigger)のeventは削除される。(fl,kl,vlにはリセットとして反映済み)
     events = pass2_filter_l0(events)
     pass2_dump_csv(events, trace_csv_path)
 
+    # 無音状態(v=15 又は keyon=0) の連続したeventをマージ
     events = pass3_merge_silent_rests(events)
     pass3_dump_csv(events, trace_csv_path)
 
+    # beat, beat_posを算出
+    # beatは最小の音価 (min_l)で正規化した単位。grid幅を示す
+    # beat_pos は前のeventのbeatの累計。そのeventのスタート地点を表す
     events, min_l, bpm = pass4_compute_beats(events)
     pass4_dump_csv(events, trace_csv_path)
 
-    # ------------------------------------------------------------
-    # melody: ch=0..8
-    # rhythm: is_ryt=1 → BD/SD/TOM/TC/HH
-    # ------------------------------------------------------------
-    melody_by_ch = {ch: [] for ch in range(9)}
-    rhythm_events = []  # tick ベースで処理するため PASS1 の ticks を使う
+    # ------------------------------------------------------
+    # pass4まで処理されたeventsをベースに_Segmentを生成する
+    # ------------------------------------------------------
+    # ch ごとに整理
+    events_by_ch = defaultdict(list)
+    for ev in events:
+        ch = int(ev["ch"])
+        events_by_ch[ch].append(ev)
+
+    # ch ごとに整理
+    events_by_ch = defaultdict(list)
 
     for ev in events:
         ch = int(ev["ch"])
-        is_ryt = _int(ev, "is_ryt", 0)
 
-        if is_ryt == 0 and 0 <= ch < 9:
-            melody_by_ch[ch].append(ev)
-        elif ev.get("#type") == "rhythm" and is_ryt == 1:
-            rhythm_events.append(ev)
+        # --- ch 補正（リズム対応） ---
+        if _int(ev, "is_ryt", 0) == 1:
+            if _int(ev, "bd", 0) == 1:
+                ch = 6
+            elif _int(ev, "sd", 0) == 1:
+                ch = 7
+            elif (_int(ev, "tom", 0) == 1 or
+                _int(ev, "tc", 0) == 1 or
+                _int(ev, "hh", 0) == 1):
+                ch = 8
+            else:
+                # rhythm だが種類不明 → 無視
+                continue
 
-    # ------------------------------------------------------------
-    # 1. melody segment generation (beat-based)
-    # ------------------------------------------------------------
+        # ★ ch が -1 や範囲外なら無視
+        if ch < 0 or ch >= NUM_CH:
+            continue
+
+        # ★ 補正済み ch を events_by_ch に入れる
+        events_by_ch[ch].append(ev)
+
+    # ticks でソート
+    for ch in events_by_ch:
+        events_by_ch[ch].sort(key=lambda e: int(e["ticks"]))
+
     segments_by_ch = {ch: [] for ch in range(NUM_CH)}
 
-    for ch in range(9):
-        evs = melody_by_ch[ch]
-        evs.sort(key=lambda e: _int(e, "beat_pos", 0))
-
+    for ch, evs in events_by_ch.items():
         prev_seg = None
 
         for ev in evs:
+            ev_type = ev.get("type") 
             keyon    = _int(ev, "keyon", 0)
             fnum     = _int(ev, "fnum", 0)
             block    = _int(ev, "block", 0)
@@ -975,7 +1101,37 @@ def _build_segments(trace_csv_path,
             beat_pos = _int(ev, "beat_pos", 0)
             beat     = _int(ev, "beat", 0)
 
-            # melody は keyon=0 でも休符として Segment を作る
+            is_ryt   = _int(ev, "is_ryt", 0)
+
+            # NOTE_ON or OFF 条件
+            # 'type' != "rhythm"のeventはメロディを含んでいる
+            is_melody_on = ev_type  != "rhythm"
+
+            # 'is_ryt' = 1 : eventはリズムを含む : 0 eventはリズムを含まない
+            is_rhythm_on = (is_ryt == 1)
+
+            # 基本的にはpass4の全てのeventが_Segmentに変換されるべき
+            if not (is_melody_on or is_rhythm_on):
+                continue
+
+            # MS2はファイルのフォーマット的には0:最大 63:無音 (エディタ上の表示と逆)　
+            ms2_vol = _opll_vol_to_ms2(vol_opll)
+
+            # eventはメロディとリズムの両方を含む場合もあるし、どちらか一方のみもあり得る
+            # リズムの情報はメロディの情報と分離
+            # bd	sd	tom	tc	hh　　　 : 1: 0->1が発生 0:変化なし
+            # fnum_ch6	vol_ch6	sus_ch6 block_ch6: ch6のfnum, vol, sus, blockを保持
+            # fnum_ch7	vol_ch7	sus_ch7 block_ch6: ch7のfnum, vol, sus, blockを保持
+            # fnum_ch8	vol_ch8	sus_ch8 block_ch6: ch8のfnum, vol, sus, blockを保持
+
+            # MS2はOPL3/4のメロディモードで動作。これはリズムも他のメロディ同様にNOTE_ON, OFFで表現する
+            # 基本的にはbd	sd	tom	tc	hhが1の時に、beat_posをベースにNOTE_ONを置き、次のgridでOFF又はretrigger
+            # MS2は連続したNOTE_ONは通常retrigger扱い
+            # 小文字にするとkeyoffなしのfnumの変更になる
+            # ちなみに、リズムの長さは 1 gridのdt幅で判断されるべき。
+
+            # NOTE
+            # pass4時点で連続した無音状態 (keyon=0又はv=15)のeventはマージされています。start_beat, end_beatに要注意
             seg = _Segment(
                 ev["#type"],
                 float(ev["time"]),
@@ -985,28 +1141,52 @@ def _build_segments(trace_csv_path,
                 fnum=fnum,
                 block=block,
                 inst=inst,
-                vol=_opll_vol_to_ms2(vol_opll),
+                vol=ms2_vol,
                 sus=sus,
                 beat=beat,
                 fb=_int(ev, "fb", 0),
                 kb=_int(ev, "kb", 0),
                 vb=_int(ev, "vb", 0),
-                is_ryt=0,
-                bd=0, sd=0, tom=0, tc=0, hh=0,
-                fnum_ch6=0, vol_ch6=0, sus_ch6=0,
-                fnum_ch7=0, vol_ch7=0, sus_ch7=0,
-                fnum_ch8=0, vol_ch8=0, sus_ch8=0,
+                is_ryt=is_ryt,
+                bd=_int(ev, "bd", 0),
+                sd=_int(ev, "sd", 0),
+                tom=_int(ev, "tom", 0),
+                tc=_int(ev, "tc", 0),
+                hh=_int(ev, "hh", 0),
+                fnum_ch6=_int(ev, "fnum_ch6", 0),
+                vol_ch6=_opll_vol_to_ms2(_int(ev, "vol_ch6", 15)),
+                sus_ch6=_int(ev, "sus_ch6", 0),
+                block_ch6=_int(ev, "block_ch6", 0),
+                fnum_ch7=_int(ev, "fnum_ch7", 0),
+                vol_ch7=_opll_vol_to_ms2(_int(ev, "vol_ch7", 15)),
+                sus_ch7=_int(ev, "sus_ch7", 0),
+                block_ch7=_int(ev, "block_ch7", 0),
+                fnum_ch8=_int(ev, "fnum_ch8", 0),
+                vol_ch8=_opll_vol_to_ms2(_int(ev, "vol_ch8", 15)),
+                sus_ch8=_int(ev, "sus_ch8", 0),
+                block_ch8=_int(ev, "block_ch8", 0),
             )
 
+            # ---------------------------------------------------
+            # コンストラクタで設定されない_Segmentのメンバ情報を設定
+            # ---------------------------------------------------
+            # beat_end
             seg.beat_end = beat_pos + beat
-            seg.beat_sz  = min_l
-            seg.grid_sz  = 1
-            seg.ms2_len  = beat
 
-            # 音階
-            seg.o = get_octave(fnum)
+            # beat_sz = min_l
+            seg.beat_sz = min_l
+
+            # grid_sz = 1 beat 単位
+            seg.grid_sz = 1
+
+            # ms2_len = beat / grid_sz
+            seg.ms2_len = beat // seg.grid_sz
+
+            # 音階情報
+            seg.o     = get_octave(fnum)
             seg.scale = get_scale(fnum)
 
+            # odiff / vdiff
             if prev_seg:
                 seg.odiff = seg.o - prev_seg.o
                 seg.vdiff = seg.vol - prev_seg.vol
@@ -1017,94 +1197,19 @@ def _build_segments(trace_csv_path,
             prev_seg = seg
             segments_by_ch[ch].append(seg)
 
-    # ------------------------------------------------------------
-    # 2. rhythm segment generation (tick-based → beat-based conversion)
-    # ------------------------------------------------------------
-    if include_rhythm:
-        # Compute melody step scale so rhythm beat_pos aligns with melody grid.
-        # Melody uses a per-channel sequential beat_pos; to map rhythm ticks
-        # to the same scale, derive ticks_per_step from the melody's max tick
-        # and max beat_pos.  For rhythm-only songs (no melody) fall back to a
-        # BPM-derived value so the patterns chunk stays within the 16384-byte limit.
-        all_melody_evs = [ev for evs in melody_by_ch.values() for ev in evs]
-        if all_melody_evs:
-            mel_max_bp   = max(_int(e, "beat_pos", 0) for e in all_melody_evs)
-            mel_max_tick = max(_int(e, "ticks",    0) for e in all_melody_evs)
-            if mel_max_bp > 0 and mel_max_tick > 0:
-                rhy_ticks_per_step = mel_max_tick / mel_max_bp
-            else:
-                rhy_ticks_per_step = 8.0
-        else:
-            # Rhythm-only song: derive from detected BPM or default to 8
-            _freq = 59.922727  # NTSC VDP interrupt rate used for ticks
-            rhy_ticks_per_step = max(1.0, round(_freq * 15.0 / bpm)) if bpm else 8.0
+            # 基本は 1 beat = 1 grid
+            # 但し 1 beatがどれくらいの長さ(l64, l32, l16, l8, l4, l2, l1)になるかはdtから判定が必要
+            seg.beat_start = beat_pos
+            seg.beat_end   = beat_pos + beat
+            seg.ms2_len    = beat
+            seg.beat_sz    = min_l
+            seg.grid_sz    = 1
 
-        RHY_KEYS = ["bd", "sd", "tom", "tc", "hh"]
-        last = {k: dict(tick=0, on=0, fnum=0, vol=0, sus=0) for k in RHY_KEYS}
-
-        # tick 昇順
-        rhythm_events.sort(key=lambda e: _int(e, "ticks", 0))
-
-        for ev in rhythm_events:
-            tick = _int(ev, "ticks", 0)
-
-            # Map tick to the melody beat grid (avoids per-channel sequential mismatch)
-            beat_pos = max(0, round(tick / rhy_ticks_per_step))
-
-            for k in RHY_KEYS:
-                on = _int(ev, k, 0)
-
-                # rhythm fnum/vol/sus: bd/hh→ch6, sd→ch7, tom/tc→ch8
-                # (matches OPLL hardware and reference branch formula)
-                rhy_ch_idx = 6 + (k == "sd") + (k == "tom" or k == "tc")
-                fnumX = _int(ev, f"fnum_ch{rhy_ch_idx}", 0)
-                volX  = _int(ev, f"vol_ch{rhy_ch_idx}", 15)
-                susX  = _int(ev, f"sus_ch{rhy_ch_idx}", 0)
-
-                prev = last[k]
-                changed = (
-                    prev["on"]  != on or
-                    prev["fnum"] != fnumX or
-                    prev["vol"]  != volX or
-                    prev["sus"]  != susX
-                )
-
-                if changed:
-                    chidx = RHYTHM_CH_MAP[k]  # 例: bd→6, sd→7, tom/tc/hh→8
-
-                    # 前の segment を閉じる
-                    if segments_by_ch[chidx]:
-                        prev_seg = segments_by_ch[chidx][-1]
-                        prev_seg.beat_end = beat_pos
-                        prev_seg.ms2_len  = prev_seg.beat_end - prev_seg.beat_start
-
-                    # 新しい segment（beat ベース）
-                    seg = _Segment(
-                        reg_type="rhythm",
-                        time=float(ev["time"]),
-                        ch=chidx,
-                        beat_start=beat_pos,
-                        keyon=on,
-                        fnum=fnumX,
-                        block=0,
-                        inst=RHYTHM_VOICE_ID_MAP[k],
-                        vol=_opll_vol_to_ms2(volX),
-                        sus=susX,
-                        beat=1,  # 1 beat として扱う（後で ms2_len で調整）
-                        fb=beat_pos,
-                        kb=beat_pos,
-                        vb=beat_pos,
-                        is_ryt=1,
-                        bd=1 if k=="bd" else 0,
-                        sd=1 if k=="sd" else 0,
-                        tom=1 if k=="tom" else 0,
-                        tc=1 if k=="tc" else 0,
-                        hh=1 if k=="hh" else 0,
-                    )
-
-                    segments_by_ch[chidx].append(seg)
-
-                prev.update(dict(tick=tick, on=on, fnum=fnumX, vol=volX, sus=susX))
+            seg.o = get_octave(fnum)
+            seg.scale = get_scale(fnum)
+            if prev_seg:
+                seg.odiff = seg.o - prev_seg.o
+                seg.vdiff = seg.vol - prev_seg.vol
 
     return segments_by_ch, bpm
 
@@ -1382,66 +1487,75 @@ def _voice_table_comments(voice_table: dict) -> list[str]:
 # ---------------------------------------------------------------------------
 # MML generation
 # ---------------------------------------------------------------------------
+
 def _generate_mml_impl(segments: dict, stem: str, raw_ticks: bool = False,
                        voice_table: dict | None = None,
                        user_patches: dict | None = None,
                        warnings: list[str] | None = None) -> str:
+    """Generate MGSDRV MML text from per-channel segment data.
 
+    When *raw_ticks* is True, emit ``{scale}%{N}`` tick notation and use
+    ``#tempo 75`` (pass3.simple.mml style).  When False (default), emit
+    standard divisor notation with ``#tempo 225``.
+    """
     mml_buffer: dict[int, list] = {ch: [] for ch in range(NUM_CH)}
 
     for ch in range(NUM_CH):
-        #ch_num   = ch + CH_OFFSET
-        #track_id = track_id_to_mgsdrv(ch_num)
-        track_id = track_id_to_mgsdrv(9 + ch)
-        if getattr(seg, "is_ryt", 0) == 1:
-            track_id = 'f'
-        else:
-            track_id = track_id_to_mgsdrv(9 + ch)
-
+        ch_num   = ch + CH_OFFSET
+        track_id = track_id_to_mgsdrv(ch_num)
         mml_buffer[ch].append(f'\n\n;ch{track_id} start')
 
-        segs = segments.get(ch, [])
+        segs = segments.get(ch,[])
         if not segs:
             continue
-
-        o_stamp = None
-        v_stamp = None
-        at_stamp = None
+        l_cnt   = 0
+        o_stamp = 0
+        v_stamp = -1
+        at_stamp = ''
         is_first_group = True
-        mml = ''
+        mml     = ''
+        note_cnt = 0
 
-        for seg in segs:
-
-            # リズムはここでは無視（必要なら別処理）
+        for seg_idx, seg in enumerate(segs):
             if ch >= 6 and getattr(seg, "is_ryt", 0) == 1:
-                continue
-
-            length = seg.ms2_len
+                continue  
+            length = seg.beat_end - seg.beat_start
             if length <= 0:
                 continue
 
-            scale = seg.scale
-            octave = seg.o
-            v = seg.mml_vol()
+            octave, scale = _opll_note(seg.fnum, seg.block)
+            v   = seg.mml_vol()
 
             if not seg.keyon or seg.fnum == 0:
                 scale = 'r'
 
-            # --- MML 行の開始 ---
-            if is_first_group:
-                mml = f'\n{track_id} {seg.at_token} v{v} o{octave}'
-                is_first_group = False
-                at_stamp = seg.at_token
-                v_stamp = v
-                o_stamp = octave
-            else:
-                mml = f'\n{track_id}'
+            remaining = length
+            while remaining > 0:
+                ltmp = min(remaining, 255)
 
-                if seg.at_token != at_stamp:
+                if note_cnt == 0:
+                    at_token = seg.at_token
+                    if is_first_group:
+                        if raw_ticks:
+                            mml = f'\n{track_id} {at_token} v{v}'
+                        else:
+                            mml = f'\n{track_id} {at_token} v{v} o{octave} l64'
+                            o_stamp = octave
+                        is_first_group = False
+                    else:
+                        mml = f'\n{track_id}'
+                        if at_token != at_stamp:
+                            mml += f' {at_token}'
+                        if v != v_stamp:
+                            mml += f' v{v}'
+                    at_stamp = at_token
+                    v_stamp  = v
+
+                if seg.at_token != at_stamp and note_cnt != 0:
                     mml += f' {seg.at_token}'
                     at_stamp = seg.at_token
 
-                if v != v_stamp:
+                if v != v_stamp and note_cnt != 0:
                     mml += f' v{v}'
                     v_stamp = v
 
@@ -1449,33 +1563,42 @@ def _generate_mml_impl(segments: dict, stem: str, raw_ticks: bool = False,
                     mml += f' o{octave}'
                     o_stamp = octave
 
-            # --- beat ベースの L 値生成 ---
-            if raw_ticks:
-                # raw_ticks モードは ticks を使うが、beat→tick変換はしない
-                mml += f' {scale}%{length}'
-            else:
-                # divisor notation: scale + L(length)
-                mml += f' {scale}{length}'
+                if raw_ticks:
+                    mml += f' {scale}%{ltmp}'
+                else:
+                    mml += f' {ticks_to_mml_length(ltmp, scale)}'
+                l_cnt += ltmp
 
+                remaining -= ltmp
+                if remaining > 0:
+                    mml_buffer[ch].append(mml)
+                    mml = ''
+
+            note_cnt += 1
+            if note_cnt >= 8 or (not seg.keyon and v == 0):
+                mml_buffer[ch].append(mml)
+                mml = ''
+                mml_buffer[ch].append(f'\n;tick count: {l_cnt}\n')
+                note_cnt = 0
+
+        if mml:
             mml_buffer[ch].append(mml)
 
-        mml_buffer[ch].append(f'\n;ch{track_id} end\n')
+        mml_buffer[ch].append(f'\n;ch{track_id} end: tick count: {l_cnt}\n')
 
-    # --- Header ---
+    # Build header
     tempo = 75 if raw_ticks else 225
     lines = []
     lines.append(';[name=opll]')
     lines.append('#opll_mode 1')
     lines.append(f'#tempo {tempo}')
     lines.append(f'#title {{ "{stem}"}}')
-
     for ch in range(NUM_CH):
         ch_num   = ch + CH_OFFSET
         track_id = track_id_to_mgsdrv(ch_num)
         used  = estimate_mml_used(mml_buffer[ch])
         alloc = estimate_alloc(used)
         lines.append(f'#alloc {track_id}={alloc}')
-
     if user_patches:
         lines.append('')
         lines.extend(_user_patch_mml_defs(user_patches))
@@ -1483,7 +1606,6 @@ def _generate_mml_impl(segments: dict, stem: str, raw_ticks: bool = False,
         lines.extend(_voice_table_comments(voice_table))
     if warnings:
         lines.extend(warnings)
-
     lines.append('')
     lines.append('')
 
@@ -1509,107 +1631,107 @@ def _generate_mml(segments: dict, stem: str,
                               voice_table=voice_table, user_patches=user_patches,
                               warnings=warnings)
 
+
 def _generate_mml_mgs_pct(segments: dict, stem: str,
                            voice_table: dict | None = None,
                            user_patches: dict | None = None,
                            warnings: list[str] | None = None) -> str:
-    """
-    Generate OPLL MML (MGS_pct style) using beat-based _Segment.
-    Note lengths are encoded as {scale}%{N} where N = seg.ms2_len (beats).
-    Delta-token logic for octave/volume is preserved.
-    """
+    """Generate OPLL MML with MGS delta-token octave/volume and raw tick (%) lengths.
 
+    Applies the same ``<``/``>``/``(``/``)`` delta-token logic as
+    :func:`get_mgs_note_token_pct` (±3 threshold):  emits relative octave
+    and volume changes when the difference fits in ±3, otherwise emits
+    absolute ``oN``/``vN`` tokens.  Note lengths are encoded as
+    ``{scale}%{N}`` (raw ticks).  Uses ``#tempo 75``.
+
+    This is the OPLL equivalent of the PSG/SCC ``MGS_pct`` variants.
+    """
     mml_buffer: dict[int, list] = {ch: [] for ch in range(NUM_CH)}
 
     for ch in range(NUM_CH):
-        #ch_num   = ch + CH_OFFSET
-        #track_id = track_id_to_mgsdrv(ch_num)
-        track_id = track_id_to_mgsdrv(ch + 1)
+        ch_num   = ch + CH_OFFSET
+        track_id = track_id_to_mgsdrv(ch_num)
         mml_buffer[ch].append(f'\n\n;ch{track_id} start')
 
-        segs = segments.get(ch, [])
-        if not segs:
-            continue
-
-        o_stamp = None
-        v_stamp = None
-        at_stamp = None
+        segs = segments.get(ch,[])
+        l_cnt   = 0
+        o_stamp = 0
+        v_stamp = 0
+        at_stamp = ''
         is_first_group = True
+        mml     = ''
+        note_cnt = 0
 
         for seg in segs:
-
-            # リズムはここでは無視（必要なら後で追加）
-            if getattr(seg, "is_ryt", 0) == 1:
-                continue
-
-            length = seg.ms2_len
+            length = seg.beat_end - seg.beat_start
             if length <= 0:
                 continue
 
-            scale = seg.scale
-            octave = seg.o
-            v = seg.mml_vol()
+            octave, scale = _opll_note(seg.fnum, seg.block)
+            v   = seg.mml_vol()
 
             if not seg.keyon or seg.fnum == 0:
                 scale = 'r'
-                if o_stamp is None:
-                    octave = 4
-                else:
-                    octave = o_stamp
+                octave = o_stamp if o_stamp != 0 else 1
 
-            # --- MML 行の開始 ---
-            if is_first_group:
-                mml = f'\n{track_id} {seg.at_token} v{v} o{octave}'
-                is_first_group = False
-                at_stamp = seg.at_token
-                v_stamp = v
+            remaining = length
+            while remaining > 0:
+                ltmp = min(remaining, 255)
+
+                if note_cnt == 0:
+                    at_token = seg.at_token
+                    if is_first_group:
+                        mml = f'\n{track_id} {at_token} v{v} o{octave}'
+                        at_stamp = at_token
+                        v_stamp  = v
+                        o_stamp  = octave
+                        is_first_group = False
+                    else:
+                        mml = f'\n{track_id}'
+                        if at_token != at_stamp:
+                            mml += f' {at_token}'
+                            at_stamp = at_token
+                        mml += f' v{v}'
+                        v_stamp = v
+
+                # Build note token with delta-token logic (cnt always 1 for OPLL)
+                note = get_mgs_note_token_pct(
+                    ltmp, v, v - v_stamp, scale, 1, octave, o_stamp, v_stamp)
+                mml += ' ' + note
+                l_cnt += ltmp
+
                 o_stamp = octave
-            else:
-                mml = f'\n{track_id}'
+                v_stamp = v
 
-                if seg.at_token != at_stamp:
-                    mml += f' {seg.at_token}'
-                    at_stamp = seg.at_token
+                remaining -= ltmp
+                if remaining > 0:
+                    mml_buffer[ch].append(mml)
+                    mml = ''
 
-                if v != v_stamp:
-                    mml += f' v{v}'
-                    v_stamp = v
+            note_cnt += 1
+            if note_cnt >= 8 or (not seg.keyon and v == 0):
+                mml_buffer[ch].append(mml)
+                mml = ''
+                mml_buffer[ch].append(f'\n;tick count: {l_cnt}\n')
+                note_cnt = 0
 
-                if scale != 'r' and octave != o_stamp:
-                    mml += f' o{octave}'
-                    o_stamp = octave
-
-            # --- delta-token note ---
-            note = get_mgs_note_token_pct(
-                length,            # ★ beat ベースの長さ
-                v,                 # current volume
-                seg.vdiff,         # ★ volume diff
-                scale,             # scale or 'r'
-                1,                 # cnt=1 (OPLL)
-                octave,            # current octave
-                seg.odiff,         # ★ octave diff
-                v_stamp            # previous volume
-            )
-
-            mml += ' ' + note
+        if mml:
             mml_buffer[ch].append(mml)
 
-        mml_buffer[ch].append(f'\n;ch{track_id} end\n')
+        mml_buffer[ch].append(f'\n;ch{track_id} end: tick count: {l_cnt}\n')
 
-    # --- Header ---
+    # Build header
     lines = []
     lines.append(';[name=opll]')
     lines.append('#opll_mode 1')
     lines.append('#tempo 75')
     lines.append(f'#title {{ "{stem}"}}')
-
     for ch in range(NUM_CH):
         ch_num   = ch + CH_OFFSET
         track_id = track_id_to_mgsdrv(ch_num)
         used  = estimate_mml_used(mml_buffer[ch])
         alloc = estimate_alloc(used)
         lines.append(f'#alloc {track_id}={alloc}')
-
     if user_patches:
         lines.append('')
         lines.extend(_user_patch_mml_defs(user_patches))
@@ -1617,7 +1739,6 @@ def _generate_mml_mgs_pct(segments: dict, stem: str,
         lines.extend(_voice_table_comments(voice_table))
     if warnings:
         lines.extend(warnings)
-
     lines.append('')
     lines.append('')
 
@@ -1632,47 +1753,50 @@ def _generate_mml_mgs_pct(segments: dict, stem: str,
     if not result.endswith('\n'):
         result += '\n'
     return result
-
-           
+              
 # -----------------------------------------------------------------------------
 # Main pipeline
 # -----------------------------------------------------------------------------
+
 def process_opll_csv(trace_path, output_dir, stem=None,
                      dump_passes=False, debug=True,
-                     voice_csv_path=None, rhythm_reg_timeline=None,
-                     include_rhythm=True):
-    """
-    Run the OPLL MML generation pipeline (beat-based).
-    _build_segments() returns (segments_by_ch, bpm_detected).
-    """
+                     voice_csv_path=None, rhythm_reg_timeline=None):
+    """Run the OPLL MML generation pipeline.
 
-    # ---- stem の決定 ----
+    Args:
+        trace_path     : path to ``*_trace.opll.csv``
+        output_dir     : directory for output files
+        stem           : base name for output files (e.g. ``"mysong"``).
+                         When *None* the stem is derived from *trace_path*.
+        dump_passes    : when True write a pass0 segment CSV for debugging
+        debug          : when True (default) write all MML variant files; when
+                         False write only the ``pass3.compress.MGS_pct.mml``.
+        voice_csv_path : optional path to ``*_trace.opll_voice.csv`` produced
+                         by :func:`vgm_reader.parse_vgm`.  When provided the
+                         voice table is built from user-patch register data so
+                         that inst=0 segments are correctly distinguished by
+                         their patch bytes.  When *None* inst=0 is treated as
+                         an all-zero user patch.
+
+    Returns:
+        path to the generated MML file (``*.opll.mml`` in debug mode, or
+        ``*.opll.pass3.compress.MGS_pct.mml`` in non-debug mode).
+    """
     if stem is None:
         base = os.path.basename(trace_path)
         root = os.path.splitext(base)[0]
         stem = os.path.splitext(root)[0]
         if stem.endswith('_trace'):
             stem = stem[:-len('_trace')]
-
     os.makedirs(output_dir, exist_ok=True)
+    # Build segments (tick-based final-state evaluation)
+    segments, NUM_CH = _build_segments(trace_path,rhythm_reg_timeline=rhythm_reg_timeline)
+    
+    # Assign voice IDs using the voice CSV (user-patch tracking)
+    voice_table, user_patches, warnings = _assign_voice_ids(segments, voice_csv_path)
 
-    # ---- PASS0–PASS4 → beat-based segments ----
-    segments, bpm_detected = _build_segments(
-        trace_path,
-        include_rhythm=include_rhythm,
-        rhythm_reg_timeline=rhythm_reg_timeline
-    )
-
-    # NUM_CH は segments のキーから決める
-    NUM_CH = max(segments.keys()) + 1 if segments else 0
-
-    # ---- voice ID 割り当て ----
-    voice_table, user_patches, warnings = _assign_voice_ids(
-        segments, voice_csv_path
-    )
-
-    # ---- デバッグ用 PASS0 CSV ----
     if dump_passes:
+        # Emit a simple segment dump for debugging
         seg_path = os.path.join(output_dir, f'{stem}.opll.pass0.csv')
         with open(seg_path, 'w', newline='\n') as fh:
             fh.write('#ch,beat_start,beat_end,keyon,fnum,block,inst,vol,voice_id,at_token\n')
@@ -1682,64 +1806,52 @@ def process_opll_csv(trace_path, output_dir, stem=None,
                              f'{seg.keyon},{seg.fnum},{seg.block},'
                              f'{seg.inst},{seg.vol},{seg.voice_id},{seg.at_token}\n')
 
-    # ---- pass3.compress.MGS_pct.mml（常に生成）----
-    simple_mgs_pct_text = _generate_mml_mgs_pct(
-        segments, stem,
-        voice_table=voice_table,
-        user_patches=user_patches,
-        warnings=warnings
-    )
-
-    compress_mgs_pct_path = os.path.join(
-        output_dir, f'{stem}.opll.pass3.compress.MGS_pct.mml'
-    )
+    # ---- pass3.compress.MGS_pct.mml – always produced (merge source + non-debug output) ----
+    simple_mgs_pct_text = _generate_mml_mgs_pct(segments, stem,
+                                                  voice_table=voice_table,
+                                                  user_patches=user_patches,
+                                                  warnings=warnings)
+    compress_mgs_pct_path = os.path.join(output_dir, f'{stem}.opll.pass3.compress.MGS_pct.mml')
     with open(compress_mgs_pct_path, 'w', newline='\n') as fh:
         fh.write(compress_mml_text(simple_mgs_pct_text))
 
-    # ---- 非 debug モードならここで終了 ----
     if not debug:
-        return compress_mgs_pct_path, bpm_detected
+        return compress_mgs_pct_path
 
     # ---- debug-only variants ----
 
-    # 標準 MML（divisor notation）
-    mml_text = _generate_mml(
-        segments, stem,
-        voice_table=voice_table,
-        user_patches=user_patches,
-        warnings=warnings
-    )
+    mml_text = _generate_mml(segments, stem, voice_table=voice_table,
+                              user_patches=user_patches, warnings=warnings)
     mml_path = os.path.join(output_dir, f'{stem}.opll.mml')
     with open(mml_path, 'w', newline='\n') as fh:
         fh.write(mml_text)
 
-    # raw tick (%N) 版
-    simple_raw_text = _generate_mml_impl(
-        segments, stem, raw_ticks=True,
-        voice_table=voice_table,
-        user_patches=user_patches,
-        warnings=warnings
-    )
+    # pass3.simple.mml – raw tick (%N) notation, #tempo 75
+    simple_raw_text = _generate_mml_impl(segments, stem, raw_ticks=True,
+                                          voice_table=voice_table,
+                                          user_patches=user_patches,
+                                          warnings=warnings)
     simple_raw_path = os.path.join(output_dir, f'{stem}.opll.pass3.simple.mml')
     with open(simple_raw_path, 'w', newline='\n') as fh:
         fh.write(simple_raw_text)
 
-    # simple.MGS（divisor notation）
+    # pass3.simple.MGS.mml – same as primary .opll.mml
     simple_mgs_path = os.path.join(output_dir, f'{stem}.opll.pass3.simple.MGS.mml')
     with open(simple_mgs_path, 'w', newline='\n') as fh:
         fh.write(mml_text)
 
-    # compress.MGS（RLE）
+    # pass3.compress.MGS.mml – divisor notation with token-level RLE compression
     compress_path = os.path.join(output_dir, f'{stem}.opll.pass3.compress.MGS.mml')
     with open(compress_path, 'w', newline='\n') as fh:
         fh.write(compress_mml_text(mml_text))
 
-    # simple.MGS_pct（delta-token + %N）
+    # pass3.simple.MGS_pct.mml – MGS delta-token, raw tick (%) lengths, #tempo 75
     simple_mgs_pct_path = os.path.join(output_dir, f'{stem}.opll.pass3.simple.MGS_pct.mml')
     with open(simple_mgs_pct_path, 'w', newline='\n') as fh:
         fh.write(simple_mgs_pct_text)
 
-    return mml_path, bpm_detected
+    return mml_path
+
 
 # ---------------------------------------------------------------------------
 # CLI entry point

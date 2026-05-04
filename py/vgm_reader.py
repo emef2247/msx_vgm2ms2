@@ -447,9 +447,9 @@ class _OpllState:
 
     _HEADER = ('#type,time,ch,ticks,l,fl,kl,vl,beat_pos,beat,fb,kb,vb,keyon,fnum,block,inst,vol,sus,'
                'is_ryt,bd,sd,tom,tc,hh,'
-               'fnum_ch6,vol_ch6,sus_ch6,'
-               'fnum_ch7,vol_ch7,sus_ch7,'
-               'fnum_ch8,vol_ch8,sus_ch8')
+               'fnum_ch6,vol_ch6,sus_ch6,block_ch6,'
+               'fnum_ch7,vol_ch7,sus_ch7,block_ch7,'
+               'fnum_ch8,vol_ch8,sus_ch8,block_ch8,')
     _VOICE_HEADER = '#type,time,ch,ticks,inst,vol,patch_hex'
     _REGS_HEADER  = '#type,time,ticks,addr,val,ch'
 
@@ -460,6 +460,7 @@ class _OpllState:
         self.fnum_low = [0] * self.NUM_CH   # 0x10-0x18 LSB (all ch)
         self.fnum_msb = [0] * self.NUM_CH   # keyBlk[0]...keyBlk[8] LSB (all ch)
         self.sus      = [0] * self.NUM_CH   # sustain bit (keyBlk)
+        self.block    = [0] * self.NUM_CH   # block bit (keyBlk)
         self.key_blk  = [0] * self.NUM_CH   # 0x20-0x28
         self.inst_vol = [0] * self.NUM_CH   # 0x30-0x38
         self.vol      = [0] * self.NUM_CH   # 0x36-0x38(のみ), ch=6..8のみ有効
@@ -486,8 +487,8 @@ class _OpllState:
 
     def _keyon(self, ch: int) -> int:
         return (self.key_blk[ch] >> 4) & 0x01
-
-    def _sus_from_keyblk(self, ch: int) -> int:
+    
+    def _sus(self, ch: int) -> int:
         return (self.key_blk[ch] >> 5) & 0x01
 
     def _inst(self, ch: int) -> int:
@@ -497,6 +498,7 @@ class _OpllState:
         # 0..5: inst_vol, 6..8: vol専用（0 if unset）
         return self.inst_vol[ch] & 0x0F if ch < 6 else self.vol[ch] & 0x0F
 
+    
     def _patch_hex(self) -> str:
         return ''.join(f'{b:02x}' for b in self.user_patch)
 
@@ -532,9 +534,9 @@ class _OpllState:
             str(self._vol_melody(ch)),
             str(self.sus[ch]),
             str(is_ryt), str(bd), str(sd), str(tom), str(tc), str(hh),
-            str(self.fnum9(6)), str(self._vol_melody(6)), str(self.sus[6]),
-            str(self.fnum9(7)), str(self._vol_melody(7)), str(self.sus[7]),
-            str(self.fnum9(8)), str(self._vol_melody(8)), str(self.sus[8]),
+            str(self.fnum9(6)), str(self._vol_melody(6)), str(self._sus(6)), str(self._block(6)),
+            str(self.fnum9(7)), str(self._vol_melody(7)), str(self._sus(7)), str(self._block(7)),
+            str(self.fnum9(8)), str(self._vol_melody(8)), str(self._sus(8)), str(self._block(8)),
         ]
         return ','.join(cols)
 
@@ -550,9 +552,9 @@ class _OpllState:
         cols = [
             type_, repr(t), '-1', str(ticks),'','','', '', '', '', '', '', '','','','','','','',
             str(is_ryt), str(bd), str(sd), str(tom), str(tc), str(hh),
-            str(self.fnum9(6)), str(self._vol_melody(6)), str(self.sus[6]),
-            str(self.fnum9(7)), str(self._vol_melody(7)), str(self.sus[7]),
-            str(self.fnum9(8)), str(self._vol_melody(8)), str(self.sus[8]),
+            str(self.fnum9(6)), str(self._vol_melody(6)), str(self._sus(6)), str(self._block(6)),
+            str(self.fnum9(7)), str(self._vol_melody(7)), str(self._sus(7)), str(self._block(7)),
+            str(self.fnum9(8)), str(self._vol_melody(8)), str(self._sus(8)), str(self._block(8)),
         ]
         self.trace_buf.append(','.join(cols))
 
@@ -599,6 +601,7 @@ class _OpllState:
             self.key_blk[ch] = v & 0x3F
             self.fnum_msb[ch] = v & 0x01
             self.sus[ch] = (v >> 5) & 0x01
+            self.block[ch] = (v >> 1) & 0x07
             self._log(ch, 'keyBlk')
         elif 0x30 <= a <= 0x35:
             ch = a - 0x30
