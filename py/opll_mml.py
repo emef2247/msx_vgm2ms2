@@ -501,7 +501,7 @@ def pass2_compute_onsets_and_ioi(events):
       onset / ioi を計算
 
     rhythm:
-      r_ioi           : rhythm 全体の IOI（= l）
+      r_ioi           : rhythm 全体の IOI（ticks 差分）
       r_mode_ioi      : r_ioi の最頻値（mode）
       r_tempo         : 3600 / r_mode_ioi
       r_hh_ioi        : HH の IOI（ticks 差分）
@@ -515,7 +515,7 @@ def pass2_compute_onsets_and_ioi(events):
             return default
 
     # ------------------------------------------------------------
-    # 1. scale
+    # 1. scale をセット
     # ------------------------------------------------------------
     for ev in events:
         fnum = _ival(ev.get("fnum"))
@@ -588,32 +588,46 @@ def pass2_compute_onsets_and_ioi(events):
                 total_l = 0
 
     # ------------------------------------------------------------
-    # 3. rhythm IOI（r_ioi = l）
+    # 3. rhythm IOI（ticks 差分）
     # ------------------------------------------------------------
-    r_ioi_list = []
+    rhythm_ticks = []
     hh_ticks = []
 
     for ev in events:
         if ev.get("#type") == "rhythm":
-            l = _ival(ev.get("l"))
-            if l > 0:
-                r_ioi_list.append(l)
-
-            # HH 専用
+            t = _ival(ev.get("ticks"))
+            rhythm_ticks.append(t)
             if _ival(ev.get("hh")) == 1:
-                hh_ticks.append(_ival(ev.get("ticks")))
+                hh_ticks.append(t)
 
-    # ------------------------------------------------------------
-    # 4. r_hh_ioi（ticks 差分）
-    # ------------------------------------------------------------
-    r_hh_ioi_list = [
+    raw_r_ioi_list = [
+        b - a for a, b in zip(rhythm_ticks, rhythm_ticks[1:])
+        if (b - a) > 0
+    ]
+
+    raw_r_hh_ioi_list = [
         b - a for a, b in zip(hh_ticks, hh_ticks[1:])
         if (b - a) > 0
     ]
 
     # ------------------------------------------------------------
-    # 5. mode（最頻値）で決定
+    # 4. 「音楽的にありえない速さ」を除外してから mode を取る
+    #    tempo = 3600 / ioi
+    #    → tempo > 400 BPM は除外
     # ------------------------------------------------------------
+    def filter_by_tempo(iois, max_bpm=400):
+        out = []
+        for d in iois:
+            if d <= 0:
+                continue
+            tempo = 3600.0 / d
+            if tempo <= max_bpm:
+                out.append(d)
+        return out
+
+    r_ioi_list    = filter_by_tempo(raw_r_ioi_list)
+    r_hh_ioi_list = filter_by_tempo(raw_r_hh_ioi_list)
+
     from statistics import mode, median
 
     def pick_mode(lst):
@@ -624,14 +638,12 @@ def pass2_compute_onsets_and_ioi(events):
         except:
             return int(median(lst))
 
-    r_mode_ioi = pick_mode(r_ioi_list)
-    r_hh_mode_ioi = pick_mode(r_hh_ioi_list)
-
-    # tempo
-    r_tempo = 3600.0 / r_mode_ioi if r_mode_ioi > 0 else 0
+    r_mode_ioi     = pick_mode(r_ioi_list)
+    r_hh_mode_ioi  = pick_mode(r_hh_ioi_list)
+    r_tempo        = 3600.0 / r_mode_ioi if r_mode_ioi > 0 else 0.0
 
     # ------------------------------------------------------------
-    # 6. ev に書き込む
+    # 5. ev に書き込む
     # ------------------------------------------------------------
     for ev in events:
         ev["r_ioi"] = r_mode_ioi
