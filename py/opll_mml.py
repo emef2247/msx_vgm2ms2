@@ -122,98 +122,182 @@ class _Segment:
     """
 
     __slots__ = (
-        # 追加フィールド
-        'reg_type',     # trace.csv のレジスタ種別（fNumL / fNumH / keyBlk / vol / inst / rhythm …）
-        'time',         # VGM 経過時間（秒 or サンプル）
-        'ch',           # ch               
-        'l',            # 音価（前 Segment からの tick 差）
+        'ev_type',      # trace.csv type（fNumL / fNumH / keyBlk / vol / inst / rhythm)今のところレジスタアクセスの区別。意図としてはeventのタイプ
+        'time',         # global time [s], そのeventが起きた時間
+        'ch',           # チェンネル
+        'ticks',        # 1 tick = 1/60s
+        'ticks_start',   # keyon=1区間の開始点 [tick]
+        'ticks_end',     # keyon=1区間の終了点 [tick]
+        'tempo',        # BPM. 今のところ曲全体のBPM
+        'onset',        #　keyon=1の開始点であることを示すマーカー 0:　keyon=1を維持又はkeyon=0 1: 1: keyon区間の開始 keyon: 0--> 1
+        'ioi',          # IOI（Inter‑Onset Interval). keyon=1 区間の 実際の長さ（tick). keyon=1でioi=0はまだkeyonが継続中を表す(ioi未確定のためioi=0)
+        'min_ioi',      # ioi の最小値（または mode). 音符の最小長さ. tempo 計算の基準
+        'l',            # そのＳｅｇｍｅｎｔの長さ [tick] Next ticks = current ticks + l
+        'fl',           # 同じfnumの継続期間 [tick] keyonのposedgeでlにリセット. fl > lはkeyoffを挟まずにfnumが変化していることを表す
+        'kl',           # 同じkeyonの継続期間 [tick] keyonのposedgeでlにリセット. kl > lは_Segmentを跨いで同じkeyon状態が継続中であることを示す
+        'vl',           # 同じvolの継続期間 [tick] keyonのposedgeでlにリセット. vl > lはkeyoffを挟まずにvolが変化していることを表す
+        'min_l',        # min_l　vgmのイベントの最小区間　beat = l / min_l
+        'beat_start',   # keyon=1の開始点 [beat]
+        'beat_end',     # keyon=1の終了点 [beat]
+        'beat_pos',     # _Segmentの開始 [beat] beat_pos = それまでのbeatの累計。 next beat_pos = beat_pos + beat
+        'beat',         # vgmのイベントをmin_lで正規化した値。
+        'fb',           # flのbeat換算 [beat] keyonのposedgeでbeatにリセット.　fb > beat はkeyoffを挟まずにfnumが変化していることを表す
+        'kb',           # kbのbeat換算 [beat] keyonのposedgeでbeatにリセット.　kb > beat は同じkeyon状態が_Segmentを跨いで継続中であることを示す
+        'vb',           # vlのbeat換算 [beat] keyonのposedgeでbeatにリセット.　vb > beat はkeyoffを挟まずにvolが変化していることを表す
+        'keyon',        # keyonの状態
+        'fnum',         # frequency
+        'block',        # block, octave
+        'inst',         # instrument no
+        'vol',          # volume
+        'sus',          # sustain
+        'scale',        # scale
+        'voice_id',     # voice id
+        'odiff',        # 一つ前のSegmentとのblock(octave)の差分。　MML生成用
+        'vdiff',        #　一つ前のSegmentとのvolumeの差分。　MML生成用
+        'is_ryt',       # リズムモード 0: メロディモード 1:リズムモード  OPLL 0xEのD5の値が入る
+        'r_tempo',      # リズムで計測したtempo
+        'r_ioi',        # rhythm 全体の IOI [tick]
+        'r_mode_ioi',   # rhythm の最頻 IOI [tick] (mode)
+        'r_tempo',      # rhythm の BPM
+        'r_hh_ioi',     # ハイハット専用 IOI [tick]
+        'r_hh_mode_ioi', # ハイハットの最頻 IOI [tick] (mode)
+        'bd',           # Bass  Drum エッジトリガ 1: ON 0: OFF
+        'sd',           # Snare Drum エッジトリガ 1: ON 0: OFF
+        'tom',          # Tom-tom    エッジトリ  1: ON 0: OFF
+        'tc',           # Top Cymbal エッジトリ  1: ON 0: OFF
+        'hh',           # High-Hat   エッジトリ  1: ON 0: OFF
+        'fnum_ch6',     # リズムモード(ryt==1)時、参照用 ch6のfnum
+        'vol_ch6',      # リズムモード(ryt==1)時、参照用 ch6のvol
+        'sus_ch6',      # リズムモード(ryt==1)時、参照用 ch6のsus
+        'block_ch6',    # リズムモード(ryt==1)時、参照用 ch6のblock
+        'fnum_ch7',     # リズムモード(ryt==1)時、参照用 ch7のfnum
+        'vol_ch7',      # リズムモード(ryt==1)時、参照用 ch7のvol
+        'sus_ch7',      # リズムモード(ryt==1)時、参照用 ch7のsus
+        'block_ch7',    # リズムモード(ryt==1)時、参照用 ch8のblock
+        'fnum_ch8',     # リズムモード(ryt==1)時、参照用 ch8のfnum
+        'vol_ch8',      # リズムモード(ryt==1)時、参照用 ch8のvol
+        'sus_ch8',      # リズムモード(ryt==1)時、参照用 ch8のsus
+        'block_ch8',    # リズムモード(ryt==1)時、参照用 ch8のblock
+        'ms2_vol',      # ms2用volume (0: 最大 63: 無音)
         'ms2_len',      # MS2 の 1 グリッド（grid_sz beat）を何個並べるか
-        'beat_sz',      # beatは何ticksか
-        'grid_sz',      # 「何分音符にするか」
-        'o',            # オクターブ（block を MML 用に変換した値）
-        'scale',        # 音階（0–11）
-        'odiff',        # 音価（前 Segment からの o 差）
-        'vdiff',        # 音価（前 Segment からの v 差）
-        # 既存フィールド
-        'beat_start', 'beat_end', 'keyon', 'fnum', 'block', 'inst', 'vol', 'sus',
-        'beat', 'fb', 'kb', 'vb',
-        'is_ryt', 'bd', 'sd', 'tom', 'tc', 'hh',
-        'fnum_ch6', 'vol_ch6', 'sus_ch6', 'block_ch6',
-        'fnum_ch7', 'vol_ch7', 'sus_ch7', 'block_ch7',
-        'fnum_ch8', 'vol_ch8', 'sus_ch8', 'block_ch8',
-
-        # MS2 用
-        'at_token', 'voice_id',
-
-        # retrigger
-        'retrigger_ticks',
+        'beat_sz',      # beatは何ticksか (== min_l)
+        'grid_sz',      # 何分音符にするか
+        'at_token',
     )
 
     def __init__(
         self,
-        reg_type, time,ch,
-        beat_start, keyon, fnum, block, inst, vol, sus,
-        beat=0,fb=0, kb=0, vb=0,
-        is_ryt=0, bd=0, sd=0, tom=0, tc=0, hh=0,
-        fnum_ch6=0, vol_ch6=0, sus_ch6=0, block_ch6=0,
-        fnum_ch7=0, vol_ch7=0, sus_ch7=0, block_ch7=0,
-        fnum_ch8=0, vol_ch8=0, sus_ch8=0, block_ch8=0,
+        ev_type       ,
+        time          ,
+        ch            ,
+        ticks         ,
+        onset         ,
+        tempo         ,
+        ioi           ,
+        min_ioi       ,
+        l             ,
+        fl            ,
+        kl            ,
+        vl            ,
+        beat_pos      ,
+        beat          ,
+        fb            ,
+        kb            ,
+        vb            ,
+        keyon         ,
+        fnum          ,
+        block         ,
+        inst          ,
+        vol           ,
+        sus           ,
+        scale         ,
+        is_ryt        ,
+        r_tempo       ,
+        r_ioi         ,
+        r_mode_ioi    ,
+        r_hh_ioi      ,
+        r_hh_mode_ioi ,
+        bd            ,
+        sd            ,
+        tom           ,
+        tc            ,
+        hh            ,
+        fnum_ch6      ,
+        vol_ch6       ,
+        sus_ch6       ,
+        block_ch6     ,
+        fnum_ch7      ,
+        vol_ch7       ,
+        sus_ch7       ,
+        block_ch7     ,
+        fnum_ch8      ,
+        vol_ch8       ,
+        sus_ch8       ,
+        block_ch8     ,
+
     ):
-        # 追加フィールド
-        self.reg_type = reg_type
-        self.time     = time
-        self.ch       = ch
-        self.l        = 0          # 後で _build_segments() 側で計算して埋める
-        self.ms2_len  = 0
-        self.beat_sz  = 0
-        self.grid_sz  = 0
-        self.o        = block      # とりあえず block をそのまま入れる（後で MML 用に変換）
-        self.scale    = -1         # fnum → 音階変換で後から埋める
-        self.odiff    = 0
-        self.vdiff    = 0
 
-        # 既存
-        self.beat_start = beat_start
-        self.beat_end   = beat_start
-
-        self.keyon      = keyon
-        self.fnum       = fnum
-        self.block      = block
-        self.inst       = inst
-        self.vol        = vol
-        self.sus        = sus
-
-        self.beat       = beat
-        self.fb         = fb
-        self.kb         = kb
-        self.vb         = vb
-
-        self.is_ryt     = is_ryt
-        self.bd         = bd
-        self.sd         = sd
-        self.tom        = tom
-        self.tc         = tc
-        self.hh         = hh
-
-        self.fnum_ch6   = fnum_ch6
-        self.vol_ch6    = vol_ch6
-        self.sus_ch6    = sus_ch6
-        self.block_ch6  = block_ch6
-
-        self.fnum_ch7   = fnum_ch7
-        self.vol_ch7    = vol_ch7
-        self.sus_ch7    = sus_ch7
-        self.block_ch7  = block_ch7
-
-        self.fnum_ch8   = fnum_ch8
-        self.vol_ch8    = vol_ch8
-        self.sus_ch8    = sus_ch8
-        self.block_ch8  = block_ch8
-
-        self.at_token   = ''
-        self.voice_id   = -1
-
-        self.retrigger_ticks = []
+        self.ev_type       = ev_type
+        self.time          = time
+        self.ch            = ch
+        self.ticks         = ticks
+        self.ticks_start   = 0
+        self.ticks_end     = 0
+        self.tempo         = tempo
+        self.onset         = onset
+        self.ioi           = ioi
+        self.min_ioi       = min_ioi
+        self.l             = l
+        self.fl            = fl
+        self.kl            = kl
+        self.vl            = vl
+        self.min_l         = 0
+        self.beat_start    = 0
+        self.beat_end      = 0
+        self.beat_pos      = beat_pos
+        self.beat          = beat
+        self.fb            = fb
+        self.kb            = kb
+        self.vb            = vb
+        self.keyon         = keyon
+        self.fnum          = fnum
+        self.block         = block
+        self.inst          = inst
+        self.vol           = vol
+        self.sus           = sus
+        self.scale         = scale
+        self.voice_id      = -1
+        self.odiff         = 0
+        self.vdiff         = 0
+        self.is_ryt        = is_ryt
+        self.r_tempo       = r_tempo
+        self.r_ioi         = r_ioi
+        self.r_mode_ioi    = r_mode_ioi
+        self.r_tempo       = 0
+        self.r_hh_ioi      = r_hh_ioi
+        self.r_hh_mode_ioi = r_hh_mode_ioi
+        self.bd            = bd
+        self.sd            = sd
+        self.tom           = tom
+        self.tc            = tc
+        self.hh            = hh
+        self.fnum_ch6      = fnum_ch6
+        self.vol_ch6       = vol_ch6
+        self.sus_ch6       = sus_ch6
+        self.block_ch6     = block_ch6
+        self.fnum_ch7      = fnum_ch7
+        self.vol_ch7       = vol_ch7
+        self.sus_ch7       = sus_ch7
+        self.block_ch7     = block_ch7
+        self.fnum_ch8      = fnum_ch8
+        self.vol_ch8       = vol_ch8
+        self.sus_ch8       = sus_ch8
+        self.block_ch8     = block_ch8
+        self.ms2_vol       = 0
+        self.ms2_len       = 0
+        self.beat_sz       = 0
+        self.grid_sz       = 0
+        self.at_token      = ''
 
     def mml_vol(self):
         return 15 - self.vol
@@ -411,6 +495,154 @@ def pass1_dump_csv(events, trace_csv_path):
 
     print(f"[PASS1] Debug CSV written: {out_csv_path}")
 
+def pass2_compute_onsets_and_ioi(events):
+    """
+    melody:
+      onset / ioi を計算
+
+    rhythm:
+      r_ioi           : rhythm 全体の IOI（= l）
+      r_mode_ioi      : r_ioi の最頻値（mode）
+      r_tempo         : 3600 / r_mode_ioi
+      r_hh_ioi        : HH の IOI（ticks 差分）
+      r_hh_mode_ioi   : r_hh_ioi の最頻値（mode）
+    """
+
+    def _ival(v, default=0):
+        try:
+            return int(v)
+        except:
+            return default
+
+    # ------------------------------------------------------------
+    # 1. scale
+    # ------------------------------------------------------------
+    for ev in events:
+        fnum = _ival(ev.get("fnum"))
+        ev["scale"] = get_scale(fnum)
+
+    # ------------------------------------------------------------
+    # 2. melody onset / ioi（既存処理）
+    # ------------------------------------------------------------
+    events_by_ch = {}
+    for idx, ev in enumerate(events):
+        ch = _ival(ev.get("ch"))
+        events_by_ch.setdefault(ch, []).append((idx, ev))
+
+    for ch, lst in events_by_ch.items():
+
+        lst.sort(key=lambda x: _ival(x[1].get("ticks")))
+
+        prev_keyon = 0
+        prev_vol   = 15
+
+        # onset
+        for i in range(len(lst)):
+            idx, ev = lst[i]
+            keyon = _ival(ev.get("keyon"))
+            vol   = _ival(ev.get("vol"))
+
+            if ev.get("#type") == "rhythm":
+                ev["onset"] = 0
+            else:
+                is_onset = False
+                if prev_keyon == 0 and keyon == 1 and vol < 15:
+                    is_onset = True
+                elif prev_keyon == 1 and keyon == 1 and prev_vol == 15 and vol < 15:
+                    is_onset = True
+                ev["onset"] = 1 if is_onset else 0
+
+            prev_keyon = keyon
+            prev_vol   = vol
+
+        # ioi
+        total_l = 0
+        for i in range(len(lst)):
+            idx, ev = lst[i]
+            keyon = _ival(ev.get("keyon"))
+            vol   = _ival(ev.get("vol"))
+            l     = _ival(ev.get("l"))
+
+            if vol == 15 or ev.get("#type") == "rhythm" or keyon == 0:
+                total_l = 0
+                ev["ioi"] = 0
+                continue
+
+            if ev["onset"] == 1:
+                total_l = l
+            else:
+                total_l += l
+
+            if i + 1 < len(lst):
+                next_ev = lst[i+1][1]
+                next_keyon = _ival(next_ev.get("keyon"))
+                next_vol   = _ival(next_ev.get("vol"))
+
+                if next_keyon == 0 or next_vol == 15:
+                    ev["ioi"] = total_l
+                    total_l = 0
+                else:
+                    ev["ioi"] = 0
+            else:
+                ev["ioi"] = total_l
+                total_l = 0
+
+    # ------------------------------------------------------------
+    # 3. rhythm IOI（r_ioi = l）
+    # ------------------------------------------------------------
+    r_ioi_list = []
+    hh_ticks = []
+
+    for ev in events:
+        if ev.get("#type") == "rhythm":
+            l = _ival(ev.get("l"))
+            if l > 0:
+                r_ioi_list.append(l)
+
+            # HH 専用
+            if _ival(ev.get("hh")) == 1:
+                hh_ticks.append(_ival(ev.get("ticks")))
+
+    # ------------------------------------------------------------
+    # 4. r_hh_ioi（ticks 差分）
+    # ------------------------------------------------------------
+    r_hh_ioi_list = [
+        b - a for a, b in zip(hh_ticks, hh_ticks[1:])
+        if (b - a) > 0
+    ]
+
+    # ------------------------------------------------------------
+    # 5. mode（最頻値）で決定
+    # ------------------------------------------------------------
+    from statistics import mode, median
+
+    def pick_mode(lst):
+        if not lst:
+            return 0
+        try:
+            return mode(lst)
+        except:
+            return int(median(lst))
+
+    r_mode_ioi = pick_mode(r_ioi_list)
+    r_hh_mode_ioi = pick_mode(r_hh_ioi_list)
+
+    # tempo
+    r_tempo = 3600.0 / r_mode_ioi if r_mode_ioi > 0 else 0
+
+    # ------------------------------------------------------------
+    # 6. ev に書き込む
+    # ------------------------------------------------------------
+    for ev in events:
+        ev["r_ioi"] = r_mode_ioi
+        ev["r_mode_ioi"] = r_mode_ioi
+        ev["r_tempo"] = r_tempo
+        ev["r_hh_ioi"] = r_hh_mode_ioi
+        ev["r_hh_mode_ioi"] = r_hh_mode_ioi
+
+    return events
+
+
 def pass2_filter_l0(events):
     """
     PASS 2:
@@ -435,10 +667,12 @@ def pass2_filter_l0(events):
 
 def pass2_compute_fl_kl_vl(events):
     """
-    PASS2（retrigger 完全対応版）
-      - retrigger を正しく検出し fl/kl/vl をリセット
-      - l=0 の retrigger 行は keyon_prev を維持する
-      - instVol の l>0 行で fl/kl/vl = l となる
+    PASS2（レガート完全対応版）
+
+      - keyon=0 または keyon=1 の最初のイベントは fl/kl/vl = l にセット
+      - keyon=1 が続き、かつ fnum/block/inst/vol が同じならレガート継続として fl/kl/vl += l
+      - ピッチ/音色/音量が変わったら fl/kl/vl = l（新しい音符）
+      - keyon=1 かつ l==0 の行は「長さを持たない制御イベント」として fl/kl/vl を変えない
     """
 
     from collections import defaultdict
@@ -476,64 +710,64 @@ def pass2_compute_fl_kl_vl(events):
             vol   = _ival(ev.get("vol"))
             keyon = _ival(ev.get("keyon"))
 
-            # --- retrigger 判定 ---
-            is_retrigger = (
-                keyon_prev == 1 and keyon == 1 and
-                fnum == fnum_prev and
-                block == block_prev and
-                inst == inst_prev and
-                vol == vol_prev
-            )
-
-            # --- fl ---
+            # --- keyon=0: 音符が終わった区間 ---
             if keyon == 0:
-                fl_acc = 0
-            else:
-                if keyon_prev == 0:
-                    fl_acc = l
-                elif is_retrigger:
-                    fl_acc = l
-                else:
-                    if fnum != fnum_prev:
-                        fl_acc = l
-                    else:
-                        fl_acc += l
-            ev["fl"] = fl_acc
+                fl_acc = l
+                kl_acc = l
+                vl_acc = l
 
-            # --- kl ---
-            if keyon == 0:
-                kl_acc = 0
+                ev["fl"] = fl_acc
+                ev["kl"] = kl_acc
+                ev["vl"] = vl_acc
+
+                keyon_prev = 0
+                fnum_prev  = fnum
+                block_prev = block
+                inst_prev  = inst
+                vol_prev   = vol
+                continue
+
+            # --- keyon=1 かつ l==0: 制御イベント（長さなし） ---
+            if keyon == 1 and l == 0:
+                ev["fl"] = fl_acc
+                ev["kl"] = kl_acc
+                ev["vl"] = vl_acc
+
+                keyon_prev = 1
+                fnum_prev  = fnum
+                block_prev = block
+                inst_prev  = inst
+                vol_prev   = vol
+                continue
+
+            # --- keyon=1 かつ l>0: 実際の音価 ---
+            if keyon_prev == 0:
+                # 新しい音符
+                fl_acc = l
+                kl_acc = l
+                vl_acc = l
             else:
-                if keyon_prev == 0:
-                    kl_acc = l
-                elif is_retrigger:
-                    kl_acc = l
-                else:
+                # keyon_prev == 1 → 音が続いている
+                same_pitch = (fnum == fnum_prev and block == block_prev)
+                same_tone  = (inst == inst_prev)
+                same_vol   = (vol == vol_prev)
+
+                if same_pitch and same_tone and same_vol:
+                    # ★ レガート継続
+                    fl_acc += l
                     kl_acc += l
-            ev["kl"] = kl_acc
-
-            # --- vl ---
-            if keyon == 0:
-                vl_acc = 0
-            else:
-                if keyon_prev == 0:
-                    vl_acc = l
-                elif is_retrigger:
-                    vl_acc = l
+                    vl_acc += l
                 else:
-                    if vol != vol_prev:
-                        vl_acc = l
-                    else:
-                        vl_acc += l
+                    # ピッチ/音色/音量が変わった → 新しい音符
+                    fl_acc = l
+                    kl_acc = l
+                    vl_acc = l
+
+            ev["fl"] = fl_acc
+            ev["kl"] = kl_acc
             ev["vl"] = vl_acc
 
-            # --- retrigger の keyon_prev 修正 ---
-            # l=0 の keyon=1 は retrigger の一部なので keyon_prev を維持する
-            if keyon == 1 and l == 0:
-                keyon_prev = 1
-            else:
-                keyon_prev = keyon
-
+            keyon_prev = 1
             fnum_prev  = fnum
             block_prev = block
             inst_prev  = inst
@@ -606,9 +840,9 @@ def pass2_dump_csv(events, trace_csv_path):
 
 def pass3_merge_silent_rests(events):
     """
-    PASS3（2段階処理）:
-      1. retrigger（keyon=1 & vol!=15）を除外しつつ休符をマージ
-      2. さらに vol=15 の連続イベントを keyon に関係なくマージ
+    PASS3:
+      - retrigger を除外しつつ休符をマージ
+      - ただし rhythm(ch=-1) は絶対にマージしない（そのまま残す）
     """
 
     from collections import defaultdict
@@ -628,19 +862,28 @@ def pass3_merge_silent_rests(events):
         ev["ticks_start"] = ev["ticks"]
         ev["ticks_end"]   = ev["ticks"] + ev["l"]
 
-    # --- 休符判定（あなたの仕様） ---
+    # --- rhythm は絶対にマージしない ---
+    def is_rhythm(ev):
+        return ev.get("#type") == "rhythm" or _ival(ev.get("ch")) == -1
+
+    # --- 休符判定（melody のみ） ---
     def is_rest(ev):
+        if is_rhythm(ev):
+            return False  # rhythm は休符扱いしない
         return (
             _ival(ev["vol"]) == 15 or
             _ival(ev["keyon"]) == 0 or
             _ival(ev["fnum"]) == 0
         )
 
-    # --- retrigger 判定（keyon=1 & vol!=15 のときのみ retrigger） ---
+    # --- retrigger 判定（melody のみ） ---
     def is_retrigger(ev):
+        if is_rhythm(ev):
+            return False
         return (_ival(ev["keyon"]) == 1 and _ival(ev["vol"]) != 15)
 
     # チャンネルごとに処理
+    from collections import defaultdict
     ch_events = defaultdict(list)
     for ev in events:
         ch_events[_ival(ev.get("ch"), -1)].append(ev)
@@ -651,19 +894,26 @@ def pass3_merge_silent_rests(events):
         buf.sort(key=lambda e: e["ticks_start"])
 
         # -------------------------
-        # 第1段階：通常の休符マージ
+        # 第1段階：休符マージ（rhythm は除外）
         # -------------------------
         stage1 = []
         for ev in buf:
+
+            if is_rhythm(ev):
+                stage1.append(ev)
+                continue
+
             if stage1:
                 prev = stage1[-1]
 
-                # retrigger は絶対にマージしない
+                if is_rhythm(prev):
+                    stage1.append(ev)
+                    continue
+
                 if is_retrigger(prev) or is_retrigger(ev):
                     stage1.append(ev)
                     continue
 
-                # 休符同士ならマージ
                 if is_rest(prev) and is_rest(ev):
                     prev["ticks_end"] = ev["ticks_end"]
                     prev["l"] = prev["ticks_end"] - prev["ticks_start"]
@@ -672,14 +922,22 @@ def pass3_merge_silent_rests(events):
             stage1.append(ev)
 
         # -------------------------
-        # 第2段階：vol=15 のみ追加マージ
+        # 第2段階：vol=15 マージ（rhythm は除外）
         # -------------------------
         stage2 = []
         for ev in stage1:
+
+            if is_rhythm(ev):
+                stage2.append(ev)
+                continue
+
             if stage2:
                 prev = stage2[-1]
 
-                # vol=15 同士なら keyon に関係なくマージ
+                if is_rhythm(prev):
+                    stage2.append(ev)
+                    continue
+
                 if _ival(prev["vol"]) == 15 and _ival(ev["vol"]) == 15:
                     prev["ticks_end"] = ev["ticks_end"]
                     prev["l"] = prev["ticks_end"] - prev["ticks_start"]
@@ -688,6 +946,201 @@ def pass3_merge_silent_rests(events):
             stage2.append(ev)
 
         merged_all.extend(stage2)
+
+    return merged_all
+
+def pass3_merge_same_note(events):
+    """
+    PASS3(3):
+      同じ NOTE_ON（keyon=1, vol!=15, fnum/block/inst/vol/sus が同じ）の
+      連続イベントを 1 つにマージする。
+    """
+
+    from collections import defaultdict
+
+    def _ival(v, default=0):
+        if v is None or v == "":
+            return default
+        try:
+            return int(v)
+        except:
+            return default
+
+    # ticks_start / ticks_end は pass3_merge_silent_rests で付与済み
+    # 念のため再計算
+    for ev in events:
+        ev["ticks"] = _ival(ev.get("ticks"))
+        ev["l"]     = _ival(ev.get("l"))
+        ev["ticks_start"] = ev["ticks"]
+        ev["ticks_end"]   = ev["ticks"] + ev["l"]
+
+    # マージ条件
+    def can_merge(a, b):
+        return (
+            _ival(a["keyon"]) == 1 and _ival(b["keyon"]) == 1 and
+            _ival(a["vol"]) != 15 and _ival(b["vol"]) != 15 and
+            _ival(a["fnum"])  == _ival(b["fnum"])  and
+            _ival(a["block"]) == _ival(b["block"]) and
+            _ival(a["inst"])  == _ival(b["inst"])  and
+            _ival(a["vol"])   == _ival(b["vol"])   and
+            _ival(a["sus"])   == _ival(b["sus"])   and
+            a["ticks_end"] == b["ticks_start"]
+        )
+
+    ch_events = defaultdict(list)
+    for ev in events:
+        ch_events[_ival(ev.get("ch"), -1)].append(ev)
+
+    merged_all = []
+
+    for ch, buf in ch_events.items():
+        buf.sort(key=lambda e: e["ticks_start"])
+
+        merged = []
+        for ev in buf:
+            if merged:
+                prev = merged[-1]
+
+                if can_merge(prev, ev):
+                    # マージ
+                    prev["ticks_end"] = ev["ticks_end"]
+                    prev["l"] = prev["ticks_end"] - prev["ticks_start"]
+                    continue
+
+            merged.append(ev)
+
+        merged_all.extend(merged)
+
+    return merged_all
+
+def pass3_merge_retrigger_note(events):
+    """
+    PASS3(4):
+      keyoff → keyon（同じ音）→ keyoff の retrigger を
+      1 つの NOTE_ON にまとめる。
+    """
+
+    from collections import defaultdict
+
+    def _ival(v, default=0):
+        if v is None or v == "":
+            return default
+        try:
+            return int(v)
+        except:
+            return default
+
+    # ticks_start / ticks_end は pass3 で付与済み
+    for ev in events:
+        ev["ticks"] = _ival(ev.get("ticks"))
+        ev["l"]     = _ival(ev.get("l"))
+        ev["ticks_start"] = ev["ticks"]
+        ev["ticks_end"]   = ev["ticks"] + ev["l"]
+
+    def same_note(a, b):
+        return (
+            _ival(a["fnum"])  == _ival(b["fnum"])  and
+            _ival(a["block"]) == _ival(b["block"]) and
+            _ival(a["inst"])  == _ival(b["inst"])  and
+            _ival(a["vol"])   == _ival(b["vol"])   and
+            _ival(a["sus"])   == _ival(b["sus"])
+        )
+
+    ch_events = defaultdict(list)
+    for ev in events:
+        ch_events[_ival(ev.get("ch"), -1)].append(ev)
+
+    merged_all = []
+
+    for ch, buf in ch_events.items():
+        buf.sort(key=lambda e: e["ticks_start"])
+
+        merged = []
+        i = 0
+        while i < len(buf):
+            ev = buf[i]
+
+            # retrigger パターンを検出
+            if (
+                i + 2 < len(buf) and
+                _ival(ev["keyon"]) == 1 and
+                _ival(buf[i+1]["keyon"]) == 0 and
+                _ival(buf[i+2]["keyon"]) == 1 and
+                same_note(ev, buf[i+2]) and
+                ev["ticks_end"] == buf[i+1]["ticks_start"] and
+                buf[i+1]["ticks_end"] == buf[i+2]["ticks_start"]
+            ):
+                # マージ：ev の終端を buf[i+2] に伸ばす
+                ev["ticks_end"] = buf[i+2]["ticks_end"]
+                ev["l"] = ev["ticks_end"] - ev["ticks_start"]
+
+                merged.append(ev)
+                i += 3
+                continue
+
+            merged.append(ev)
+            i += 1
+
+        merged_all.extend(merged)
+
+    return merged_all
+
+def pass3_merge_pitch_volume_wobble(events):
+    """
+    PASS3(5):
+      block + scale が同じ範囲での fnum/vol の微揺れをマージする。
+      （ソフトウェアエンベロープや微ピッチ揺れの除去）
+    """
+
+    from collections import defaultdict
+
+    def _ival(v, default=0):
+        if v is None or v == "":
+            return default
+        try:
+            return int(v)
+        except:
+            return default
+
+    # ticks_start / ticks_end は PASS3 で付与済み
+    for ev in events:
+        ev["ticks_start"] = _ival(ev["ticks"])
+        ev["ticks_end"]   = ev["ticks_start"] + _ival(ev["l"])
+
+    def can_merge(a, b):
+        return (
+            _ival(a["keyon"]) == 1 and _ival(b["keyon"]) == 1 and
+            _ival(a["vol"]) != 15 and _ival(b["vol"]) != 15 and
+            _ival(a["block"]) == _ival(b["block"]) and
+            get_scale(_ival(a["fnum"])) == get_scale(_ival(b["fnum"])) and
+            _ival(a["inst"]) == _ival(b["inst"]) and
+            _ival(a["sus"])  == _ival(b["sus"]) and
+            a["ticks_end"] == b["ticks_start"]
+        )
+
+    ch_events = defaultdict(list)
+    for ev in events:
+        ch_events[_ival(ev.get("ch"), -1)].append(ev)
+
+    merged_all = []
+
+    for ch, buf in ch_events.items():
+        buf.sort(key=lambda e: e["ticks_start"])
+
+        merged = []
+        for ev in buf:
+            if merged:
+                prev = merged[-1]
+
+                if can_merge(prev, ev):
+                    # マージ：prev の終端を ev に伸ばす
+                    prev["ticks_end"] = ev["ticks_end"]
+                    prev["l"] = prev["ticks_end"] - prev["ticks_start"]
+                    continue
+
+            merged.append(ev)
+
+        merged_all.extend(merged)
 
     return merged_all
 
@@ -718,18 +1171,207 @@ def pass3_dump_csv(events, trace_csv_path):
     print(f"[PASS3] Debug CSV written: {out_csv_path}")
 
 
+def compute_min_l(events):
+    # ------------------------------------------------------------
+    # 1. [EXP1] 最小音価クラスタ(min_l)の推定（全チャンネル共通）
+    # ------------------------------------------------------------
+    def _ival(v, default=0):
+        try:
+            return int(v)
+        except:
+            return default
+    l_vals = []
+    for ev in events:
+        ch     = _ival(ev.get("ch"))
+        l      = _ival(ev.get("l"))
+        keyon  = _ival(ev.get("keyon"))
+        vol    = _ival(ev.get("vol"))
+        is_ryt = _ival(ev.get("is_ryt"))
+        ev_type = ev.get("#type")
+
+        # --- 無音(vol=15)は除外 ---
+        if vol == 15:
+            continue
+
+        is_rhythm_on = ev["#type"] == "rhythm"
+        is_melody_on = ev["#type"] != "rhythm" and (0 <= ch <= 5)
+        # --- rhythm は除外 ---
+        if is_rhythm_on:
+            continue
+
+        # --- instVol(keyon=1) と keyBlk(keyon=0) の両方を対象にする ---
+        if l > 0:
+            l_vals.append(l)
+
+    if not l_vals:
+        min_l_base = 1.0
+        base  = 1
+        cluster = []
+    else:
+        # 全チャンネルの最小値 base
+        base = min(l_vals)
+
+        # b = base + 1 : 1 tick分の揺らぎを抑える
+        b = base + 1
+        cluster_base = [lv for lv in l_vals if lv == base]
+        cluster_b =    [lv for lv in l_vals if lv == b]
+        if cluster_b:
+            cluster = cluster_base + cluster_b
+            min_l_base = int(sum(cluster) / len(cluster)) 
+        else:
+            cluster = []
+            min_l_base = float(base)
+    # min_l補正 + 0.4
+    min_l = int(min_l_base) + 0.4
+    print(f"       min_l={min_l}, min_l_base={min_l_base}, base={base}, cluster={cluster[:40]}")
+
+    return base, min_l
+
+
+def compute_min_l_from_one_l_cluster(events):
+    # ------------------------------------------------------------
+    # [EXP2] min_l を「最小クラスタ」から決定
+    # ------------------------------------------------------------
+
+    def _ival(v, default=0):
+        try:
+            return int(v)
+        except:
+            return default
+
+    # --- l 値を収集 ---
+    l_vals = []
+    for ev in events:
+        ch      = _ival(ev.get("ch"))
+        l       = _ival(ev.get("l"))
+        vol     = _ival(ev.get("vol"))
+        ev_type = ev.get("#type")
+
+        # 無音は除外
+        if vol == 15:
+            continue
+
+        # rhythm は除外
+        if ev_type == "rhythm":
+            continue
+
+        # l>0 のみ対象
+        if l > 0:
+            l_vals.append(l)
+
+    if not l_vals:
+        return None, None, None, None
+
+    ls_sorted = sorted(l_vals)
+
+    ls = [ _ival(ev.get("l")) for ev in events
+           if _ival(ev.get("keyon")) == 1 and _ival(ev.get("l")) > 0 ]
+
+    if not ls:
+        return events, None, None
+
+    ls_sorted = sorted(ls)
+
+    # base は 2 以上の最小値（l=1 の誤差を除外）
+    for v in ls_sorted:
+        if v >= 2:
+            base = v
+            break
+
+    cluster = [l for l in ls_sorted if l == base or l == base + 1]
+    min_l_base_exp2 = sum(cluster) / len(cluster)
+    # min_lを小数切り捨てにして、+0.4 補正
+    min_l = int(min_l_base_exp2) + 0.4
+
+    print(f"       min_l={min_l}, min_l_base={min_l_base_exp2},base={base}, cluster={cluster[:40]}")
+    return base, min_l
+
+
+def compute_min_l_from_two_l_clusters(events):
+    # ------------------------------------------------------------
+    # [EXP3]  最小音価クラスタ(min_l)及び最小次点音価クラスタから推定
+    # ------------------------------------------------------------
+    def _ival(v, default=0):
+        try:
+            return int(v)
+        except:
+            return default
+
+    # --- l 値を収集 ---
+    l_vals = []
+    for ev in events:
+        ch      = _ival(ev.get("ch"))
+        l       = _ival(ev.get("l"))
+        vol     = _ival(ev.get("vol"))
+        ev_type = ev.get("#type")
+
+        # 無音は除外
+        if vol == 15:
+            continue
+
+        # rhythm は除外
+        if ev_type == "rhythm":
+            continue
+
+        # l>0 のみ対象
+        if l > 0:
+            l_vals.append(l)
+
+    if not l_vals:
+        return None, None, None, None
+
+    ls_sorted = sorted(l_vals)
+
+    # --- base（最小クラスタの基準） ---
+    base = None
+    for v in ls_sorted:
+        if v >= 2:
+            base = v
+            break
+
+    if base is None:
+        return None, None, None, None
+
+    # --- クラスタ1（base/base+1） ---
+    cluster1 = [l for l in ls_sorted if l == base or l == base + 1]
+    avg1_base = sum(cluster1) / len(cluster1) if cluster1 else float(base)
+
+    # --- base2（次点クラスタの基準） ---
+    base2 = None
+    for v in ls_sorted:
+        if v > base:
+            base2 = v
+            break
+
+    if base2 is None:
+        return base, avg1, None, None
+
+    # --- クラスタ2（base2/base2+1） ---
+    cluster2 = [l for l in ls_sorted if l == base2 or l == base2 + 1]
+    avg2_base = sum(cluster2) / len(cluster2) if cluster2 else float(base2)
+
+
+    avg1 = int(avg1_base) + 0.4
+    avg2 = int(avg2_base) + 0.4
+
+    min_l_base = (avg1_base + avg2_base) /2
+    min_l = int(min_l_base) + 0.4
+    print(f"       avg1={avg1}, avg1_base={avg1_base},base={base}, cluster={cluster1[:40]}")
+    print(f"       avg2={avg2}, avg2_base={avg2_base},base={base2}, cluster={cluster2[:40]}")
+    print(f"       min_l={min_l}, min_l_base={min_l_base},avg1={avg1},avg2={avg2}")
+
+    return base, min_l
+
+
 def pass4_compute_beats(events):
     """
     PASS4:
-      1. 最小音価クラスタ(min_l)の推定
-      2. beat（音価）を min_l から計算
-      3. beat_pos（beat の累積）をチャンネルごとに計算
-      4. fb/kb/vb の計算
-      5. dt から BPM を推定
+      1. min_l（beat 正規化用）を決定
+      2. beat / beat_pos を計算（min_l ベース）
+      3. fb/kb/vb を計算
+      4. min_ioi（音符長の最小単位）を計算
+      5. tempo（BPM）を IOI ベースで計算し ev["tempo"] に格納
     """
-
-    from collections import defaultdict
-    from statistics import mode, median
 
     def _ival(v, default=0):
         if v is None or v == "":
@@ -739,202 +1381,162 @@ def pass4_compute_beats(events):
         except:
             return default
 
+    # ------------------------------------------------------------
+    # 1. min_l を 最小値又は「最小クラスタ」から決定
+    # ------------------------------------------------------------
+    base_exp1, min_l_exp1 = compute_min_l(events)
+
+    min_l = min_l_exp1
+    base  = base_exp1
+    print(f"[PASS4]        min_l={min_l} base={base}")
 
     # ------------------------------------------------------------
-    # 1. 最小音価クラスタ(min_l)の推定（keyon==1 の音符のみ）
-    # ------------------------------------------------------------
-    l_vals = []
-    for ev in events:
-        time  = ev.get("time")
-        ev_type = ev.get("type")
-        ticks  = _ival(ev.get("ticks")) 
-        ch  = _ival(ev.get("ch")) 
-        l     = _ival(ev.get("l"))
-        keyon = _ival(ev.get("keyon"))
-        is_ryt = _ival(ev.get("is_ryt"))
-
-        # ★ keyon==1 の音符だけを対象にする（休符は絶対に含めない）
-        if keyon == 1 and l > 0 and ev_type != "rhythm":
-            print(f"[PASS4] ev_type={ev_type} time={time}, ticks={ticks},ch={ch},keyon={keyon}, is_ryt={is_ryt},l={l}")
-            l_vals.append(l)
-
-    if not l_vals:
-        min_l = 1.0
-        base  = 1
-        cluster = []
-        print(f"[PASS4] min_l={min_l} base:{base}")
-    else:
-        # ★ 最小値 base（keyon==1 の音符のみ）
-        base = min(l_vals)
-        print(f"[PASS4] base={base}")
-        # ★ base と base+1 のクラスタ（休符は入らない）
-        cluster = [lv for lv in l_vals if lv == base or lv == base + 1]
-
-        # ★ min_l は平均（切り捨て不要）
-        if cluster:
-            min_l = sum(cluster) / len(cluster)
-        else:
-            min_l = float(base)
-
-    print(f"[PASS4] min_l={min_l}, base={base}, cluster={cluster[:40]}")
-
-
-    # ------------------------------------------------------------
-    # 2. beat（音価）を min_l から計算（ceil）
+    # 2. beat（音価）を min_l から計算（切り捨て）
     # ------------------------------------------------------------
     for ev in events:
         l = _ival(ev.get("l"))
 
         if l > 0:
-            ev["beat"] = max(1, round(l / min_l))
+            ev["beat"] = max(1, int(l / min_l))
         else:
             ev["beat"] = 0  # retrigger or 無音
 
     # ------------------------------------------------------------
-    # 3. beat_pos（beat の累積）をチャンネルごとに計算
+    # 3. beat_pos（チャンネル独立）
     # ------------------------------------------------------------
+    from collections import defaultdict
     ch_events = defaultdict(list)
+
     for ev in events:
-        ch = _ival(ev.get("ch"), -1)
-        ch_events[ch].append(ev)
+        ch_events[_ival(ev.get("ch"), -1)].append(ev)
 
     for ch, buf in ch_events.items():
         buf.sort(key=lambda e: _ival(e.get("ticks")))
         beat_pos = 0
-
         for ev in buf:
             ev["beat_pos"] = beat_pos
-            beat_pos += ev["beat"]   # ★ チャンネル独立の Σ beat ★
+            beat_pos += ev["beat"]
 
     # ------------------------------------------------------------
-    # 4. fb/kb/vb を beat に合わせる
+    # 4. fb/kb/vb（レガート対応）
     # ------------------------------------------------------------
+    ch_events_fb = defaultdict(list)
     for ev in events:
-        ev["fb"] = ev["beat"]
-        ev["kb"] = ev["beat"]
-        ev["vb"] = ev["beat"]
+        ch_events_fb[_ival(ev.get("ch"), -1)].append(ev)
 
-    # ------------------------------------------------------------
-    # 3. BPM 推定（dt ベース）
-    # ------------------------------------------------------------
-    from statistics import mode, median
+    for ch, buf in ch_events_fb.items():
+        buf.sort(key=lambda e: _ival(e.get("ticks")))
 
-    # --- メロディ判定（新仕様） ---
-    def is_melody(ev):
-        return ev.get("type") != "rhythm"
+        fnum_prev  = None
+        block_prev = None
+        inst_prev  = None
+        vol_prev   = None
+        keyon_prev = 0
 
-    ch_events_bpm = defaultdict(list)
-    for ev in events:
-        ch = _ival(ev.get("ch"), -1)
-        ch_events_bpm[ch].append(ev)
-
-    dt_all = []
-    beat_pos_minl = []   # ★ 1 beat 相当の beat_pos を集める
-
-    for ch, buf in ch_events_bpm.items():
-        buf.sort(key=lambda e: float(e.get("time", 0.0)))
-        prev_ev = None
+        fb_acc = kb_acc = vb_acc = 0
 
         for ev in buf:
-            l        = _ival(ev.get("l"))
-            keyon    = _ival(ev.get("keyon"))
-            beat     = _ival(ev.get("beat"))
-            beat_pos = _ival(ev.get("beat_pos"))
+            beat  = _ival(ev.get("beat"))
+            fnum  = _ival(ev.get("fnum"))
+            block = _ival(ev.get("block"))
+            inst  = _ival(ev.get("inst"))
+            vol   = _ival(ev.get("vol"))
+            keyon = _ival(ev.get("keyon"))
 
-            # ★ 新仕様：type=rhythm のみ除外
-            if not is_melody(ev):
-                continue
+            if keyon == 0:
+                fb_acc = kb_acc = vb_acc = beat
+            else:
+                if keyon_prev == 1 and fnum == fnum_prev and block == block_prev and inst == inst_prev and vol == vol_prev:
+                    fb_acc += beat
+                    kb_acc += beat
+                    vb_acc += beat
+                else:
+                    fb_acc = kb_acc = vb_acc = beat
 
-            # --- dt_all: keyon=1 のメロディイベント間隔 ---
-            if keyon == 1:
-                if prev_ev is not None:
-                    dt = float(ev["time"]) - float(prev_ev["time"])
-                    if dt > 0.005:
-                        dt_all.append(dt)
-                prev_ev = ev
+            ev["fb"] = fb_acc
+            ev["kb"] = kb_acc
+            ev["vb"] = vb_acc
 
-            # --- 1 beat 相当（min_l クラスタ）の beat_pos を収集 ---
-            if keyon == 1 and (l == base or l == base + 1) and beat == 1:
-                beat_pos_minl.append(beat_pos)
+            keyon_prev = keyon
+            fnum_prev  = fnum
+            block_prev = block
+            inst_prev  = inst
+            vol_prev   = vol
 
-    if not dt_all:
-        bpm = None
-        print("[PASS4] BPM estimation skipped (no dt)")
-        return events, min_l, bpm
+    # ------------------------------------------------------------
+    # 5. min_ioi（音符長の最小単位）を計算
+    # ------------------------------------------------------------
+    ioi_list = [ _ival(ev.get("ioi")) for ev in events if _ival(ev.get("ioi")) > 0 ]
 
-    # --- dt_mode ---
+    if not ioi_list:
+        print("[PASS4] No IOI found")
+        return events, min_l, None
+
+    # mode が最も安定（最頻値）
+    from statistics import mode, median
     try:
-        dt_mode = mode(dt_all)
+        min_ioi = mode(ioi_list)
     except:
-        dt_mode = median(dt_all)
+        min_ioi = median(ioi_list)
 
-    bpm_per_grid = 60.0 / dt_mode
+    print(f"[PASS4] min_ioi={min_ioi}")
 
-    # --------------------------------------------------------
-    # grid_per_beat の推定
-    #   beat_pos_minl の差分から推定する
-    # --------------------------------------------------------
-    grid_per_beat = None
-    if len(beat_pos_minl) >= 2:
-        beat_pos_sorted = sorted(set(beat_pos_minl))
-        intervals = [
-            b - a
-            for a, b in zip(beat_pos_sorted, beat_pos_sorted[1:])
-            if (b - a) > 0
-        ]
-        if intervals:
-            try:
-                grid_per_beat = mode(intervals)
-            except:
-                grid_per_beat = int(round(median(intervals)))
+    # ------------------------------------------------------------
+    # 6. tempo（BPM）を IOI ベースで計算
+    # ------------------------------------------------------------
+    # tick=1/60sec → dt = ioi / 60
+    # BPM = 60 / dt = 3600 / ioi
+    bpm_per_grid = 3600.0 / min_ioi
 
-    # フォールバック（典型値から選ぶ）
-    if not grid_per_beat or grid_per_beat <= 0:
-        candidates = [4, 8, 12, 16]
-        best_g = None
-        best_bpm = None
+    # grid_per_beat は min_l ベースの beat_pos から推定
+    beat_pos_all = sorted(set(ev["beat_pos"] for ev in events if ev["beat"] > 0))
+    intervals = [b - a for a, b in zip(beat_pos_all, beat_pos_all[1:]) if (b - a) > 0]
 
-        for g in candidates:
-            bpm_candidate = bpm_per_grid / g
-            if 30.0 <= bpm_candidate <= 225.0:
-                if best_bpm is None or abs(bpm_candidate - round(bpm_candidate)) < abs(best_bpm - round(best_bpm)):
-                    best_bpm = bpm_candidate
-                    best_g = g
+    if intervals:
+        try:
+            grid_per_beat = mode(intervals)
+        except:
+            grid_per_beat = int(round(median(intervals)))
+    else:
+        grid_per_beat = 4  # fallback
 
-        grid_per_beatls  = best_g if best_g else 16
-
-    # --- 正しい BPM の式 ---
     bpm_raw = bpm_per_grid / grid_per_beat
-
     bpm_clamped = max(30.0, min(225.0, bpm_raw))
 
-    print(
-        f"[PASS4 BPM] dt_mode={dt_mode:.6f}, "
-        f"bpm_per_grid={bpm_per_grid:.3f}, "
-        f"grid_per_beat={grid_per_beat}, "
-        f"bpm_raw={bpm_raw:.3f}, "
-        f"bpm_clamped={bpm_clamped:.3f}"
-    )
+    print(f"[PASS4 BPM] min_ioi={min_ioi}, bpm_raw={bpm_raw:.3f}, bpm={bpm_clamped:.3f}")
+
+    # ------------------------------------------------------------
+    # 7. tempo を ev に書き込む
+    # ------------------------------------------------------------
+    for ev in events:
+        ev["tempo"] = bpm_clamped
+
+    # ------------------------------------------------------------
+    # rhythm の beat_pos を melody に同期させる
+    # ------------------------------------------------------------
+    events_sorted = sorted(events, key=lambda e: _ival(e.get("ticks")))
+    last_melody_beat_pos = 0
+
+    for ev in events_sorted:
+        is_ryt = ev.get("is_ryt") == 1 or ev.get("#type") == "rhythm"
+
+        if not is_ryt:
+            # melody
+            last_melody_beat_pos = _ival(ev.get("beat_pos"))
+        else:
+            # rhythm
+            ev["beat_pos"] = last_melody_beat_pos
 
     return events, min_l, bpm_clamped
 
-
 def pass4_dump_csv(events, trace_csv_path):
-    """
-    PASS 4:
-      - beat = int(l  / min_l)
-      - fb   = int(fl / min_l)
-      - kb   = int(kl / min_l)
-      - vb   = int(vl / min_l)
-      ここで min_l は l>0 の最小値。
-    """
 
     if not events:
         return
 
     # 元ファイル名: <stem>_trace.opll.csv
     base, ext = os.path.splitext(trace_csv_path)
-    # 出力ファイル名: <stem>_trace.opll.pass1.csv
+    # 出力ファイル名: <stem>_trace.opll.pass4.csv
     out_csv_path = base + ".pass4.csv"
 
     fieldnames = list(events[0].keys())
@@ -946,6 +1548,7 @@ def pass4_dump_csv(events, trace_csv_path):
             writer.writerow(ev)
 
     print(f"[PASS4] Debug CSV written: {out_csv_path}")
+
 
 def _int(ev, key, default=0):
     """空文字列や欠損値を安全に int に変換するヘルパー"""
@@ -1030,6 +1633,9 @@ def _build_segments(trace_csv_path,
     # 但しこれらはkeyon 0->1でlと同じ値にリセットされる
     events = pass2_compute_fl_kl_vl(events)
 
+    # onsetの検出とIOI(Inter‑Onset Interval:IOIの間隔)の算出, tempoの導出
+    events = pass2_compute_onsets_and_ioi(events)
+
     # pass2 (2): fl,kl,vlを計算した後にl=0のeventを削除
     # ここで l=0 の keyon 0->1 (retrigger)のeventは削除される。(fl,kl,vlにはリセットとして反映済み)
     events = pass2_filter_l0(events)
@@ -1037,6 +1643,12 @@ def _build_segments(trace_csv_path,
 
     # 無音状態(v=15 又は keyon=0) の連続したeventをマージ
     events = pass3_merge_silent_rests(events)
+    # fnum, vol, keyon状態が続くNOTEをマージ
+    #events = pass3_merge_same_note(events)
+    # retriggerのためのkeyoffを一つのeventにマージ
+    events = pass3_merge_retrigger_note(events) 
+    # fnumの揺れ(vibrato / pitch envelope ), software envelopをマージ
+    #events = pass3_merge_pitch_volume_wobble(events)
     pass3_dump_csv(events, trace_csv_path)
 
     # beat, beat_posを算出
@@ -1048,38 +1660,61 @@ def _build_segments(trace_csv_path,
     # ------------------------------------------------------
     # pass4まで処理されたeventsをベースに_Segmentを生成する
     # ------------------------------------------------------
-    # ch ごとに整理
-    events_by_ch = defaultdict(list)
-    for ev in events:
-        ch = int(ev["ch"])
-        events_by_ch[ch].append(ev)
-
-    # ch ごとに整理
     events_by_ch = defaultdict(list)
 
     for ev in events:
+        ev_type = ev.get("#type", "")
         ch = int(ev["ch"])
+        is_ryt = _int(ev, "is_ryt", 0)
 
-        # --- ch 補正（リズム対応） ---
-        if _int(ev, "is_ryt", 0) == 1:
+        # まず ch 範囲チェック（安全のため最初に）
+        if ch < -1 or ch >= NUM_CH:
+            continue
+
+        # ------------------------------------------------------
+        # 1. リズムイベント（0x0E の行）だけ特別扱い
+        # ------------------------------------------------------
+        if ev_type == "rhythm":
+            if is_ryt != 1:
+                continue
+
             if _int(ev, "bd", 0) == 1:
                 ch = 6
             elif _int(ev, "sd", 0) == 1:
                 ch = 7
             elif (_int(ev, "tom", 0) == 1 or
-                _int(ev, "tc", 0) == 1 or
-                _int(ev, "hh", 0) == 1):
+                  _int(ev, "tc", 0) == 1 or
+                  _int(ev, "hh", 0) == 1):
                 ch = 8
             else:
-                # rhythm だが種類不明 → 無視
+                # NOTE_ON ではない rhythm 行は無視
                 continue
 
-        # ★ ch が -1 や範囲外なら無視
-        if ch < 0 or ch >= NUM_CH:
+            events_by_ch[ch].append(ev)
             continue
 
-        # ★ 補正済み ch を events_by_ch に入れる
-        events_by_ch[ch].append(ev)
+        # ------------------------------------------------------
+        # 2. メロディイベント（#type != rhythm）
+        # ------------------------------------------------------
+        # ch0〜5 → 常にメロディ
+        if 0 <= ch <= 5:
+            events_by_ch[ch].append(ev)
+            continue
+
+        # ------------------------------------------------------
+        # 3. ch6〜8 の通常レジスタ書き込み
+        # ------------------------------------------------------
+        # rhythm_mode=1 のときは「イベントではない」
+        if is_ryt == 1:
+            continue
+
+        # rhythm_mode=0 のときはメロディ扱い（VGM によっては使われる）
+        if 6 <= ch <= 8:
+            events_by_ch[ch].append(ev)
+            continue
+
+        # それ以外は無視
+        continue
 
     # ticks でソート
     for ch in events_by_ch:
@@ -1091,104 +1726,82 @@ def _build_segments(trace_csv_path,
         prev_seg = None
 
         for ev in evs:
-            ev_type = ev.get("type") 
-            keyon    = _int(ev, "keyon", 0)
-            fnum     = _int(ev, "fnum", 0)
-            block    = _int(ev, "block", 0)
-            inst     = _int(ev, "inst", 0)
+            ev_type = ev.get("#type", "")
             vol_opll = _int(ev, "vol", 15)
-            sus      = _int(ev, "sus", 0)
-            beat_pos = _int(ev, "beat_pos", 0)
-            beat     = _int(ev, "beat", 0)
-
             is_ryt   = _int(ev, "is_ryt", 0)
 
-            # NOTE_ON or OFF 条件
-            # 'type' != "rhythm"のeventはメロディを含んでいる
-            is_melody_on = ev_type  != "rhythm"
+            # --- イベント種別判定 ---
+            is_rhythm_on = (ev_type == "rhythm") and (is_ryt == 1)
+            is_melody_on = (ev_type != "rhythm") and (0 <= ch < NUM_CH)
 
-            # 'is_ryt' = 1 : eventはリズムを含む : 0 eventはリズムを含まない
-            is_rhythm_on = (is_ryt == 1)
-
-            # 基本的にはpass4の全てのeventが_Segmentに変換されるべき
-            if not (is_melody_on or is_rhythm_on):
+            if not (is_melody_on or (include_rhythm and is_rhythm_on)):
                 continue
 
-            # MS2はファイルのフォーマット的には0:最大 63:無音 (エディタ上の表示と逆)　
             ms2_vol = _opll_vol_to_ms2(vol_opll)
 
-            # eventはメロディとリズムの両方を含む場合もあるし、どちらか一方のみもあり得る
-            # リズムの情報はメロディの情報と分離
-            # bd	sd	tom	tc	hh　　　 : 1: 0->1が発生 0:変化なし
-            # fnum_ch6	vol_ch6	sus_ch6 block_ch6: ch6のfnum, vol, sus, blockを保持
-            # fnum_ch7	vol_ch7	sus_ch7 block_ch6: ch7のfnum, vol, sus, blockを保持
-            # fnum_ch8	vol_ch8	sus_ch8 block_ch6: ch8のfnum, vol, sus, blockを保持
-
-            # MS2はOPL3/4のメロディモードで動作。これはリズムも他のメロディ同様にNOTE_ON, OFFで表現する
-            # 基本的にはbd	sd	tom	tc	hhが1の時に、beat_posをベースにNOTE_ONを置き、次のgridでOFF又はretrigger
-            # MS2は連続したNOTE_ONは通常retrigger扱い
-            # 小文字にするとkeyoffなしのfnumの変更になる
-            # ちなみに、リズムの長さは 1 gridのdt幅で判断されるべき。
-
-            # NOTE
-            # pass4時点で連続した無音状態 (keyon=0又はv=15)のeventはマージされています。start_beat, end_beatに要注意
             seg = _Segment(
-                ev["#type"],
-                float(ev["time"]),
-                ch,
-                beat_start=beat_pos,
-                keyon=keyon,
-                fnum=fnum,
-                block=block,
-                inst=inst,
-                vol=ms2_vol,
-                sus=sus,
-                beat=beat,
-                fb=_int(ev, "fb", 0),
-                kb=_int(ev, "kb", 0),
-                vb=_int(ev, "vb", 0),
-                is_ryt=is_ryt,
-                bd=_int(ev, "bd", 0),
-                sd=_int(ev, "sd", 0),
-                tom=_int(ev, "tom", 0),
-                tc=_int(ev, "tc", 0),
-                hh=_int(ev, "hh", 0),
-                fnum_ch6=_int(ev, "fnum_ch6", 0),
-                vol_ch6=_opll_vol_to_ms2(_int(ev, "vol_ch6", 15)),
-                sus_ch6=_int(ev, "sus_ch6", 0),
-                block_ch6=_int(ev, "block_ch6", 0),
-                fnum_ch7=_int(ev, "fnum_ch7", 0),
-                vol_ch7=_opll_vol_to_ms2(_int(ev, "vol_ch7", 15)),
-                sus_ch7=_int(ev, "sus_ch7", 0),
-                block_ch7=_int(ev, "block_ch7", 0),
-                fnum_ch8=_int(ev, "fnum_ch8", 0),
-                vol_ch8=_opll_vol_to_ms2(_int(ev, "vol_ch8", 15)),
-                sus_ch8=_int(ev, "sus_ch8", 0),
-                block_ch8=_int(ev, "block_ch8", 0),
+                ev_type       = ev["#type"],
+                time          = float(ev["time"]),
+                ch            = _int(ev, "ch", 0),
+                ticks         = _int(ev, "ticks", 0),
+                onset         = _int(ev, "onset", 0),
+                tempo         =  _int(ev, "tempo", 0),
+                ioi           = _int(ev, "ioi", 0),
+                min_ioi       = _int(ev, "min_ioi", 0),
+                l             = _int(ev, "l", 0),
+                fl            = _int(ev, "fl", 0),
+                kl            = _int(ev, "kl", 0),
+                vl            = _int(ev, "vl", 0),
+                beat_pos      = _int(ev, "beat_pos", 0),
+                beat          = _int(ev, "beat", 0),
+                fb            = _int(ev, "fb", 0),
+                kb            = _int(ev, "kb", 0),
+                vb            = _int(ev, "vb", 0),
+                keyon         = _int(ev, "keyon", 0),
+                fnum          = _int(ev, "fnum", 0),
+                block         = _int(ev, "block", 0),
+                inst          = _int(ev, "inst", 0),
+                vol           = _int(ev, "vol", 0),
+                sus           = _int(ev, "sus", 0),
+                scale         = ev["scale"],
+                is_ryt        = _int(ev, "is_ryt", 0),
+                r_tempo       =  _int(ev, "r_tempo", 0),
+                r_ioi         = _int(ev, "r_ioi", 0),
+                r_mode_ioi    = _int(ev, "r_mode_ioi", 0),
+                r_hh_ioi      = _int(ev, "r_hh_ioi", 0),
+                r_hh_mode_ioi = _int(ev, "r_hh_mode_ioi", 0),
+                bd            = _int(ev, "bd", 0),
+                sd            = _int(ev, "sd", 0),
+                tom           = _int(ev, "tom", 0),
+                tc            = _int(ev, "tc", 0),
+                hh            = _int(ev, "hh", 0),
+                fnum_ch6      = _int(ev, "fnum_ch6", 0),
+                vol_ch6       = _int(ev, "vol_ch6", 0),
+                sus_ch6       = _int(ev, "sus_ch6", 0),
+                block_ch6     = _int(ev, "block_ch6", 0),
+                fnum_ch7      = _int(ev, "fnum_ch7", 0),
+                vol_ch7       = _int(ev, "vol_ch7", 0),
+                sus_ch7       = _int(ev, "sus_ch7", 0),
+                block_ch7     = _int(ev, "block_ch7", 0),
+                fnum_ch8      = _int(ev, "fnum_ch8", 0),
+                vol_ch8       = _int(ev, "vol_ch8", 0),
+                sus_ch8       = _int(ev, "sus_ch8", 0),
+                block_ch8     = _int(ev, "block_ch8", 0),
             )
 
-            # ---------------------------------------------------
-            # コンストラクタで設定されない_Segmentのメンバ情報を設定
-            # ---------------------------------------------------
-            # beat_end
-            seg.beat_end = beat_pos + beat
-
-            # beat_sz = min_l
-            seg.beat_sz = min_l
-
-            # grid_sz = 1 beat 単位
-            seg.grid_sz = 1
-
-            # ms2_len = beat / grid_sz
-            seg.ms2_len = beat // seg.grid_sz
-
-            # 音階情報
-            seg.o     = get_octave(fnum)
-            seg.scale = get_scale(fnum)
-
-            # odiff / vdiff
+            seg.ticks_start = _int(ev, "ticks", 0)
+            seg.ticks_end   = _int(ev, "ticks", 0) + _int(ev, "l", 0) 
+            seg.beat_start = _int(ev, "beat_pos", 0)
+            seg.beat_end   = _int(ev, "beat_pos", 0) + _int(ev, "beat", 0)
+            seg.grid_sz    = 1
+            seg.ms2_len    = _int(ev, "beat", 0)
+            seg.ms2_vol    = ms2_vol
+            seg.ms2_len    = _int(ev, "beat", 0)
+            seg.min_l      = min_l
+            seg.beat_sz    = min_l
+            seg.grid_sz    = 1
             if prev_seg:
-                seg.odiff = seg.o - prev_seg.o
+                seg.odiff = seg.block  - prev_seg.block
                 seg.vdiff = seg.vol - prev_seg.vol
             else:
                 seg.odiff = 0
@@ -1197,21 +1810,8 @@ def _build_segments(trace_csv_path,
             prev_seg = seg
             segments_by_ch[ch].append(seg)
 
-            # 基本は 1 beat = 1 grid
-            # 但し 1 beatがどれくらいの長さ(l64, l32, l16, l8, l4, l2, l1)になるかはdtから判定が必要
-            seg.beat_start = beat_pos
-            seg.beat_end   = beat_pos + beat
-            seg.ms2_len    = beat
-            seg.beat_sz    = min_l
-            seg.grid_sz    = 1
-
-            seg.o = get_octave(fnum)
-            seg.scale = get_scale(fnum)
-            if prev_seg:
-                seg.odiff = seg.o - prev_seg.o
-                seg.vdiff = seg.vol - prev_seg.vol
-
     return segments_by_ch, bpm
+
 
 # ---------------------------------------------------------------------------
 # Voice table: voice CSV columns
