@@ -445,7 +445,7 @@ class _OpllState:
 
     NUM_CH = 9   # 0..8:melody+rhythm
 
-    _HEADER = ('#type,time,ch,ticks,l,fl,kl,vl,beat_pos,beat,fb,kb,vb,keyon,fnum,block,inst,vol,sus,scale,ioi,onset,tempo,'
+    _HEADER = ('#type,time,ch,ticks,l,fl,kl,vl,beat_pos,beat,fb,kb,vb,keyon,is_retrigger,is_vibrato,is_vol_envelope,fnum,block,inst,vol,sus,scale,ioi,onset,tempo,'
                'is_ryt,r_tempo,r_ioi,r_mode_ioi,r_hh_ioi,r_hh_mode_ioi,'
                'bd,sd,tom,tc,hh,'
                'fnum_ch6,vol_ch6,sus_ch6,block_ch6,'
@@ -464,7 +464,6 @@ class _OpllState:
         self.block    = [0] * self.NUM_CH   # block bit (keyBlk)
         self.key_blk  = [0] * self.NUM_CH   # 0x20-0x28
         self.inst_vol = [0] * self.NUM_CH   # 0x30-0x38
-        self.vol      = [0] * self.NUM_CH   # 0x36-0x38(のみ), ch=6..8のみ有効
         self.user_patch = [0] * 8
         self.rhythm_mode = 0
         self.rhythm_history = []
@@ -495,9 +494,8 @@ class _OpllState:
     def _inst(self, ch: int) -> int:
         return (self.inst_vol[ch] >> 4) & 0x0F
 
-    def _vol_melody(self, ch: int) -> int:
-        # 0..5: inst_vol, 6..8: vol専用（0 if unset）
-        return self.inst_vol[ch] & 0x0F if ch < 6 else self.vol[ch] & 0x0F
+    def _vol(self, ch: int) -> int:
+        return self.inst_vol[ch] & 0x0F
 
     
     def _patch_hex(self) -> str:
@@ -529,17 +527,18 @@ class _OpllState:
         cols = [
             type_, repr(t), str(ch), str(ticks),'','','','','','','','','',
             str(self._keyon(ch)),
+            '','','',
             str(self.fnum9(ch)),
             str(self._block(ch)),
             str(self._inst(ch)),
-            str(self._vol_melody(ch)),
+            str(self._vol(ch)),
             str(self._sus(ch)),
             '','','','',
             str(is_ryt),'','','','','',
             str(bd), str(sd), str(tom), str(tc), str(hh),
-            str(self.fnum9(6)), str(self._vol_melody(6)), str(self._sus(6)), str(self._block(6)),
-            str(self.fnum9(7)), str(self._vol_melody(7)), str(self._sus(7)), str(self._block(7)),
-            str(self.fnum9(8)), str(self._vol_melody(8)), str(self._sus(8)), str(self._block(8)),
+            str(self.fnum9(6)), str(self._vol(6)), str(self._sus(6)), str(self._block(6)),
+            str(self.fnum9(7)), str(self._vol(7)), str(self._sus(7)), str(self._block(7)),
+            str(self.fnum9(8)), str(self._vol(8)), str(self._sus(8)), str(self._block(8)),
         ]
         return ','.join(cols)
 
@@ -553,12 +552,12 @@ class _OpllState:
         ticks = get_ticks(t)
         is_ryt, bd, sd, tom, tc, hh = self._decode_rhythm_bits(regval)
         cols = [
-            type_, repr(t), '-1', str(ticks),'','','', '', '', '', '', '', '','','','','','','','','','','',
+            type_, repr(t), '-1', str(ticks),'','','', '', '', '', '', '', '','','','','','','','','','','','','','',
             str(is_ryt),'','','','','',
             str(bd), str(sd), str(tom), str(tc), str(hh),
-            str(self.fnum9(6)), str(self._vol_melody(6)), str(self._sus(6)), str(self._block(6)),
-            str(self.fnum9(7)), str(self._vol_melody(7)), str(self._sus(7)), str(self._block(7)),
-            str(self.fnum9(8)), str(self._vol_melody(8)), str(self._sus(8)), str(self._block(8)),
+            str(self.fnum9(6)), str(self._vol(6)), str(self._sus(6)), str(self._block(6)),
+            str(self.fnum9(7)), str(self._vol(7)), str(self._sus(7)), str(self._block(7)),
+            str(self.fnum9(8)), str(self._vol(8)), str(self._sus(8)), str(self._block(8)),
         ]
         self.trace_buf.append(','.join(cols))
 
@@ -603,7 +602,7 @@ class _OpllState:
             _type, _ch = 'fNumL', ch
             self.fnum_low[ch] = v & 0xFF
 
-            # ch6–8: rhythm_mode=1 のときはログしない（状態だけ更新）
+            # ch6–8: rhythm_mode=1 のときは記録しない
             if not (self.rhythm_mode and ch >= 6):
                 self._log(ch, 'fNumL')
 
@@ -615,31 +614,21 @@ class _OpllState:
             self.sus[ch]      = (v >> 5) & 0x01
             self.block[ch]    = (v >> 1) & 0x07
 
-            # ch6–8: rhythm_mode=1 のときはログしない
+            # ch6–8: rhythm_mode=1 の時は記録しない
             if not (self.rhythm_mode and ch >= 6):
                 self._log(ch, 'keyBlk')
 
-        elif 0x30 <= a <= 0x35:
+        elif 0x30 <= a <= 0x38:
             ch = a - 0x30
             _type, _ch = 'instVol', ch
             self.inst_vol[ch] = v & 0xFF
 
-            # ch6–8: rhythm_mode=1 のときはログしない
+            # ch6–8: rhythm_mode=1 のときは記録しない
             if not (self.rhythm_mode and ch >= 6):
                 self._log(ch, 'instVol')
-                row = self._voice_row('instVol', ch, self._inst(ch), self._vol_melody(ch))
+                row = self._voice_row('instVol', ch, self._inst(ch), self._vol(ch))
                 self.voice_trace_buf.append(row)
 
-        elif 0x36 <= a <= 0x38:
-            ch = a - 0x30    # 0x36→6, 0x37→7, 0x38→8
-            _type, _ch = 'instVol', ch
-            self.vol[ch] = v & 0xFF
-
-            # ここも「rhythm 専用」とみなして、rhythm_mode=1 のときは
-            # 行を出さずに状態だけ更新する
-            if not self.rhythm_mode:
-                # メロディモードで ch6–8 を普通のメロディとして使うケース用
-                self._log(ch, 'instVol')
 
         # 全レジスタの生トレース
         self.regs_trace_buf.append(self._regs_row(_type, a, v, _ch))
