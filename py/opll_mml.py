@@ -193,7 +193,7 @@ RHYTHM_VOICE_ID_MAP = {
 }
 
 class Segment:
-    def __init__(self, tick_start, tick_end, ch, keyon, fnum, block, inst, vol, sus):
+    def __init__(self, tick_start, tick_end, ch, keyon, fnum, block, inst, vol, sus, ev_type='note'):
         self.tick_start = tick_start
         self.tick_end   = tick_end
         self.ch         = ch
@@ -203,10 +203,12 @@ class Segment:
         self.inst       = inst
         self.vol        = vol
         self.sus        = sus
+        self.ev_type    = ev_type
 
     def __repr__(self):
         return (f"Seg(ch={self.ch}, tick={self.tick_start}-{self.tick_end}, keyon={self.keyon}, "
-                f"fnum={self.fnum}, block={self.block}, inst={self.inst}, vol={self.vol}, sus={self.sus})")
+                f"fnum={self.fnum}, block={self.block}, inst={self.inst}, vol={self.vol}, sus={self.sus}, "
+                f"ev_type={self.ev_type})")
 
 def _build_segments(trace_csv_path):
     """
@@ -289,7 +291,7 @@ def _build_segments(trace_csv_path):
                         if events_by_ch[chidx]:
                             events_by_ch[chidx][-1].tick_end = tick
                         # Start a new segment for this rhythm instrument.
-                        seg = Segment(prev['tick'], tick, chidx, bd_v, fnumX, 0, voice_id, volX, susX)
+                        seg = Segment(prev['tick'], tick, chidx, bd_v, fnumX, 0, voice_id, volX, susX, ev_type='rhythm')
                         events_by_ch[chidx].append(seg)
                     # Always update last seen state for rhythm key.
                     prev.update(dict(tick=tick, on=bd_v, fnum=fnumX, vol=volX, sus=susX))

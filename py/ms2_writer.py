@@ -124,6 +124,7 @@ _BPM_TO_DIVIDER: dict[int, int] = {
 
 STEPS_PER_PATTERN = 16      # MS2 whole-note = 16 steps (16th-note granularity)
 TICKS_PER_STEP_75BPM = 12   # at 60 fps, 75 BPM: 1/16 note = 12 ticks
+DEFAULT_RHYTHM_NOTE = 36    # Default MS2 note (C3) for rhythm hits with no explicit fnum
 
 def build_tunings_chunk_data_from_list(tuning_defs):
     """
@@ -256,8 +257,8 @@ def opll_vol_to_ms2_vol(opll_vol: int) -> int:
 # ---------------------------------------------------------------------------
 
 def _build_chunk(chunk_type: int, data: bytes) -> bytes:
-    if len(data) > 16384:
-        raise ValueError(f"Chunk data too large: {len(data)} bytes (max 16384)")
+    if len(data) > 65535:
+        raise ValueError(f"Chunk data too large: {len(data)} bytes (max 65535)")
     return struct.pack('<BBH', chunk_type, 0, len(data)) + data
 
 
@@ -591,7 +592,15 @@ def _build_step_grid(
             if start_step >= total_steps:
                 continue
             at_token = getattr(seg, 'at_token', '')
-            if seg.keyon:
+            if getattr(seg, 'ev_type', 'note') == 'rhythm':
+                if seg.keyon:
+                    ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
+                    if ms2_note is None:
+                        ms2_note = DEFAULT_RHYTHM_NOTE  # Default note for unpitched rhythm
+                    retrigger = start_step in keyoff_steps
+                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token)
+                # Rhythm channels do not emit NOTE_OFF; drums decay naturally
+            elif seg.keyon:
                 ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
                 if ms2_note is not None:
                     retrigger = start_step in keyoff_steps
