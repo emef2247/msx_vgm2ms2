@@ -256,10 +256,10 @@ def opll_vol_to_ms2_vol(opll_vol: int) -> int:
 # ---------------------------------------------------------------------------
 
 def _build_chunk(chunk_type: int, data: bytes) -> bytes:
-    if len(data) > 16384:
-        raise ValueError(f"Chunk data too large: {len(data)} bytes (max 16384)")
+    # MS² の仕様上、サイズフィールドは uint16 (0〜65535)
+    if len(data) > 65535:
+        raise ValueError(f"Chunk data too large: {len(data)} bytes (max 65535)")
     return struct.pack('<BBH', chunk_type, 0, len(data)) + data
-
 
 def _sentinel_chunk() -> bytes:
     return struct.pack('<BBH', 0, 0, 0)
@@ -575,8 +575,7 @@ def _build_step_grid(segments, total_steps):
 
     for ch, segs in segments.items():
         for seg in segs:
-            # Melody only (is_ryt=0)
-            if getattr(seg, "is_ryt", 0):
+            if seg.ev_type == 'rhythm':
                 continue
 
             start_step = seg.beat_start
@@ -674,16 +673,6 @@ def segments_to_patterns(
     user_patches: dict | None = None,
     ref_count: int = 0,
 ) -> list[list]:
-    """
-    Place pass4 _Segment items by beat_pos faithfully:
-      - Explicit keyoff segments (keyon==0) produce NOTE_OFF at seg.beat_start.
-      - keyon==1 segments produce NOTE_ON at seg.beat_start.
-      - NOTE_OFF for a keyon==1 segment is placed at seg.beat_start + seg.ms2_len,
-        except when that off step is the beat_start of another keyon==1 segment
-        on the same channel (retriggers/adjacent NOTE_ON) or when an explicit
-        keyon==0 segment exists at that step (explicit off will handle it).
-    VOL/INST are emitted on first NOTE_ON or when changed. After NOTE_OFF, prevs reset.
-    """
 
     if user_patches is None:
         user_patches = {}
@@ -700,43 +689,35 @@ def segments_to_patterns(
         if not segs:
             continue
 
-        # sort by beat_start
         segs_sorted = sorted(segs, key=lambda s: s.beat_start)
 
-        # Build set of explicit-off steps (segments that explicitly mark keyoff)
-        explicit_off_steps = set(s.beat_start for s in segs_sorted if getattr(s, 'keyon', 0) == 0)
-
-        prev_ms2_note = None
         prev_inst_idx = -1
         prev_vol      = -1
 
-        for i, seg in enumerate(segs_sorted):
-            # Rhythm segments are skipped here (handled elsewhere)
-            if getattr(seg, 'is_ryt', 0):
+        for seg in segs_sorted:
+
+            # rhythm は別処理
+            if seg.ev_type == 'rhythm':
                 continue
 
-            # If this segment explicitly indicates keyoff (keyon==0), place NOTE_OFF at its beat_start.
-            if getattr(seg, 'keyon', 0) == 0:
-                off_step_abs = seg.beat_start
-                if 0 <= off_step_abs < total_steps:
-                    pat = off_step_abs // STEPS_PER_PATTERN
-                    step_in_pat = off_step_abs % STEPS_PER_PATTERN
-                    channel_event_lists[pat][ch].append((step_in_pat, [bytes([0x01])]))  # NOTE_OFF
-                # Reset prev so next NOTE_ON will re-emit VOL/INST
-                prev_ms2_note = None
-                prev_vol = -1
-                prev_inst_idx = -1
+            start = seg.beat_start
+            if not (0 <= start < total_steps):
                 continue
 
-            # Otherwise this is a keyon==1 segment -> emit NOTE_ON at seg.beat_start
+            pat = start // STEPS_PER_PATTERN
+            step = start % STEPS_PER_PATTERN
+
+            keyon = seg.keyon
+            is_legato = seg.is_legate
+            ioi = seg.ioi
+
             ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
             if ms2_note is None:
-                # Nothing to emit for invalid pitch
                 continue
 
-            # Instrument index resolution
+            # instrument index
             if seg.inst == 0 and user_patches:
-                v_num = _parse_user_v_num(seg.at_token)
+                v_num = _parse_user_v_num(getattr(seg, "at_token", None))
                 if v_num is not None and v_num in user_patches:
                     inst_idx = ref_count + (v_num - 1)
                 else:
@@ -746,65 +727,62 @@ def segments_to_patterns(
 
             vol_ms2 = max(0, min(63, seg.vol))
 
-            # NOTE_ON
-            start = seg.beat_start
-            if 0 <= start < total_steps:
-                pat = start // STEPS_PER_PATTERN
-                step_in_pat = start % STEPS_PER_PATTERN
-                evts: list[bytes] = []
-                evts.append(bytes([0x00, ms2_note & 0xFF]))  # NOTE_ON
+            evts = []
 
-                # VOL: emit if first time or changed
-                if prev_vol == -1 or vol_ms2 != prev_vol or prev_ms2_note is None:
-                    evts.append(bytes([0x05, vol_ms2 & 0xFF]))
+            # ----------------------------------------------------
+            # 1. NOTE_OFF
+            # ----------------------------------------------------
+            if keyon == 0:
+                evts.append(bytes([0x01]))  # NOTE_OFF
+                channel_event_lists[pat][ch].append((step, evts))
+                prev_inst_idx = -1
+                prev_vol = -1
+                continue
+
+            # ----------------------------------------------------
+            # 2. LEGATO
+            # ----------------------------------------------------
+            if keyon == 1 and is_legato == 1:
+                evts.append(bytes([0x02, ms2_note & 0xFF]))  # LEGATO
+                channel_event_lists[pat][ch].append((step, evts))
+                continue
+
+            # ----------------------------------------------------
+            # 3. NOTE_ON
+            # ----------------------------------------------------
+            if keyon == 1 and is_legato == 0:
+
+                # NOTE_ON
+                evts.append(bytes([0x00, ms2_note & 0xFF]))
+
+                # ioi == 1 → inst + vol を必ず置く
+                if ioi == 1:
+                    evts.append(bytes([0x04, inst_idx & 0xFF]))  # INST
+                    evts.append(bytes([0x05, vol_ms2 & 0xFF]))   # VOL
+                    prev_inst_idx = inst_idx
                     prev_vol = vol_ms2
 
-                # INST: emit if first time or changed
-                if prev_inst_idx == -1 or inst_idx != prev_inst_idx or prev_ms2_note is None:
-                    evts.append(bytes([0x04, inst_idx & 0xFF]))
-                    prev_inst_idx = inst_idx
-
-                channel_event_lists[pat][ch].append((step_in_pat, evts))
-                prev_ms2_note = ms2_note
-
-            # NOTE_OFF at seg.beat_start + seg.ms2_len, unless retriggered or explicit off exists
-            off_abs_step = seg.beat_start + seg.ms2_len
-            # If an explicit keyoff segment exists at off_abs_step, rely on it (avoid duplicate)
-            if off_abs_step in explicit_off_steps:
-                # do not emit here; the explicit-off segment will produce the NOTE_OFF
-                prev_ms2_note = None
-                prev_vol = -1
-                prev_inst_idx = -1
-            else:
-                # Determine next segment for gap/retrigger logic
-                next_seg = segs_sorted[i + 1] if i + 1 < len(segs_sorted) else None
-                need_off = False
-                if next_seg is None:
-                    # last segment -> emit off at end
-                    need_off = True
                 else:
-                    # emit off only if there's a gap (off_abs_step < next.start)
-                    # if off_abs_step == next.start and next is keyon==1 -> retrigger -> skip
-                    # if off_abs_step > next.start then next already started earlier (shouldn't happen)
-                    if off_abs_step < next_seg.beat_start:
-                        need_off = True
+                    # INST
+                    if prev_inst_idx != inst_idx:
+                        evts.append(bytes([0x04, inst_idx & 0xFF]))
+                        prev_inst_idx = inst_idx
 
-                if need_off:
-                    if 0 <= off_abs_step < total_steps:
-                        off_pat = off_abs_step // STEPS_PER_PATTERN
-                        off_step_in_pat = off_abs_step % STEPS_PER_PATTERN
-                        channel_event_lists[off_pat][ch].append((off_step_in_pat, [bytes([0x01])]))
-                    prev_ms2_note = None
-                    prev_vol = -1
-                    prev_inst_idx = -1
+                    # VOL
+                    if prev_vol != vol_ms2:
+                        evts.append(bytes([0x05, vol_ms2 & 0xFF]))
+                        prev_vol = vol_ms2
 
-    # Merge per-pattern/channel entries into sorted step lists preserving insertion order per step
+                channel_event_lists[pat][ch].append((step, evts))
+                continue
+
+    # --- merge ---
     for pat in range(len(channel_event_lists)):
         for ch in range(len(channel_event_lists[pat])):
             entries = channel_event_lists[pat][ch]
             if not entries:
                 continue
-            merged: dict[int, list] = {}
+            merged = {}
             for step, evts in entries:
                 merged.setdefault(step, []).extend(evts)
             new_entries = []
