@@ -445,7 +445,7 @@ class _OpllState:
 
     NUM_CH = 9   # 0..8:melody+rhythm
 
-    _HEADER = ('#type,time,ch,ticks,l,fl,kl,vl,beat_pos,beat,fb,kb,vb,keyon,is_retrigger,is_vibrato,is_vol_envelope,fnum,block,inst,vol,sus,scale,ioi,onset,tempo,'
+    _HEADER = ('#type,time,ch,ticks,l,fl,kl,vl,beat_pos,beat,fb,kb,vb,keyon,is_legato,is_vibrato,is_envelope,fnum,block,inst,vol,sus,scale,ioi,onset,tempo,'
                'is_ryt,r_tempo,r_ioi,r_mode_ioi,r_hh_ioi,r_hh_mode_ioi,'
                'bd,sd,tom,tc,hh,'
                'fnum_ch6,vol_ch6,sus_ch6,block_ch6,'

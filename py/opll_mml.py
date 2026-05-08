@@ -126,8 +126,8 @@ class _Segment:
         'time',         # global time [s], そのeventが起きた時間
         'ch',           # チェンネル
         'ticks',        # 1 tick = 1/60s
-        'ticks_start',   # keyon=1区間の開始点 [tick]
-        'ticks_end',     # keyon=1区間の終了点 [tick]
+        'ticks_start',  # keyon=1区間の開始点 [tick]
+        'ticks_end',    # keyon=1区間の終了点 [tick]
         'tempo',        # BPM. 今のところ曲全体のBPM
         'onset',        #　keyon=1の開始点であることを示すマーカー 0:　keyon=1を維持又はkeyon=0 1: 1: keyon区間の開始 keyon: 0--> 1
         'ioi',          # IOI（Inter‑Onset Interval). keyon=1 区間の 実際の長さ（tick). keyon=1でioi=0はまだkeyonが継続中を表す(ioi未確定のためioi=0)
@@ -145,6 +145,9 @@ class _Segment:
         'kb',           # kbのbeat換算 [beat] keyonのposedgeでbeatにリセット.　kb > beat は同じkeyon状態が_Segmentを跨いで継続中であることを示す
         'vb',           # vlのbeat換算 [beat] keyonのposedgeでbeatにリセット.　vb > beat はkeyoffを挟まずにvolが変化していることを表す
         'keyon',        # keyonの状態
+        'is_legate',    # 一つ前のeventがkeyon=1であり、keyon=0を挟まずkeyon=1が続いている場合に1となる(スラー、タイ)
+        'is_vibrato',   # keyon=1区間内でkeyon=0を挟まずfnumが変化
+        'is_envelope',  # keyon=1区間内でkeyon=0を挟まずvolが変化
         'fnum',         # frequency
         'block',        # block, octave
         'inst',         # instrument no
@@ -205,6 +208,9 @@ class _Segment:
         kb            ,
         vb            ,
         keyon         ,
+        is_legate     ,
+        is_vibrato    ,
+        is_envelope   ,
         fnum          ,
         block         ,
         inst          ,
@@ -260,6 +266,9 @@ class _Segment:
         self.kb            = kb
         self.vb            = vb
         self.keyon         = keyon
+        self.is_legate     = is_legate
+        self.is_vibrato    = is_vibrato
+        self.is_envelope   = is_envelope
         self.fnum          = fnum
         self.block         = block
         self.inst          = inst
@@ -496,17 +505,6 @@ def pass1_dump_csv(events, trace_csv_path):
     print(f"[PASS1] Debug CSV written: {out_csv_path}")
 
 def pass2_compute_onsets_and_ioi(events):
-    """
-    melody:
-      onset / ioi を計算
-
-    rhythm:
-      r_ioi           : rhythm 全体の IOI（ticks 差分）
-      r_mode_ioi      : r_ioi の最頻値（mode）
-      r_tempo         : 3600 / r_mode_ioi
-      r_hh_ioi        : HH の IOI（ticks 差分）
-      r_hh_mode_ioi   : r_hh_ioi の最頻値（mode）
-    """
 
     def _ival(v, default=0):
         try:
@@ -588,45 +586,43 @@ def pass2_compute_onsets_and_ioi(events):
                 total_l = 0
 
     # ------------------------------------------------------------
-    # 3. rhythm IOI（ticks 差分）
+    # 3. rhythm: r_ioi = l（l=0 は無視）
     # ------------------------------------------------------------
-    rhythm_ticks = []
-    hh_ticks = []
-
     for ev in events:
         if ev.get("#type") == "rhythm":
-            t = _ival(ev.get("ticks"))
-            rhythm_ticks.append(t)
-            if _ival(ev.get("hh")) == 1:
-                hh_ticks.append(t)
-
-    raw_r_ioi_list = [
-        b - a for a, b in zip(rhythm_ticks, rhythm_ticks[1:])
-        if (b - a) > 0
-    ]
-
-    raw_r_hh_ioi_list = [
-        b - a for a, b in zip(hh_ticks, hh_ticks[1:])
-        if (b - a) > 0
-    ]
+            l = _ival(ev.get("l"))
+            ev["r_ioi"] = l if l > 0 else 0
 
     # ------------------------------------------------------------
-    # 4. 「音楽的にありえない速さ」を除外してから mode を取る
-    #    tempo = 3600 / ioi
-    #    → tempo > 400 BPM は除外
+    # 4. rhythm: r_hh_ioi（hh=1 の間隔を l の積算で求める）
     # ------------------------------------------------------------
-    def filter_by_tempo(iois, max_bpm=400):
-        out = []
-        for d in iois:
-            if d <= 0:
-                continue
-            tempo = 3600.0 / d
-            if tempo <= max_bpm:
-                out.append(d)
-        return out
+    _r_hh_ioi = 0
+    for ev in events:
+        if ev.get("#type") != "rhythm":
+            continue
 
-    r_ioi_list    = filter_by_tempo(raw_r_ioi_list)
-    r_hh_ioi_list = filter_by_tempo(raw_r_hh_ioi_list)
+        l = _ival(ev.get("l"))
+        hh = _ival(ev.get("hh"))
+
+        if l == 0:
+            continue
+
+        _r_hh_ioi += l
+
+        if hh == 1:
+            ev["r_hh_ioi"] = _r_hh_ioi
+            _r_hh_ioi = 0
+        else:
+            ev["r_hh_ioi"] = 0
+
+    # ------------------------------------------------------------
+    # 5. r_mode_ioi / r_hh_mode_ioi / r_tempo を計算
+    # ------------------------------------------------------------
+    r_ioi_list = [ _ival(ev.get("r_ioi")) for ev in events
+                   if ev.get("#type") == "rhythm" and _ival(ev.get("r_ioi")) > 0 ]
+
+    r_hh_ioi_list = [ _ival(ev.get("r_hh_ioi")) for ev in events
+                      if ev.get("#type") == "rhythm" and _ival(ev.get("r_hh_ioi")) > 0 ]
 
     from statistics import mode, median
 
@@ -638,29 +634,90 @@ def pass2_compute_onsets_and_ioi(events):
         except:
             return int(median(lst))
 
-    r_mode_ioi     = pick_mode(r_ioi_list)
-    r_hh_mode_ioi  = pick_mode(r_hh_ioi_list)
-    r_tempo        = 3600.0 / r_mode_ioi if r_mode_ioi > 0 else 0.0
+    r_mode_ioi    = pick_mode(r_ioi_list)
+    r_hh_mode_ioi = pick_mode(r_hh_ioi_list)
+    r_tempo       = 3600.0 / r_mode_ioi if r_mode_ioi > 0 else 0.0
 
-    # ------------------------------------------------------------
-    # 5. ev に書き込む
-    # ------------------------------------------------------------
     for ev in events:
-        ev["r_ioi"] = r_mode_ioi
         ev["r_mode_ioi"] = r_mode_ioi
-        ev["r_tempo"] = r_tempo
-        ev["r_hh_ioi"] = r_hh_mode_ioi
         ev["r_hh_mode_ioi"] = r_hh_mode_ioi
+        ev["r_tempo"] = r_tempo
 
     return events
 
+def pass2_mark_legato_vibrato_envelope(events):
+
+    def _ival(v, default=0):
+        try:
+            return int(v)
+        except:
+            return default
+
+    # ------------------------------------------------------------
+    # 1. ch ごとにイベントを分離し、ticks でソート
+    # ------------------------------------------------------------
+    events_by_ch = {}
+    for ev in events:
+        ch = _ival(ev.get("ch"))
+        events_by_ch.setdefault(ch, []).append(ev)
+
+    for ch, lst in events_by_ch.items():
+        lst.sort(key=lambda ev: _ival(ev.get("ticks")))
+
+        prev_keyon = 0
+
+        # --------------------------------------------------------
+        # 2. 各 ch 内で legato / vibrato / vol_envelope を判定
+        # --------------------------------------------------------
+        for ev in lst:
+
+            if ev.get("#type") == "rhythm":
+                ev["is_legato"] = 0
+                ev["is_vibrato"] = 0
+                ev["is_envelope"] = 0
+                continue
+
+            keyon = _ival(ev.get("keyon"))
+            l  = _ival(ev.get("l"))
+            kl = _ival(ev.get("kl"))
+            fl = _ival(ev.get("fl"))
+            vl = _ival(ev.get("vl"))
+
+            # keyon posedge → NOTE_ON → legato=0
+            if prev_keyon == 0 and keyon == 1:
+                ev["is_legato"] = 0
+
+            # legato 条件：prev_keyon=1 かつ kl > l
+            elif prev_keyon == 1 and kl > l:
+                ev["is_legato"] = 1
+
+            else:
+                ev["is_legato"] = 0
+
+            # vibrato / vol envelope は legato のときだけ
+            ev["is_vibrato"] = 1 if (ev["is_legato"] == 1 and fl != kl) else 0
+            ev["is_envelope"] = 1 if (ev["is_legato"] == 1 and vl != kl) else 0
+
+            prev_keyon = keyon
+
+    # ------------------------------------------------------------
+    # 3. 全 ch を結合して返す
+    # ------------------------------------------------------------
+    merged = []
+    for ch in sorted(events_by_ch.keys()):
+        merged.extend(events_by_ch[ch])
+
+    return merged
 
 def pass2_filter_l0(events):
     """
     PASS 2:
-      l=0 の event をすべて削除する簡易版。
-      （vol=15=無音、かつ l=0 は意味のある長さを持たない前提）
+      l=0 の event を削除する。
+      ただし、l=0 かつ keyon の立ち上がり (prev keyon=0, cur keyon=1) の場合は、
+      その event 自体は削除しつつ、
+      「次に残る同じ ch の event」に ioi=1 / onset=1 を引き継ぐ。
     """
+
     def _ival(v, default=0):
         if v is None or v == "":
             return default
@@ -669,13 +726,53 @@ def pass2_filter_l0(events):
         except:
             return default
 
-    filtered = []
+    # ch ごとにまとめて ticks でソート
+    events_by_ch = {}
     for ev in events:
-        l = _ival(ev.get("l"))
-        if l > 0:
-            filtered.append(ev)
+        ch = _ival(ev.get("ch"), -999)
+        events_by_ch.setdefault(ch, []).append(ev)
 
-    return filtered
+    for ch, lst in events_by_ch.items():
+        lst.sort(key=lambda e: _ival(e.get("ticks")))
+
+    filtered_all = []
+
+    for ch, lst in events_by_ch.items():
+        prev_keyon = 0
+        # 「直前に削除した l=0 posedge のぶん、次の event に ioi=1/onset=1 を付ける」フラグ
+        pending_ioi_onset = False
+
+        for ev in lst:
+            l      = _ival(ev.get("l"))
+            keyon  = _ival(ev.get("keyon"))
+            ioi    = _ival(ev.get("ioi"))
+            onset  = _ival(ev.get("onset"))
+
+            is_posedge = (prev_keyon == 0 and keyon == 1)
+
+            if l == 0:
+                # 削除対象。ただし keyon posedge の場合は「次の event に ioi=1/onset=1 を付ける」予約をする
+                if is_posedge:
+                    pending_ioi_onset = True
+                # この ev 自体は残さない
+                prev_keyon = keyon
+                continue
+
+            # ここに来るのは l>0 で残す event
+            if pending_ioi_onset:
+                # すでに ioi/onset が計算されている場合は壊さない前提だが、
+                # 今回のケースでは 0 なので上書きで問題ない
+                ev["ioi"]   = 1
+                ev["onset"] = 1
+                pending_ioi_onset = False
+
+            filtered_all.append(ev)
+            prev_keyon = keyon
+
+    # ch の順序は元のままでもよいが、全体を time/ticks で並べたいならここでソートしてもよい
+    filtered_all.sort(key=lambda e: (_ival(e.get("ch")), _ival(e.get("ticks"))))
+
+    return filtered_all
 
 def pass2_compute_fl_kl_vl(events):
     """
@@ -1651,6 +1748,9 @@ def _build_segments(trace_csv_path,
     # pass2 (2): fl,kl,vlを計算した後にl=0のeventを削除
     # ここで l=0 の keyon 0->1 (retrigger)のeventは削除される。(fl,kl,vlにはリセットとして反映済み)
     events = pass2_filter_l0(events)
+
+    # l=0を削除した後、fl,kl,blからlegato, vibrate, volume envelopeを判定
+    events = pass2_mark_legato_vibrato_envelope(events)
     pass2_dump_csv(events, trace_csv_path)
 
     # 無音状態(v=15 又は keyon=0) の連続したeventをマージ
@@ -1770,6 +1870,9 @@ def _build_segments(trace_csv_path,
                 kb            = _int(ev, "kb", 0),
                 vb            = _int(ev, "vb", 0),
                 keyon         = _int(ev, "keyon", 0),
+                is_legate     = _int(ev, "is_legate", 0),
+                is_vibrato    = _int(ev, "is_vibrato", 0),
+                is_envelope   = _int(ev, "is_envelope", 0),
                 fnum          = _int(ev, "fnum", 0),
                 block         = _int(ev, "block", 0),
                 inst          = _int(ev, "inst", 0),
@@ -1806,7 +1909,6 @@ def _build_segments(trace_csv_path,
             seg.beat_start = _int(ev, "beat_pos", 0)
             seg.beat_end   = _int(ev, "beat_pos", 0) + _int(ev, "beat", 0)
             seg.grid_sz    = 1
-            seg.ms2_len    = _int(ev, "beat", 0)
             seg.ms2_vol    = ms2_vol
             seg.ms2_len    = _int(ev, "beat", 0)
             seg.min_l      = min_l
