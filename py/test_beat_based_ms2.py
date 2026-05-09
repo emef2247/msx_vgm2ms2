@@ -19,15 +19,18 @@ from __future__ import annotations
 import os
 import struct
 import sys
+from types import SimpleNamespace
 
 _this_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _this_dir)
 
 from opll_mml import _Segment, NUM_CH
 from ms2_writer import (
+    _build_step_grid,
     segments_to_patterns,
     build_ms2_file,
     STEPS_PER_PATTERN,
+    TICKS_PER_STEP_75BPM,
 )
 from ms2_dump import iter_chunks
 from ms2_validate import validate_ms2_bytes
@@ -75,6 +78,85 @@ def _collect_events(channel_event_lists, ch):
             for evt in evts:
                 result.append((abs_step, evt[0]))
     return result
+
+
+def test_build_step_grid_uses_beat_start_when_min_l_is_set():
+    """With min_l, beat_start-based reconstruction should absorb tick jitter."""
+    segs = {0: [
+        SimpleNamespace(
+            keyon=1, tick_start=11, tick_end=22, beat_start=3,
+            fnum=_FNUM, block=_BLOCK, inst=_INST, vol=_VOL,
+            at_token='', is_legato=0, ev_type='note',
+        )
+    ]}
+    total_steps = 4
+    grid = _build_step_grid(
+        segs,
+        ticks_per_step=TICKS_PER_STEP_75BPM,
+        total_steps=total_steps,
+        min_l=5.4,
+    )
+    # tick_start=11 -> step0, but beat_start=3 with int(min_l)=5 gives 15 -> step1.
+    assert grid[(0, 1)][0] == 1
+
+
+def test_build_step_grid_falls_back_to_tick_when_min_l_none():
+    """Without min_l, tick_start-based mapping must remain unchanged."""
+    segs = {0: [
+        SimpleNamespace(
+            keyon=1, tick_start=11, tick_end=22, beat_start=3,
+            fnum=_FNUM, block=_BLOCK, inst=_INST, vol=_VOL,
+            at_token='', is_legato=0, ev_type='note',
+        )
+    ]}
+    total_steps = 4
+    grid = _build_step_grid(
+        segs,
+        ticks_per_step=TICKS_PER_STEP_75BPM,
+        total_steps=total_steps,
+        min_l=None,
+    )
+    assert grid[(0, 0)][0] == 1
+
+
+def test_build_step_grid_prefers_tick_for_rhythm_even_with_min_l():
+    """Rhythm events should keep tick-first placement even when beat_start exists."""
+    segs = {9: [
+        SimpleNamespace(
+            keyon=1, tick_start=24, tick_end=30, beat_start=1,
+            fnum=_FNUM, block=_BLOCK, inst=_INST, vol=_VOL,
+            at_token='', is_legato=0, ev_type='rhythm',
+        )
+    ]}
+    total_steps = 4
+    grid = _build_step_grid(
+        segs,
+        ticks_per_step=TICKS_PER_STEP_75BPM,
+        total_steps=total_steps,
+        min_l=5.4,
+    )
+    assert grid[(9, 2)][0] == 1
+
+
+def test_segments_to_patterns_uses_min_l_for_step_mapping():
+    """segments_to_patterns should place NOTE_ON using beat-based step when min_l is set."""
+    segs = {0: [
+        SimpleNamespace(
+            keyon=1, tick_start=11, tick_end=22, beat_start=3,
+            fnum=_FNUM, block=_BLOCK, inst=_INST, vol=_VOL,
+            at_token='', is_legato=0, ev_type='note',
+        )
+    ]}
+    events = segments_to_patterns(
+        segs,
+        ticks_per_step=TICKS_PER_STEP_75BPM,
+        n_patterns=1,
+        n_channels=1,
+        n_instruments=15,
+        min_l=5.4,
+    )
+    note_ons = [(s, op) for s, op in _collect_events(events, 0) if op == 0x00]
+    assert note_ons and note_ons[0][0] == 1
 
 
 # ---------------------------------------------------------------------------

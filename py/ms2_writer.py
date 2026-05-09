@@ -567,9 +567,44 @@ def build_patterns_chunk_data(
 
 def _build_step_grid(
     segments: dict,
-    ticks_per_step: int,
-    total_steps: int,
+    ticks_per_step: int = TICKS_PER_STEP_75BPM,
+    total_steps: int | None = None,
+    min_l: float | None = None,
+    debug: bool = False,
 ) -> dict:
+    if total_steps is None:
+        total_steps = ticks_per_step
+        ticks_per_step = TICKS_PER_STEP_75BPM
+
+    min_l_int = None
+    if min_l is not None:
+        min_l_int = int(min_l)
+        if min_l_int <= 0:
+            min_l_int = None
+
+    def _steps_from_seg(seg) -> tuple[int, int | None]:
+        tick_step = seg.tick_start // ticks_per_step
+        beat_step = None
+        beat_start = getattr(seg, 'beat_start', None)
+        ev_type = getattr(seg, 'ev_type', 'note')
+        if min_l_int is not None and beat_start is not None and beat_start >= 0:
+            reconstructed_tick = beat_start * min_l_int
+            beat_step = reconstructed_tick // ticks_per_step
+            if debug and beat_step != tick_step:
+                if ev_type == 'rhythm':
+                    print(
+                        f"[beat_grid] ch={ch} rhythm tick→{tick_step} beat→{beat_step} "
+                        f"(beat_start={beat_start}, min_l={min_l_int}, ticks_per_step={ticks_per_step})"
+                    )
+                else:
+                    print(
+                        f"[beat_grid] ch={ch} step tick→{tick_step} beat→{beat_step} "
+                        f"(beat_start={beat_start}, min_l={min_l_int}, ticks_per_step={ticks_per_step})"
+                    )
+            if ev_type != 'rhythm':
+                return beat_step, beat_step
+        return tick_step, beat_step
+
     grid: dict[tuple, tuple] = {}
     # Iterate over all channel indices present in 'segments' (not only NUM_CH).
     # Rhythm channels may be added at indices >= NUM_CH, so include them.
@@ -584,11 +619,11 @@ def _build_step_grid(
         for seg in segs:
             if seg.keyon:
                 continue
-            start_step = seg.tick_start // ticks_per_step
+            start_step, _ = _steps_from_seg(seg)
             if start_step < total_steps:
                 keyoff_steps.add(start_step)
         for seg in segs:
-            start_step = seg.tick_start // ticks_per_step
+            start_step, _ = _steps_from_seg(seg)
             if start_step >= total_steps:
                 continue
             at_token = getattr(seg, 'at_token', '')
@@ -695,17 +730,19 @@ def _get_ms2_inst_idx(
 
 def segments_to_patterns(
     segments: dict,
-    ticks_per_step: int,
-    n_patterns: int,
-    n_channels: int,
-    n_instruments: int,
+    ticks_per_step: int = TICKS_PER_STEP_75BPM,
+    n_patterns: int = 1,
+    n_channels: int = NUM_CH,
+    n_instruments: int = 15,
     user_patches: dict | None = None,
     ref_count: int = 0,
+    min_l: float | None = None,
+    debug: bool = False,
 ) -> list[list]:
     if user_patches is None:
         user_patches = {}
     total_steps = n_patterns * STEPS_PER_PATTERN
-    grid = _build_step_grid(segments, ticks_per_step, total_steps)
+    grid = _build_step_grid(segments, ticks_per_step, total_steps, min_l=min_l, debug=debug)
     channel_event_lists: list[list] = []
     for _ in range(n_patterns):
         channel_event_lists.append([[] for _ in range(n_channels)])
@@ -878,6 +915,7 @@ def build_ms2_file(
     video: str = 'ntsc',
     debug: bool = False,
     rhythm_instruments: dict | None = None,
+    min_l: float | None = None,
 ) -> bytes:
     """
     MS2ファイル生成: メロディはbase_ms2優先(1～15、index 0～14)、16～はリズム etc.
@@ -947,6 +985,16 @@ def build_ms2_file(
     timer_divider = max(1, min(0xFFFF, timer_divider))
     ticks_per_step = max(1, round(freq_hz * 15 / bpm))
 
+    if min_l is None:
+        for ch in range(NUM_CH):
+            for seg in segments.get(ch, []):
+                seg_min_l = getattr(seg, 'min_l', None)
+                if seg_min_l is not None:
+                    min_l = seg_min_l
+                    break
+            if min_l is not None:
+                break
+
     # ==== パターン数自動推定 ====
     last_note_end_tick = 0
     for ch in range(NUM_CH):
@@ -957,6 +1005,21 @@ def build_ms2_file(
         for ch in range(NUM_CH):
             for seg in segments.get(ch, []):
                 last_note_end_tick = max(last_note_end_tick, seg.tick_end)
+    if min_l is not None:
+        min_l_int = int(min_l)
+        if min_l_int > 0:
+            last_note_end_tick_beat = 0
+            for ch in range(NUM_CH):
+                for seg in segments.get(ch, []):
+                    beat_end = getattr(seg, 'beat_end', -1)
+                    if beat_end is not None and beat_end >= 0:
+                        last_note_end_tick_beat = max(last_note_end_tick_beat, beat_end * min_l_int)
+            if debug and last_note_end_tick_beat and last_note_end_tick_beat != last_note_end_tick:
+                print(
+                    f"[beat_grid] n_patterns tick_end={last_note_end_tick} "
+                    f"beat_end={last_note_end_tick_beat} (min_l={min_l_int})"
+                )
+            last_note_end_tick = max(last_note_end_tick, last_note_end_tick_beat)
     n_patterns = max(1, math.ceil(last_note_end_tick / (ticks_per_step * STEPS_PER_PATTERN)))
 
     # ==== starting_instruments配列生成 ====
@@ -970,7 +1033,8 @@ def build_ms2_file(
     # ==== パターン(ノート)格納 ====
     channel_event_lists = segments_to_patterns(
         segments, ticks_per_step, n_patterns, NUM_CH, n_2op_inst,
-        user_patches=user_patches, ref_count=ref_count
+        user_patches=user_patches, ref_count=ref_count,
+        min_l=min_l, debug=debug
     )
 
     # ==== チャンクまとめ ====
