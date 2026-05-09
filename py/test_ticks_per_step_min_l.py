@@ -4,7 +4,7 @@ import struct
 from types import SimpleNamespace
 
 from ms2_dump import iter_chunks
-from ms2_writer import NUM_CH, _FREQ_NTSC, build_ms2_file
+from ms2_writer import NUM_CH, STEPS_PER_PATTERN, _FREQ_NTSC, build_ms2_file, segments_to_patterns
 
 
 def _empty_segments() -> dict:
@@ -14,6 +14,24 @@ def _empty_segments() -> dict:
 def _make_note_seg(tick_start: int, tick_end: int, min_l=None):
     seg = SimpleNamespace(
         keyon=1,
+        tick_start=tick_start,
+        tick_end=tick_end,
+        fnum=172,
+        block=3,
+        inst=1,
+        vol=60,
+        at_token='',
+        is_legato=0,
+        ev_type='instVol',
+    )
+    if min_l is not None:
+        seg.min_l = min_l
+    return seg
+
+
+def _make_keyoff_seg(tick_start: int, tick_end: int, min_l=None):
+    seg = SimpleNamespace(
+        keyon=0,
         tick_start=tick_start,
         tick_end=tick_end,
         fnum=172,
@@ -62,6 +80,16 @@ def _read_pattern_count(ms2_bytes: bytes) -> int:
         if ctype == 6 and len(cdata) >= 2:
             return struct.unpack_from('<H', cdata, 0)[0]
     raise AssertionError('patterns chunk not found')
+
+
+def _collect_ch_opcodes(channel_event_lists: list[list], ch: int) -> list[tuple[int, int]]:
+    opcodes: list[tuple[int, int]] = []
+    for pat_idx, pat in enumerate(channel_event_lists):
+        for step_in_pat, evts in pat[ch]:
+            abs_step = pat_idx * STEPS_PER_PATTERN + step_in_pat
+            for evt in evts:
+                opcodes.append((abs_step, evt[0]))
+    return opcodes
 
 
 def test_min_l_5_point_4_uses_min_l_based_ticks_and_timer():
@@ -116,3 +144,43 @@ def test_debug_prints_min_l_vs_legacy_comparison(capsys):
     assert f'legacy={_legacy_ticks_per_step(120)}' in out
     assert 'ticks_per_step=5' in out
     assert 'timer_divider=1280' in out
+
+
+def test_same_note_retrigger_emits_note_on_for_each_is_legato_zero_event():
+    segs = _empty_segments()
+    for tick in [2, 5, 7, 10, 12, 15, 17, 20]:
+        segs[0].append(_make_note_seg(tick, tick + 1, min_l=2.4))
+    segs[0].append(_make_keyoff_seg(22, 23, min_l=2.4))
+
+    channel_event_lists = segments_to_patterns(
+        segs,
+        ticks_per_step=2,
+        n_patterns=2,
+        n_channels=NUM_CH,
+        n_instruments=20,
+    )
+    note_ons = [step for step, opcode in _collect_ch_opcodes(channel_event_lists, 0) if opcode == 0x00]
+    assert len(note_ons) == 8
+
+
+def test_is_legato_one_event_emits_legato_instead_of_note_on():
+    segs = _empty_segments()
+    segs[0].append(_make_note_seg(2, 3, min_l=2.4))
+    legato_seg = _make_note_seg(4, 5, min_l=2.4)
+    legato_seg.block = 4
+    legato_seg.is_legato = 1
+    segs[0].append(legato_seg)
+    segs[0].append(_make_keyoff_seg(6, 7, min_l=2.4))
+
+    channel_event_lists = segments_to_patterns(
+        segs,
+        ticks_per_step=2,
+        n_patterns=1,
+        n_channels=NUM_CH,
+        n_instruments=20,
+    )
+    ch0 = _collect_ch_opcodes(channel_event_lists, 0)
+    note_ons = [step for step, opcode in ch0 if opcode == 0x00]
+    legatos = [step for step, opcode in ch0 if opcode == 0x02]
+    assert note_ons == [1]
+    assert legatos == [2]

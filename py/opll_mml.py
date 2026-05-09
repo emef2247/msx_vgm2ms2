@@ -1442,8 +1442,12 @@ def compute_min_l_from_one_l_cluster(events):
 
     ls_sorted = sorted(l_vals)
 
-    ls = [ _ival(ev.get("l")) for ev in events
-           if _ival(ev.get("keyon")) == 1 and _ival(ev.get("l")) > 0 ]
+    ls = [
+        _ival(ev.get("l")) for ev in events
+        if _ival(ev.get("keyon")) == 1
+        and _ival(ev.get("l")) > 0
+        and ev.get("#type") != "rhythm"
+    ]
 
     if not ls:
         return events, None, None
