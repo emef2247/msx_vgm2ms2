@@ -63,7 +63,7 @@ def _read_pattern_count(ms2_bytes: bytes) -> int:
     raise AssertionError('patterns chunk not found')
 
 
-def test_min_l_54_uses_min_l_based_ticks_and_timer():
+def test_min_l_5_point_4_uses_min_l_based_ticks_and_timer():
     segs = _empty_segments()
     segs[0].append(_make_note_seg(0, 50, min_l=5.4))
 

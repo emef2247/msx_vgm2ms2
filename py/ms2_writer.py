@@ -963,16 +963,16 @@ def build_ms2_file(
     ticks_per_step = ticks_per_step_16th
     timer_divider = legacy_timer_divider
     if min_l is not None:
-        min_l_i = int(min_l)
-        if min_l_i > 0:
-            ticks_per_step = max(1, min(min_l_i, ticks_per_step_16th))
+        min_l_int = int(min_l)
+        if min_l_int > 0:
+            ticks_per_step = max(1, min(min_l_int, ticks_per_step_16th))
             # Song settings timer_divider unit is 1/256 of a VDP tick.
             # Keeping timer_divider = 256 * ticks_per_step preserves 1-step duration.
             timer_divider = 256 * ticks_per_step
             timer_divider = max(1, min(0xFFFF, timer_divider))
             if debug:
                 print(
-                    f"[ticks_per_step] min_l={min_l} int(min_l)={min_l_i} "
+                    f"[ticks_per_step] min_l={min_l} int(min_l)={min_l_int} "
                     f"legacy={ticks_per_step_16th} → using ticks_per_step={ticks_per_step} "
                     f"timer_divider={timer_divider}"
                 )
