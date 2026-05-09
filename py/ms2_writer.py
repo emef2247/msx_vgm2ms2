@@ -597,14 +597,15 @@ def _build_step_grid(
                     ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
                     if ms2_note is None:
                         ms2_note = DEFAULT_RHYTHM_NOTE  # Default note for unpitched rhythm
-                    retrigger = start_step in keyoff_steps
-                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token,getattr(seg, "is_legate", 0))
+                    # Rhythm hits always retrigger: drums have no explicit keyoff between
+                    # consecutive hits, so we cannot rely on keyoff_steps to detect retriggering.
+                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, True, at_token,getattr(seg, "is_legato", 0))
                 # Rhythm channels do not emit NOTE_OFF; drums decay naturally
             elif seg.keyon:
                 ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
                 if ms2_note is not None:
                     retrigger = start_step in keyoff_steps
-                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token,getattr(seg, "is_legate", 0))
+                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token,getattr(seg, "is_legato", 0))
             else:
                 if start_step not in assignments or assignments[start_step][0] == 0:
                     assignments[start_step] = (0, 0, seg.inst, seg.vol, False, at_token,0)
@@ -614,7 +615,7 @@ def _build_step_grid(
                 cur_state = assignments[step]
             else:
                 if cur_state[4]:
-                    # (keyon, note, inst, vol, retrigger, at_token, is_legate)
+                    # (keyon, note, inst, vol, retrigger, at_token, is_legato)
                     cur_state = (
                         cur_state[0],
                         cur_state[1],
@@ -716,7 +717,7 @@ def segments_to_patterns(
             pat = step // STEPS_PER_PATTERN
             step_in_pat = step % STEPS_PER_PATTERN
             state = grid.get((ch, step), (0, 0, 0, 0, False, '', 0))
-            keyon, ms2_note, inst, vol_opll, retrigger, at_token, is_legate = state
+            keyon, ms2_note, inst, vol_opll, retrigger, at_token, is_legato = state
             prev_keyon = prev_state[0]
             prev_note  = prev_state[1]
             vol_ms2 = opll_vol_to_ms2_vol(vol_opll)
@@ -745,7 +746,7 @@ def segments_to_patterns(
                 # LEGATO / NOTE_ON
                 # -------------------------
                 if emit_note:
-                    if is_legate == 1:
+                    if is_legato == 1:
                         evts_here.append(bytes([0x02, ms2_note & 0xFF]))  # LEGATO
                         # LEGATO のときは INST/VOL を emit しない
                         emit_inst = False
