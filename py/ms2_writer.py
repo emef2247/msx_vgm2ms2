@@ -580,13 +580,6 @@ def _build_step_grid(
     for ch in range(max_ch + 1):
         segs = segments.get(ch, [])
         assignments: dict[int, tuple] = {}
-        keyoff_steps: set = set()
-        for seg in segs:
-            if seg.keyon:
-                continue
-            start_step = seg.tick_start // ticks_per_step
-            if start_step < total_steps:
-                keyoff_steps.add(start_step)
         for seg in segs:
             start_step = seg.tick_start // ticks_per_step
             if start_step >= total_steps:
@@ -604,8 +597,11 @@ def _build_step_grid(
             elif seg.keyon:
                 ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
                 if ms2_note is not None:
-                    retrigger = start_step in keyoff_steps
-                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token,getattr(seg, "is_legato", 0))
+                    is_legato_val = getattr(seg, "is_legato", 0)
+                    # OPLL retrigger events are represented by is_legato=0 in pass4.
+                    # is_legato=1 means true legato and should not emit NOTE_ON.
+                    retrigger = (is_legato_val == 0)
+                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token, is_legato_val)
             else:
                 if start_step not in assignments or assignments[start_step][0] == 0:
                     assignments[start_step] = (0, 0, seg.inst, seg.vol, False, at_token,0)
@@ -943,9 +939,40 @@ def build_ms2_file(
         freq_hz = _FREQ_PAL
     else:
         freq_hz = _FREQ_NTSC
-    timer_divider = int(math.floor(freq_hz * 3840 / bpm))
-    timer_divider = max(1, min(0xFFFF, timer_divider))
-    ticks_per_step = max(1, round(freq_hz * 15 / bpm))
+    legacy_timer_divider = int(freq_hz * 3840 / bpm)
+    legacy_timer_divider = max(1, min(0xFFFF, legacy_timer_divider))
+    ticks_per_step_16th = max(1, round(freq_hz * 15 / bpm))
+
+    min_l = None
+    for ch in range(NUM_CH):
+        for seg in segments.get(ch, []):
+            seg_min_l = getattr(seg, 'min_l', None)
+            if seg_min_l is None:
+                continue
+            try:
+                seg_min_l_f = float(seg_min_l)
+            except (TypeError, ValueError):
+                continue
+            if seg_min_l_f > 0:
+                min_l = seg_min_l_f if min_l is None else min(min_l, seg_min_l_f)
+
+    ticks_per_step = ticks_per_step_16th
+    timer_divider = legacy_timer_divider
+    if min_l is not None:
+        # Use int(min_l) intentionally to keep ticks_per_step integer and
+        # preserve the existing contract expected by downstream tick mapping.
+        min_l_int = int(min_l)
+        ticks_per_step = max(1, min(min_l_int, ticks_per_step_16th))
+        ticks_per_step = min(ticks_per_step, 0xFFFF // 256)
+        # Song settings timer_divider unit is 1/256 of a VDP tick.
+        # Keeping timer_divider = 256 * ticks_per_step preserves 1-step duration.
+        timer_divider = 256 * ticks_per_step
+        if debug:
+            print(
+                f"[ticks_per_step] min_l={min_l} int(min_l)={min_l_int} "
+                f"legacy={ticks_per_step_16th} → using ticks_per_step={ticks_per_step} "
+                f"timer_divider={timer_divider}"
+            )
 
     # ==== パターン数自動推定 ====
     last_note_end_tick = 0
