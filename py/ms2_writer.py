@@ -703,6 +703,7 @@ def segments_to_patterns(
 ) -> list[list]:
     if user_patches is None:
         user_patches = {}
+    SILENT_VOLUME_THRESHOLD = 63
     total_steps = n_patterns * STEPS_PER_PATTERN
     channel_event_lists: list[list] = []
     for _ in range(n_patterns):
@@ -746,7 +747,11 @@ def segments_to_patterns(
 
             if keyon:
                 seg_ms2_vol = getattr(seg, 'ms2_vol', None)
-                silent_keyon = (seg_ms2_vol == 63) or (vol_ms2 == 63) or (vol_opll == 63)
+                silent_keyon = (
+                    (seg_ms2_vol == SILENT_VOLUME_THRESHOLD)
+                    or (vol_ms2 == SILENT_VOLUME_THRESHOLD)
+                    or (vol_opll == SILENT_VOLUME_THRESHOLD)
+                )
                 if silent_keyon:
                     slot = _ensure_step_slot(step)
                     slot.clear()
@@ -764,14 +769,14 @@ def segments_to_patterns(
 
                     note_edge = (ioi == 1) or (l > 0 and l == fl)
                     vol_edge = (ioi == 1) or (l > 0 and l == vl)
-                    inst_edge = (ioi == 1) or (l > 0 and l == fl)
+                    inst_edge = note_edge
 
                     slot = _ensure_step_slot(step)
                     if slot.get('off'):
                         slot.clear()
 
                     if note_edge:
-                        if is_legate == 1:
+                        if is_legate:
                             slot['note'] = bytes([0x02, ms2_note & 0xFF])  # LEGATO
                         else:
                             slot['note'] = bytes([0x00, ms2_note & 0xFF])  # NOTE_ON
@@ -799,12 +804,15 @@ def segments_to_patterns(
             if slot.get('off'):
                 evts_here.append(bytes([0x01]))
             else:
-                if 'note' in slot:
-                    evts_here.append(slot['note'])  # type: ignore[arg-type]
-                if 'inst' in slot:
-                    evts_here.append(slot['inst'])  # type: ignore[arg-type]
-                if 'vol' in slot:
-                    evts_here.append(slot['vol'])  # type: ignore[arg-type]
+                note_evt = slot.get('note')
+                inst_evt = slot.get('inst')
+                vol_evt = slot.get('vol')
+                if isinstance(note_evt, bytes):
+                    evts_here.append(note_evt)
+                if isinstance(inst_evt, bytes):
+                    evts_here.append(inst_evt)
+                if isinstance(vol_evt, bytes):
+                    evts_here.append(vol_evt)
             if evts_here:
                 pat = step // STEPS_PER_PATTERN
                 step_in_pat = step % STEPS_PER_PATTERN
