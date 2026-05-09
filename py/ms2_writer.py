@@ -17,7 +17,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
-from opll_mml import _build_segments, _opll_note, detect_num_ch
+from opll_mml import _build_segments, _opll_note, detect_num_ch,NUM_CH
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -598,23 +598,32 @@ def _build_step_grid(
                     if ms2_note is None:
                         ms2_note = DEFAULT_RHYTHM_NOTE  # Default note for unpitched rhythm
                     retrigger = start_step in keyoff_steps
-                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token)
+                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token,getattr(seg, "is_legate", 0))
                 # Rhythm channels do not emit NOTE_OFF; drums decay naturally
             elif seg.keyon:
                 ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
                 if ms2_note is not None:
                     retrigger = start_step in keyoff_steps
-                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token)
+                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token,getattr(seg, "is_legate", 0))
             else:
                 if start_step not in assignments or assignments[start_step][0] == 0:
-                    assignments[start_step] = (0, 0, seg.inst, seg.vol, False, at_token)
-        cur_state: tuple = (0, 0, 0, 0, False, '')
+                    assignments[start_step] = (0, 0, seg.inst, seg.vol, False, at_token,0)
+        cur_state: tuple = (0, 0, 0, 0, False, '',0)
         for step in range(total_steps):
             if step in assignments:
                 cur_state = assignments[step]
             else:
                 if cur_state[4]:
-                    cur_state = cur_state[:4] + (False, cur_state[5])
+                    # (keyon, note, inst, vol, retrigger, at_token, is_legate)
+                    cur_state = (
+                        cur_state[0],
+                        cur_state[1],
+                        cur_state[2],
+                        cur_state[3],
+                        False,
+                        cur_state[5],
+                        cur_state[6],
+                    )
             grid[(ch, step)] = cur_state
     return grid
 
@@ -700,19 +709,20 @@ def segments_to_patterns(
     for _ in range(n_patterns):
         channel_event_lists.append([[] for _ in range(n_channels)])
     for ch in range(n_channels):
-        prev_state = (0, 0, 0, 0, False, '')
+        prev_state = (0, 0, 0, 0, False, '',0)
         prev_inst_idx = -1
         prev_vol_ms2 = -1
         for step in range(total_steps):
             pat = step // STEPS_PER_PATTERN
             step_in_pat = step % STEPS_PER_PATTERN
-            state = grid.get((ch, step), (0, 0, 0, 0, False, ''))
-            keyon, ms2_note, inst, vol_opll, retrigger, at_token = state
+            state = grid.get((ch, step), (0, 0, 0, 0, False, '', 0))
+            keyon, ms2_note, inst, vol_opll, retrigger, at_token, is_legate = state
             prev_keyon = prev_state[0]
             prev_note  = prev_state[1]
             vol_ms2 = opll_vol_to_ms2_vol(vol_opll)
             evts_here: list[bytes] = []
             if keyon and ms2_note is not None:
+                # instrument index
                 if inst == 0 and user_patches:
                     v_num = _parse_user_v_num(at_token)
                     if v_num is not None and v_num in user_patches:
@@ -721,18 +731,35 @@ def segments_to_patterns(
                         inst_idx = 0
                 else:
                     inst_idx = _opll_inst_to_ms2_idx(inst, n_instruments)
+
                 note_changed = (ms2_note != prev_note) or (not prev_keyon) or retrigger
                 inst_changed = (inst_idx != prev_inst_idx)
                 vol_changed  = (vol_ms2 != prev_vol_ms2)
                 force_inst = (pat == 0 and step_in_pat == 0)
+
                 emit_note = note_changed or inst_changed
                 emit_vol  = vol_changed
                 emit_inst = inst_changed or force_inst
+
+                # -------------------------
+                # LEGATO / NOTE_ON
+                # -------------------------
                 if emit_note:
-                    evts_here.append(bytes([0x00, ms2_note & 0xFF]))
+                    if is_legate == 1:
+                        evts_here.append(bytes([0x02, ms2_note & 0xFF]))  # LEGATO
+                        # LEGATO のときは INST/VOL を emit しない
+                        emit_inst = False
+                        emit_vol  = False
+                    else:
+                        evts_here.append(bytes([0x00, ms2_note & 0xFF]))  # NOTE_ON
+
+                # -------------------------
+                # VOL / INST
+                # -------------------------
                 if emit_vol:
                     evts_here.append(bytes([0x05, vol_ms2 & 0xFF]))
                     prev_vol_ms2 = vol_ms2
+
                 if emit_inst:
                     evts_here.append(bytes([0x04, inst_idx & 0xFF]))
                     prev_inst_idx = inst_idx
