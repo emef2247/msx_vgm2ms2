@@ -131,7 +131,8 @@ class _Segment:
         'tempo',        # BPM. 今のところ曲全体のBPM
         'onset',        #　keyon=1の開始点であることを示すマーカー 0:　keyon=1を維持又はkeyon=0 1: 1: keyon区間の開始 keyon: 0--> 1
         'ioi',          # IOI（Inter‑Onset Interval). keyon=1 区間の 実際の長さ（tick). keyon=1でioi=0はまだkeyonが継続中を表す(ioi未確定のためioi=0)
-        'min_ioi',      # ioi の最小値（または mode). 音符の最小長さ. tempo 計算の基準
+        'min_ioi',      # ioi の最小値 音符の最小長さ. tempo 計算の基準
+        'mode_ioi',     # ioi の最繁値(mode) 
         'l',            # そのＳｅｇｍｅｎｔの長さ [tick] Next ticks = current ticks + l
         'fl',           # 同じfnumの継続期間 [tick] keyonのposedgeでlにリセット. fl > lはkeyoffを挟まずにfnumが変化していることを表す
         'kl',           # 同じkeyonの継続期間 [tick] keyonのposedgeでlにリセット. kl > lは_Segmentを跨いで同じkeyon状態が継続中であることを示す
@@ -198,6 +199,7 @@ class _Segment:
         tempo         ,
         ioi           ,
         min_ioi       ,
+        mode_ioi      ,
         l             ,
         fl            ,
         kl            ,
@@ -253,6 +255,7 @@ class _Segment:
         self.onset         = onset
         self.ioi           = ioi
         self.min_ioi       = min_ioi
+        self.mode_ioi      = mode_ioi
         self.l             = l
         self.fl            = fl
         self.kl            = kl
@@ -1657,18 +1660,21 @@ def pass4_compute_beats(events):
     # mode が最も安定（最頻値）
     from statistics import mode, median
     try:
-        min_ioi = mode(ioi_list)
+        mode_ioi = mode(ioi_list)
     except:
-        min_ioi = median(ioi_list)
+        mode_ioi = median(ioi_list)
 
-    print(f"[PASS4] min_ioi={min_ioi}")
+    # 最小値も確認
+    min_ioi = min(ioi_list)
+
+    print(f"[PASS4] min_ioi={min_ioi}, mode_ioi={mode_ioi}")
 
     # ------------------------------------------------------------
     # 6. tempo（BPM）を IOI ベースで計算
     # ------------------------------------------------------------
     # tick=1/60sec → dt = ioi / 60
     # BPM = 60 / dt = 3600 / ioi
-    bpm_per_grid = 3600.0 / min_ioi
+    bpm_per_grid = 3600.0 / mode_ioi
 
     # grid_per_beat は min_l ベースの beat_pos から推定
     beat_pos_all = sorted(set(ev["beat_pos"] for ev in events if ev["beat"] > 0))
@@ -1685,7 +1691,7 @@ def pass4_compute_beats(events):
     bpm_raw = bpm_per_grid / grid_per_beat
     bpm_clamped = max(30.0, min(225.0, bpm_raw))
 
-    print(f"[PASS4 BPM] min_ioi={min_ioi}, bpm_raw={bpm_raw:.3f}, bpm={bpm_clamped:.3f}")
+    print(f"[PASS4 BPM] mode_ioi={mode_ioi}, bpm_raw={bpm_raw:.3f}, bpm={bpm_clamped:.3f}")
 
     # ------------------------------------------------------------
     # 7. tempo を ev に書き込む
@@ -1709,7 +1715,7 @@ def pass4_compute_beats(events):
             # rhythm
             ev["beat_pos"] = last_melody_beat_pos
 
-    return events, min_l, bpm_clamped
+    return events, min_l, min_ioi, mode_ioi, bpm_clamped
 
 def pass4_dump_csv(events, trace_csv_path):
 
@@ -1862,8 +1868,11 @@ def _build_segments(trace_csv_path,
     # beat, beat_posを算出
     # beatは最小の音価 (min_l)で正規化した単位。grid幅を示す
     # beat_pos は前のeventのbeatの累計。そのeventのスタート地点を表す
-    events, min_l, bpm = pass4_compute_beats(events)
+    events, min_l, min_ioi, mode_ioi, bpm = pass4_compute_beats(events)
     pass4_dump_csv(events, trace_csv_path)
+    # ticks_per_step (Nyquist)
+    ticks_per_step   = max(1,int(mode_ioi /2 ))
+    print(f"[SEGMENT] tiks per step:{ticks_per_step} min_ioi:{min_ioi} mode_ioi:{mode_ioi}")
 
     # ------------------------------------------------------
     # pass4まで処理されたeventsをベースに_Segmentを生成する
@@ -1929,7 +1938,6 @@ def _build_segments(trace_csv_path,
         events_by_ch[ch].sort(key=lambda e: int(e["ticks"]))
 
     segments_by_ch = {ch: [] for ch in range(NUM_CH)}
-
     for ch, evs in events_by_ch.items():
         prev_seg = None
 
@@ -1955,7 +1963,8 @@ def _build_segments(trace_csv_path,
                 onset         = _int(ev, "onset", 0),
                 tempo         = _int(ev, "tempo", 0),
                 ioi           = _int(ev, "ioi", 0),
-                min_ioi       = _int(ev, "min_ioi", 0),
+                min_ioi       = min_ioi,
+                mode_ioi      = mode_ioi,
                 l             = _int(ev, "l", 0),
                 fl            = _int(ev, "fl", 0),
                 kl            = _int(ev, "kl", 0),
@@ -1999,7 +2008,6 @@ def _build_segments(trace_csv_path,
                 sus_ch8       = _int(ev, "sus_ch8", 0),
                 block_ch8     = _int(ev, "block_ch8", 0),
             )
-
             seg.tick_start = _int(ev, "ticks", 0)
             seg.tick_end   = _int(ev, "ticks", 0) + _int(ev, "l", 0) 
             seg.beat_start = _int(ev, "beat_pos", 0)
@@ -2007,7 +2015,7 @@ def _build_segments(trace_csv_path,
             seg.grid_sz    = 1
             seg.ms2_vol    = ms2_vol
             seg.ms2_len    = _int(ev, "l", 0)
-            seg.min_l      = min_l
+            seg.min_l      = ticks_per_step
             seg.beat_sz    = min_l
             seg.grid_sz    = 1
             if prev_seg:
@@ -2016,7 +2024,7 @@ def _build_segments(trace_csv_path,
             else:
                 seg.odiff = 0
                 seg.vdiff = 0
-
+            
             prev_seg = seg
             segments_by_ch[ch].append(seg)
 
