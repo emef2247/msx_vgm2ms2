@@ -126,8 +126,8 @@ class _Segment:
         'time',         # global time [s], そのeventが起きた時間
         'ch',           # チェンネル
         'ticks',        # 1 tick = 1/60s
-        'ticks_start',  # keyon=1区間の開始点 [tick]
-        'ticks_end',    # keyon=1区間の終了点 [tick]
+        'tick_start',   # keyon=1区間の開始点 [tick]
+        'tick_end',     # keyon=1区間の終了点 [tick]
         'tempo',        # BPM. 今のところ曲全体のBPM
         'onset',        #　keyon=1の開始点であることを示すマーカー 0:　keyon=1を維持又はkeyon=0 1: 1: keyon区間の開始 keyon: 0--> 1
         'ioi',          # IOI（Inter‑Onset Interval). keyon=1 区間の 実際の長さ（tick). keyon=1でioi=0はまだkeyonが継続中を表す(ioi未確定のためioi=0)
@@ -247,8 +247,8 @@ class _Segment:
         self.time          = time
         self.ch            = ch
         self.ticks         = ticks
-        self.ticks_start   = 0
-        self.ticks_end     = 0
+        self.tick_start   = 0
+        self.tick_end     = 0
         self.tempo         = tempo
         self.onset         = onset
         self.ioi           = ioi
@@ -709,6 +709,75 @@ def pass2_mark_legato_vibrato_envelope(events):
 
     return merged
 
+
+def pass2_expand_rhythm(events, RHYTHM_CH_MAP, RHYTHM_VOICE_ID_MAP):
+    new_events = []
+
+    for ev in events:
+        ev_type = ev.get("#type", "")
+        ch      = int(ev.get("ch", 0))
+        is_ryt  = int(ev.get("is_ryt", 0))
+
+        # rhythm 以外はそのまま
+        if not ((ev_type == "rhythm") or (ch == -1 and is_ryt == 1)):
+            new_events.append(ev)
+            continue
+
+        # rhythm 行を 5 種類に分解
+        for key in ["bd", "sd", "tom", "tc", "hh"]:
+            keyon = int(ev.get(key, 0))
+
+            # チャンネル割り当て
+            ch_new = RHYTHM_CH_MAP[key]
+
+            # fnum/vol/sus は ch6/7/8 から取得
+            if key == "bd":
+                keyonX = int(ev.get("bd", 0))
+                fnumX = int(ev.get("fnum_ch6", 0))
+                volX  = int(ev.get("vol_ch6", 0))
+                susX  = int(ev.get("sus_ch6", 0))
+                blockX= int(ev.get("block_ch6", 0))
+            elif key == "sd":
+                keyonX = int(ev.get("sd", 0))
+                fnumX = int(ev.get("fnum_ch7", 0))
+                volX  = int(ev.get("vol_ch7", 0))
+                susX  = int(ev.get("sus_ch7", 0))
+                blockX= int(ev.get("block_ch7", 0))
+            elif key == "tom":
+                keyonX = int(ev.get("tom", 0))
+                # tom / tc / hh
+                fnumX = int(ev.get("fnum_ch8", 0))
+                volX  = int(ev.get("vol_ch8", 0))
+                susX  = int(ev.get("sus_ch8", 0))
+                blockX= int(ev.get("block_ch8", 0))
+            elif key == "tc": 
+                keyonX = int(ev.get("tc", 0))
+                # tom / tc / hh
+                fnumX = int(ev.get("fnum_ch8", 0))
+                volX  = int(ev.get("vol_ch8", 0))
+                susX  = int(ev.get("sus_ch8", 0))
+                blockX= int(ev.get("block_ch8", 0))
+            elif key == "hh":  
+                keyonX = int(ev.get("hh", 0))
+                # tom / tc / hh
+                fnumX = int(ev.get("fnum_ch8", 0)) 
+                volX  = int(ev.get("vol_ch8", 0))
+                susX  = int(ev.get("sus_ch8", 0))
+                blockX= int(ev.get("block_ch8", 0))
+            # 新しい ev を作成
+            ev_new = dict(ev)
+            ev_new["ch"]   = ch_new
+            ev_new["keyon"]= keyonX
+            ev_new["fnum"] = fnumX
+            ev_new["block"]= blockX
+            ev_new["inst"] = RHYTHM_VOICE_ID_MAP[key]
+            ev_new["vol"]  = volX
+            ev_new["sus"]  = susX
+
+            new_events.append(ev_new)
+
+    return new_events
+
 def pass2_filter_l0(events):
     """
     PASS 2:
@@ -964,12 +1033,12 @@ def pass3_merge_silent_rests(events):
         except:
             return default
 
-    # ticks_start / ticks_end を準備
+    # tick_start / tick_end を準備
     for ev in events:
         ev["ticks"] = _ival(ev.get("ticks"))
         ev["l"]     = _ival(ev.get("l"))
-        ev["ticks_start"] = ev["ticks"]
-        ev["ticks_end"]   = ev["ticks"] + ev["l"]
+        ev["tick_start"] = ev["ticks"]
+        ev["tick_end"]   = ev["ticks"] + ev["l"]
 
     # --- rhythm は絶対にマージしない ---
     def is_rhythm(ev):
@@ -1000,7 +1069,7 @@ def pass3_merge_silent_rests(events):
     merged_all = []
 
     for ch, buf in ch_events.items():
-        buf.sort(key=lambda e: e["ticks_start"])
+        buf.sort(key=lambda e: e["tick_start"])
 
         # -------------------------
         # 第1段階：休符マージ（rhythm は除外）
@@ -1024,8 +1093,8 @@ def pass3_merge_silent_rests(events):
                     continue
 
                 if is_rest(prev) and is_rest(ev):
-                    prev["ticks_end"] = ev["ticks_end"]
-                    prev["l"] = prev["ticks_end"] - prev["ticks_start"]
+                    prev["tick_end"] = ev["tick_end"]
+                    prev["l"] = prev["tick_end"] - prev["tick_start"]
                     continue
 
             stage1.append(ev)
@@ -1048,8 +1117,8 @@ def pass3_merge_silent_rests(events):
                     continue
 
                 if _ival(prev["vol"]) == 15 and _ival(ev["vol"]) == 15:
-                    prev["ticks_end"] = ev["ticks_end"]
-                    prev["l"] = prev["ticks_end"] - prev["ticks_start"]
+                    prev["tick_end"] = ev["tick_end"]
+                    prev["l"] = prev["tick_end"] - prev["tick_start"]
                     continue
 
             stage2.append(ev)
@@ -1075,13 +1144,13 @@ def pass3_merge_same_note(events):
         except:
             return default
 
-    # ticks_start / ticks_end は pass3_merge_silent_rests で付与済み
+    # tick_start / tick_end は pass3_merge_silent_rests で付与済み
     # 念のため再計算
     for ev in events:
         ev["ticks"] = _ival(ev.get("ticks"))
         ev["l"]     = _ival(ev.get("l"))
-        ev["ticks_start"] = ev["ticks"]
-        ev["ticks_end"]   = ev["ticks"] + ev["l"]
+        ev["tick_start"] = ev["ticks"]
+        ev["tick_end"]   = ev["ticks"] + ev["l"]
 
     # マージ条件
     def can_merge(a, b):
@@ -1093,7 +1162,7 @@ def pass3_merge_same_note(events):
             _ival(a["inst"])  == _ival(b["inst"])  and
             _ival(a["vol"])   == _ival(b["vol"])   and
             _ival(a["sus"])   == _ival(b["sus"])   and
-            a["ticks_end"] == b["ticks_start"]
+            a["tick_end"] == b["tick_start"]
         )
 
     ch_events = defaultdict(list)
@@ -1103,7 +1172,7 @@ def pass3_merge_same_note(events):
     merged_all = []
 
     for ch, buf in ch_events.items():
-        buf.sort(key=lambda e: e["ticks_start"])
+        buf.sort(key=lambda e: e["tick_start"])
 
         merged = []
         for ev in buf:
@@ -1112,8 +1181,8 @@ def pass3_merge_same_note(events):
 
                 if can_merge(prev, ev):
                     # マージ
-                    prev["ticks_end"] = ev["ticks_end"]
-                    prev["l"] = prev["ticks_end"] - prev["ticks_start"]
+                    prev["tick_end"] = ev["tick_end"]
+                    prev["l"] = prev["tick_end"] - prev["tick_start"]
                     continue
 
             merged.append(ev)
@@ -1139,12 +1208,12 @@ def pass3_merge_retrigger_note(events):
         except:
             return default
 
-    # ticks_start / ticks_end は pass3 で付与済み
+    # tick_start / tick_end は pass3 で付与済み
     for ev in events:
         ev["ticks"] = _ival(ev.get("ticks"))
         ev["l"]     = _ival(ev.get("l"))
-        ev["ticks_start"] = ev["ticks"]
-        ev["ticks_end"]   = ev["ticks"] + ev["l"]
+        ev["tick_start"] = ev["ticks"]
+        ev["tick_end"]   = ev["ticks"] + ev["l"]
 
     def same_note(a, b):
         return (
@@ -1162,7 +1231,7 @@ def pass3_merge_retrigger_note(events):
     merged_all = []
 
     for ch, buf in ch_events.items():
-        buf.sort(key=lambda e: e["ticks_start"])
+        buf.sort(key=lambda e: e["tick_start"])
 
         merged = []
         i = 0
@@ -1176,12 +1245,12 @@ def pass3_merge_retrigger_note(events):
                 _ival(buf[i+1]["keyon"]) == 0 and
                 _ival(buf[i+2]["keyon"]) == 1 and
                 same_note(ev, buf[i+2]) and
-                ev["ticks_end"] == buf[i+1]["ticks_start"] and
-                buf[i+1]["ticks_end"] == buf[i+2]["ticks_start"]
+                ev["tick_end"] == buf[i+1]["tick_start"] and
+                buf[i+1]["tick_end"] == buf[i+2]["tick_start"]
             ):
                 # マージ：ev の終端を buf[i+2] に伸ばす
-                ev["ticks_end"] = buf[i+2]["ticks_end"]
-                ev["l"] = ev["ticks_end"] - ev["ticks_start"]
+                ev["tick_end"] = buf[i+2]["tick_end"]
+                ev["l"] = ev["tick_end"] - ev["tick_start"]
 
                 merged.append(ev)
                 i += 3
@@ -1211,10 +1280,10 @@ def pass3_merge_pitch_volume_wobble(events):
         except:
             return default
 
-    # ticks_start / ticks_end は PASS3 で付与済み
+    # tick_start / tick_end は PASS3 で付与済み
     for ev in events:
-        ev["ticks_start"] = _ival(ev["ticks"])
-        ev["ticks_end"]   = ev["ticks_start"] + _ival(ev["l"])
+        ev["tick_start"] = _ival(ev["ticks"])
+        ev["tick_end"]   = ev["tick_start"] + _ival(ev["l"])
 
     def can_merge(a, b):
         return (
@@ -1224,7 +1293,7 @@ def pass3_merge_pitch_volume_wobble(events):
             get_scale(_ival(a["fnum"])) == get_scale(_ival(b["fnum"])) and
             _ival(a["inst"]) == _ival(b["inst"]) and
             _ival(a["sus"])  == _ival(b["sus"]) and
-            a["ticks_end"] == b["ticks_start"]
+            a["tick_end"] == b["tick_start"]
         )
 
     ch_events = defaultdict(list)
@@ -1234,7 +1303,7 @@ def pass3_merge_pitch_volume_wobble(events):
     merged_all = []
 
     for ch, buf in ch_events.items():
-        buf.sort(key=lambda e: e["ticks_start"])
+        buf.sort(key=lambda e: e["tick_start"])
 
         merged = []
         for ev in buf:
@@ -1243,8 +1312,8 @@ def pass3_merge_pitch_volume_wobble(events):
 
                 if can_merge(prev, ev):
                     # マージ：prev の終端を ev に伸ばす
-                    prev["ticks_end"] = ev["ticks_end"]
-                    prev["l"] = prev["ticks_end"] - prev["ticks_start"]
+                    prev["tick_end"] = ev["tick_end"]
+                    prev["l"] = prev["tick_end"] - prev["tick_start"]
                     continue
 
             merged.append(ev)
@@ -1658,6 +1727,26 @@ def pass4_dump_csv(events, trace_csv_path):
 
     print(f"[PASS4] Debug CSV written: {out_csv_path}")
 
+def pass5_dump_csv(events, trace_csv_path):
+
+    if not events:
+        return
+
+    # 元ファイル名: <stem>_trace.opll.csv
+    base, ext = os.path.splitext(trace_csv_path)
+    # 出力ファイル名: <stem>_trace.opll.pass4.csv
+    out_csv_path = base + ".pass5.csv"
+
+    fieldnames = list(events[0].keys())
+
+    with open(out_csv_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for ev in events:
+            writer.writerow(ev)
+
+    print(f"[PASS5] Debug CSV written: {out_csv_path}")
+
 
 def _int(ev, key, default=0):
     """空文字列や欠損値を安全に int に変換するヘルパー"""
@@ -1745,9 +1834,12 @@ def _build_segments(trace_csv_path,
     # onsetの検出とIOI(Inter‑Onset Interval:IOIの間隔)の算出, tempoの導出
     events = pass2_compute_onsets_and_ioi(events)
 
+    # type="rhythm", ch=-1のeventをRHYTHM_CH_MAP, RHYTHM_VOICE_ID_MAPをベースに展開
+    events = pass2_expand_rhythm(events,RHYTHM_CH_MAP,RHYTHM_VOICE_ID_MAP)
+
     # pass2 (2): fl,kl,vlを計算した後にl=0のeventを削除
     # ここで l=0 の keyon 0->1 (retrigger)のeventは削除される。(fl,kl,vlにはリセットとして反映済み)
-    events = pass2_filter_l0(events)
+    # events = pass2_filter_l0(events)
 
     # l=0を削除した後、fl,kl,blからlegato, vibrate, volume envelopeを判定
     events = pass2_mark_legato_vibrato_envelope(events)
@@ -1857,7 +1949,7 @@ def _build_segments(trace_csv_path,
                 ch            = _int(ev, "ch", 0),
                 ticks         = _int(ev, "ticks", 0),
                 onset         = _int(ev, "onset", 0),
-                tempo         =  _int(ev, "tempo", 0),
+                tempo         = _int(ev, "tempo", 0),
                 ioi           = _int(ev, "ioi", 0),
                 min_ioi       = _int(ev, "min_ioi", 0),
                 l             = _int(ev, "l", 0),
@@ -1904,8 +1996,8 @@ def _build_segments(trace_csv_path,
                 block_ch8     = _int(ev, "block_ch8", 0),
             )
 
-            seg.ticks_start = _int(ev, "ticks", 0)
-            seg.ticks_end   = _int(ev, "ticks", 0) + _int(ev, "l", 0) 
+            seg.tick_start = _int(ev, "ticks", 0)
+            seg.tick_end   = _int(ev, "ticks", 0) + _int(ev, "l", 0) 
             seg.beat_start = _int(ev, "beat_pos", 0)
             seg.beat_end   = _int(ev, "beat_pos", 0) + _int(ev, "beat", 0)
             seg.grid_sz    = 1

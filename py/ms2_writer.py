@@ -17,7 +17,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
-from opll_mml import _build_segments, _opll_note, detect_num_ch
+from opll_mml import _build_segments, _opll_note, detect_num_ch,NUM_CH
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -256,10 +256,10 @@ def opll_vol_to_ms2_vol(opll_vol: int) -> int:
 # ---------------------------------------------------------------------------
 
 def _build_chunk(chunk_type: int, data: bytes) -> bytes:
-    # MS² の仕様上、サイズフィールドは uint16 (0〜65535)
-    if len(data) > 65535:
-        raise ValueError(f"Chunk data too large: {len(data)} bytes (max 65535)")
+    if len(data) > 16384:
+        raise ValueError(f"Chunk data too large: {len(data)} bytes (max 16384)")
     return struct.pack('<BBH', chunk_type, 0, len(data)) + data
+
 
 def _sentinel_chunk() -> bytes:
     return struct.pack('<BBH', 0, 0, 0)
@@ -563,47 +563,51 @@ def build_patterns_chunk_data(
 # ---------------------------------------------------------------------------
 # Segment → step grid conversion
 # ---------------------------------------------------------------------------
-def _build_step_grid(segments, total_steps):
-    """Build a step grid mapping (ch, step) → (keyon, ms2_note, inst, vol, retrigger, at_token).
 
-    Beat-based version:
-      - seg.beat_start is the step index directly (no ticks_per_step conversion)
-      - seg.ms2_len is the note duration in steps; end_step = beat_start + ms2_len
-      - Each retrigger is an independent Segment with keyon=1; retrigger_ticks is not used
-    """
-    grid = {}
-
-    for ch, segs in segments.items():
+def _build_step_grid(
+    segments: dict,
+    ticks_per_step: int,
+    total_steps: int,
+) -> dict:
+    grid: dict[tuple, tuple] = {}
+    # Iterate over all channel indices present in 'segments' (not only NUM_CH).
+    # Rhythm channels may be added at indices >= NUM_CH, so include them.
+    if segments:
+        max_ch = max(segments.keys())
+    else:
+        max_ch = NUM_CH - 1
+    for ch in range(max_ch + 1):
+        segs = segments.get(ch, [])
+        assignments: dict[int, tuple] = {}
+        keyoff_steps: set = set()
         for seg in segs:
-            if seg.ev_type == 'rhythm':
+            if seg.keyon:
                 continue
-
-            start_step = seg.beat_start
-            end_step   = start_step + seg.ms2_len
-
-            # Note info
-            ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
-            inst     = seg.inst
-            vol      = seg.vol
+            start_step = seg.tick_start // ticks_per_step
+            if start_step < total_steps:
+                keyoff_steps.add(start_step)
+        for seg in segs:
+            start_step = seg.tick_start // ticks_per_step
+            if start_step >= total_steps:
+                continue
             at_token = getattr(seg, 'at_token', '')
-
-            # ① Segment start step
-            if 0 <= start_step < total_steps:
-                key = (ch, start_step)
-                prev = grid.get(key, (0, 0, 0, 0, False, ''))
-                # retrigger=True when this segment starts at the same step as a previous one
-                retrigger = prev[0] == 1
-                grid[key] = (1, ms2_note, inst, vol, retrigger, at_token)
-
-            # ② Segment continuation steps (keyon=1, no retrigger)
-            for step in range(start_step + 1, end_step):
-                if 0 <= step < total_steps:
-                    key = (ch, step)
-                    _, _, _, _, _, prev_at = grid.get(key, (0, 0, 0, 0, False, ''))
-                    grid[key] = (1, ms2_note, inst, vol, False, prev_at or at_token)
-
+            if seg.keyon:
+                ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
+                if ms2_note is not None:
+                    retrigger = start_step in keyoff_steps
+                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token)
+            else:
+                if start_step not in assignments or assignments[start_step][0] == 0:
+                    assignments[start_step] = (0, 0, seg.inst, seg.vol, False, at_token)
+        cur_state: tuple = (0, 0, 0, 0, False, '')
+        for step in range(total_steps):
+            if step in assignments:
+                cur_state = assignments[step]
+            else:
+                if cur_state[4]:
+                    cur_state = cur_state[:4] + (False, cur_state[5])
+            grid[(ch, step)] = cur_state
     return grid
-
 
 
 def _build_instrument_table(
@@ -665,144 +669,85 @@ def _get_ms2_inst_idx(
         key = ('preset', inst)
     return inst_map.get(key, 0)
 
+
+# ---------------------------------------------------------------------------
+# High-level: segments → MS2 patterns
+# ---------------------------------------------------------------------------
+
 def segments_to_patterns(
     segments: dict,
+    ticks_per_step: int,
     n_patterns: int,
     n_channels: int,
     n_instruments: int,
     user_patches: dict | None = None,
     ref_count: int = 0,
 ) -> list[list]:
-
     if user_patches is None:
         user_patches = {}
-
     total_steps = n_patterns * STEPS_PER_PATTERN
-
-    channel_event_lists = [
-        [[] for _ in range(n_channels)]
-        for _ in range(n_patterns)
-    ]
-
+    grid = _build_step_grid(segments, ticks_per_step, total_steps)
+    channel_event_lists: list[list] = []
+    for _ in range(n_patterns):
+        channel_event_lists.append([[] for _ in range(n_channels)])
     for ch in range(n_channels):
-        segs = segments.get(ch, [])
-        if not segs:
-            continue
-
-        segs_sorted = sorted(segs, key=lambda s: s.beat_start)
-
+        prev_state = (0, 0, 0, 0, False, '')
         prev_inst_idx = -1
-        prev_vol      = -1
-
-        for seg in segs_sorted:
-
-            # rhythm は別処理
-            if seg.ev_type == 'rhythm':
-                continue
-
-            start = seg.beat_start
-            if not (0 <= start < total_steps):
-                continue
-
-            pat = start // STEPS_PER_PATTERN
-            step = start % STEPS_PER_PATTERN
-
-            keyon = seg.keyon
-            is_legato = seg.is_legate
-            ioi = seg.ioi
-
-            ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
-            if ms2_note is None:
-                continue
-
-            # instrument index
-            if seg.inst == 0 and user_patches:
-                v_num = _parse_user_v_num(getattr(seg, "at_token", None))
-                if v_num is not None and v_num in user_patches:
-                    inst_idx = ref_count + (v_num - 1)
+        prev_vol_ms2 = -1
+        for step in range(total_steps):
+            pat = step // STEPS_PER_PATTERN
+            step_in_pat = step % STEPS_PER_PATTERN
+            state = grid.get((ch, step), (0, 0, 0, 0, False, ''))
+            keyon, ms2_note, inst, vol_opll, retrigger, at_token = state
+            prev_keyon = prev_state[0]
+            prev_note  = prev_state[1]
+            vol_ms2 = opll_vol_to_ms2_vol(vol_opll)
+            evts_here: list[bytes] = []
+            if keyon and ms2_note is not None:
+                if inst == 0 and user_patches:
+                    v_num = _parse_user_v_num(at_token)
+                    if v_num is not None and v_num in user_patches:
+                        inst_idx = ref_count + (v_num - 1)
+                    else:
+                        inst_idx = 0
                 else:
-                    inst_idx = 0
-            else:
-                inst_idx = _opll_inst_to_ms2_idx(seg.inst, n_instruments)
-
-            vol_ms2 = max(0, min(63, seg.vol))
-
-            evts = []
-
-            # ----------------------------------------------------
-            # 1. NOTE_OFF
-            # ----------------------------------------------------
-            if keyon == 0:
-                evts.append(bytes([0x01]))  # NOTE_OFF
-                channel_event_lists[pat][ch].append((step, evts))
-                prev_inst_idx = -1
-                prev_vol = -1
-                continue
-
-            # ----------------------------------------------------
-            # 2. LEGATO
-            # ----------------------------------------------------
-            if keyon == 1 and is_legato == 1:
-                evts.append(bytes([0x02, ms2_note & 0xFF]))  # LEGATO
-                channel_event_lists[pat][ch].append((step, evts))
-                continue
-
-            # ----------------------------------------------------
-            # 3. NOTE_ON
-            # ----------------------------------------------------
-            if keyon == 1 and is_legato == 0:
-
-                # NOTE_ON
-                evts.append(bytes([0x00, ms2_note & 0xFF]))
-
-                # ioi == 1 → inst + vol を必ず置く
-                if ioi == 1:
-                    evts.append(bytes([0x04, inst_idx & 0xFF]))  # INST
-                    evts.append(bytes([0x05, vol_ms2 & 0xFF]))   # VOL
+                    inst_idx = _opll_inst_to_ms2_idx(inst, n_instruments)
+                note_changed = (ms2_note != prev_note) or (not prev_keyon) or retrigger
+                inst_changed = (inst_idx != prev_inst_idx)
+                vol_changed  = (vol_ms2 != prev_vol_ms2)
+                force_inst = (pat == 0 and step_in_pat == 0)
+                emit_note = note_changed or inst_changed
+                emit_vol  = vol_changed
+                emit_inst = inst_changed or force_inst
+                if emit_note:
+                    evts_here.append(bytes([0x00, ms2_note & 0xFF]))
+                if emit_vol:
+                    evts_here.append(bytes([0x05, vol_ms2 & 0xFF]))
+                    prev_vol_ms2 = vol_ms2
+                if emit_inst:
+                    evts_here.append(bytes([0x04, inst_idx & 0xFF]))
                     prev_inst_idx = inst_idx
-                    prev_vol = vol_ms2
-
-                else:
-                    # INST
-                    if prev_inst_idx != inst_idx:
-                        evts.append(bytes([0x04, inst_idx & 0xFF]))
-                        prev_inst_idx = inst_idx
-
-                    # VOL
-                    if prev_vol != vol_ms2:
-                        evts.append(bytes([0x05, vol_ms2 & 0xFF]))
-                        prev_vol = vol_ms2
-
-                channel_event_lists[pat][ch].append((step, evts))
-                continue
-
-    # --- merge ---
-    for pat in range(len(channel_event_lists)):
-        for ch in range(len(channel_event_lists[pat])):
-            entries = channel_event_lists[pat][ch]
-            if not entries:
-                continue
-            merged = {}
-            for step, evts in entries:
-                merged.setdefault(step, []).extend(evts)
-            new_entries = []
-            for step in sorted(merged.keys()):
-                new_entries.append((step, merged[step]))
-            channel_event_lists[pat][ch] = new_entries
-
+            elif not keyon and prev_keyon:
+                evts_here.append(bytes([0x01]))
+            if evts_here:
+                channel_event_lists[pat][ch].append((step_in_pat, evts_here))
+            prev_state = state
     return channel_event_lists
+
 
 def _get_segment_inst_idx_at_step(
     segments: dict,
     ch: int,
     step: int,
+    ticks_per_step: int,
     user_patches: dict,
     inst_map: dict,
 ) -> int:
     segs = segments.get(ch, [])
     found = None
     for seg in segs:
-        if seg.beat_start <= step:
+        seg_step = seg.tick_start // ticks_per_step
+        if seg_step <= step:
             found = seg
         else:
             break
@@ -815,6 +760,7 @@ def _get_starting_instruments(
     segments: dict,
     n_channels: int,
     n_instruments: int = 15,
+    ticks_per_step: int = TICKS_PER_STEP_75BPM,
     user_patches: dict | None = None,
     ref_count: int = 0,
 ) -> list[int]:
@@ -884,13 +830,12 @@ def build_instrument_library_ms2(
         + _sentinel_chunk()
     )
     return ms2_bytes
-
+ 
 def build_ms2_file(
     segments: dict,
     voice_csv_path: str | None,
     stem: str,
-    bpm: int = 120,
-    beat_sz: int = 0,       # min_l (1 beat = how many ticks); not used in the beat-based model
+    bpm: int,
     timer: int = 0,
     base_ms2: str | None = None,
     video: str = 'ntsc',
@@ -904,43 +849,36 @@ def build_ms2_file(
     from opll_mml import _assign_voice_ids
     voice_table, user_patches, _warnings = _assign_voice_ids(segments, voice_csv_path)
 
-    # ==== 実際に使用している ch から NUM_CH を決定 ====
-    used_channels = sorted(ch for ch, segs in segments.items() if segs)
-    if used_channels:
-        max_ch = max(used_channels)
-        # メロディ 0..8 + リズム 9..13 を最低限カバー
-        NUM_CH = max(14, max_ch + 1)
-    else:
-        NUM_CH = 14
-
-    if debug:
-        print(f"[build_ms2_file] used_channels={used_channels} -> NUM_CH={NUM_CH}")
+    NUM_CH = 18
 
     # ==== チューニング/メロディ音色取得 ====
     if base_ms2 is not None:
         tunings_data, instruments_data, n_tunings, melody_count = _load_library_from_ms2(
-            base_ms2, max_presets=15
+            base_ms2, max_presets=15  # *index 0～14に15音色がある前提
         )
     else:
         tunings_data, instruments_data, n_tunings, melody_count = _load_reference_library()
 
     # ==== 既存メロディ音色を抽出 ====
+    # instruments_data: chunk3。先頭2バイトは個数、以下30バイトずつ
     n_melody = min(melody_count, 15)
     melody_records = [instruments_data[2+i*30:2+(i+1)*30] for i in range(n_melody)]
     all_instruments = list(melody_records)
 
-    # ==== リズム音色を追加 ====
+    # ==== リズム/追加音色を11byte→30byte形式へ追記 ====
+    # MS2_RHYTHM_INSTRUMENTS = [(idx, name, tuning_idx, bytes11), ...]
     for inst in MS2_RHYTHM_INSTRUMENTS:
         idx, name, tuning_idx, bytes11 = inst
         buf = bytearray(30)
         buf[0] = tuning_idx
+        # buf[1:3] ← 0
         buf[3:14] = bytes11
         buf[14:30] = (name.encode('ascii', 'replace') + b' ' * 16)[:16]
         all_instruments.append(bytes(buf))
 
     n_2op_inst = len(all_instruments)
 
-    # ==== User Patch追加 ====
+    # ==== User Patch追記 ====
     ref_count = n_2op_inst
     if user_patches:
         for v_num in sorted(user_patches):
@@ -948,59 +886,53 @@ def build_ms2_file(
             reg = opll_patch_to_opl4(patch_bytes)
             reg_order = [0x20,0x21,0x40,0x41,0x60,0x61,0x80,0x81,0xE0,0xE1,0xC0]
             buf = bytearray(30)
-            buf[0] = 0
-            buf[3:14] = bytes([reg[r] & 0xFF for r in reg_order])
+            buf[0] = 0  # tuning
+            buf[3:14] = bytes([reg[r]&0xFF for r in reg_order])
             name = f'User Patch v{v_num}'
             buf[14:30] = (name.encode('ascii', 'replace') + b' ' * 16)[:16]
             all_instruments.append(bytes(buf))
-
     n_2op_inst = len(all_instruments)
+
+    # ==== instrumentsチャンク再構築 ====
     instruments_data = struct.pack('<H', n_2op_inst) + b''.join(all_instruments)
 
     if debug:
         print(f"[build_ms2_file] base_ms2={base_ms2} melody_count={melody_count} n2op={n_2op_inst}")
 
-    # ==== timer_divider は BPM に依存 ====
+    # ==== テンポ・タイミング ====
     if timer == 1:
         freq_hz = _FREQ_PAL
     elif video == 'pal':
         freq_hz = _FREQ_PAL
     else:
         freq_hz = _FREQ_NTSC
-
     timer_divider = int(math.floor(freq_hz * 3840 / bpm))
     timer_divider = max(1, min(0xFFFF, timer_divider))
+    ticks_per_step = max(1, round(freq_hz * 15 / bpm))
 
-    if debug:
-        print(f"[build_ms2_file] beat_sz={beat_sz} bpm={bpm} timer_divider=0x{timer_divider:04X}")
-
-    # =====================================================================
-    # ==== パターン数推定（beat_start + ms2_len ベース） ====
-    # =====================================================================
-    max_end_step = 0
+    # ==== パターン数自動推定 ====
+    last_note_end_tick = 0
     for ch in range(NUM_CH):
         for seg in segments.get(ch, []):
-            max_end_step = max(max_end_step, seg.beat_start + seg.ms2_len)
+            if seg.keyon:
+                last_note_end_tick = max(last_note_end_tick, seg.tick_end)
+    if last_note_end_tick == 0:
+        for ch in range(NUM_CH):
+            for seg in segments.get(ch, []):
+                last_note_end_tick = max(last_note_end_tick, seg.tick_end)
+    n_patterns = max(1, math.ceil(last_note_end_tick / (ticks_per_step * STEPS_PER_PATTERN)))
 
-    n_patterns = max(
-        1,
-        math.ceil(max_end_step / STEPS_PER_PATTERN)
-    )
-
-    if debug:
-        print(f"[build_ms2_file] max_end_step={max_end_step} n_patterns={n_patterns}")
-
-    # ==== starting_instruments ====
+    # ==== starting_instruments配列生成 ====
     starting_instruments = _get_starting_instruments(
-        segments, NUM_CH, n_2op_inst,
+        segments, NUM_CH, n_2op_inst, ticks_per_step,
         user_patches=user_patches, ref_count=ref_count
     )
     if len(starting_instruments) < NUM_CH:
         starting_instruments += [0] * (NUM_CH - len(starting_instruments))
 
-    # ==== パターン生成 ====
+    # ==== パターン(ノート)格納 ====
     channel_event_lists = segments_to_patterns(
-        segments, n_patterns, NUM_CH, n_2op_inst,
+        segments, ticks_per_step, n_patterns, NUM_CH, n_2op_inst,
         user_patches=user_patches, ref_count=ref_count
     )
 
