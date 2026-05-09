@@ -1,0 +1,95 @@
+File: MS2TEST/OPLL/T02P01/T02P01.MS2  (2767 bytes)
+Signature: 4d53c2b20d0a001a  (OK)
+
+[0x0008] Chunk type 1 (Song Settings)  version=0  size=291
+  Description:     'T02P01'
+  Song length:      0 patterns
+  Loop pattern:     0
+  Timer:            0 (VDP)
+  Timer divider:    3.9961 (0x03FF)
+  Modulation depth: 0xC0
+  Channels:         14 total  (14 2OP + 0 4OP + 0 WAV)
+  Channel types:    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]  (14 enabled)
+  Start instruments:[1, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  Tunings:          8
+  2OP instruments:  20
+  4OP instruments:  1
+  WAV instruments:  1
+  Patterns:         1
+  Pitch envelopes:  1
+
+[0x012f] Chunk type 2 (Tunings)  version=0  size=1666
+  Count: 8
+  Tuning 0: 'MB v1.4 T-3'  offsets[0..11]=[-40, 86, 218, 348, 476, 606, 738, 866, 994, 1124, 1254, 1382]
+  Tuning 1: 'MB v1.4 T-2'  offsets[0..11]=[-28, 98, 228, 358, 486, 616, 746, 874, 1002, 1132, 1262, 1390]
+  Tuning 2: 'MB v1.4 T-1'  offsets[0..11]=[-16, 110, 240, 368, 496, 624, 756, 884, 1010, 1140, 1268, 1396]
+  Tuning 3: 'MB v1.4 T+0'  offsets[0..11]=[-2, 124, 252, 380, 506, 634, 764, 892, 1018, 1148, 1276, 1404]
+  Tuning 4: 'MB v1.4 T+1'  offsets[0..11]=[10, 136, 264, 390, 516, 644, 774, 898, 1026, 1154, 1282, 1408]
+  Tuning 5: 'MB v1.4 T+2'  offsets[0..11]=[24, 148, 274, 400, 526, 654, 782, 908, 1034, 1162, 1290, 1416]
+  Tuning 6: 'MB v1.4 T+3'  offsets[0..11]=[36, 160, 286, 412, 536, 664, 792, 916, 1042, 1170, 1298, 1424]
+  Tuning 7: 'MB v1.4 ADPCM'  offsets[0..11]=[6, 124, 249, 378, 512, 637, 765, 896, 1019, 1152, 1285, 1410]
+
+[0x07b5] Chunk type 3 (2OP Instruments)  version=0  size=602
+  Count: 20
+  Inst  0: 'OPLL Violin     ' tuning=3  regs=71 61 1E 00 D0 78 00 17 00 01 0E
+  Inst  1: 'OPLL Guitar     ' tuning=3  regs=13 41 1A 00 D8 F7 23 13 01 00 0A
+  Inst  2: 'OPLL Piano      ' tuning=3  regs=13 01 59 00 F2 C4 11 23 00 00 00
+  Inst  3: 'OPLL Flute      ' tuning=3  regs=31 61 0E 00 A8 64 70 27 00 00 0E
+  Inst  4: 'OPLL Clarinet   ' tuning=3  regs=32 21 1E 00 E0 76 00 28 00 00 0C
+  Inst  5: 'OPLL Oboe       ' tuning=3  regs=31 22 16 00 E0 71 00 18 00 00 0A
+  Inst  6: 'OPLL Trumpet    ' tuning=3  regs=21 61 1D 00 82 81 10 07 00 00 0E
+  Inst  7: 'OPLL Organ      ' tuning=3  regs=23 21 2D 00 A2 72 00 07 00 01 08
+  Inst  8: 'OPLL Horn       ' tuning=3  regs=61 61 1B 00 64 65 10 17 00 00 0C
+  Inst  9: 'OPLL Synthesizer' tuning=3  regs=41 61 0B 00 85 F7 71 07 01 01 00
+  Inst 10: 'OPLL Harpsichord' tuning=3  regs=13 01 43 00 FA E4 10 04 00 01 02
+  Inst 11: 'OPLL Vibraphone ' tuning=3  regs=17 C1 24 00 F8 F8 22 12 00 00 0E
+  Inst 12: 'OPLL Synth. Bass' tuning=3  regs=61 50 0C 00 C2 F5 20 42 00 00 0A
+  Inst 13: 'OPLL Acoust.Bass' tuning=3  regs=01 01 95 00 C9 95 03 02 00 00 06
+  Inst 14: 'OPLL Elec.Guitar' tuning=3  regs=61 41 49 00 F1 E4 40 13 00 00 06
+  Inst 15: 'Bass Drum 1     ' tuning=0  regs=20 20 09 00 FA F6 FF FF 00 00 00
+  Inst 16: 'Snare Drum      ' tuning=0  regs=20 00 00 00 F1 F7 00 B8 00 00 0E
+  Inst 17: 'Acid drum       ' tuning=0  regs=04 00 03 0D F9 F9 F9 F9 00 00 00
+  Inst 18: 'Closed Hihat    ' tuning=0  regs=2F 0F 00 00 F1 99 00 B8 00 00 0E
+  Inst 19: 'Cymbal          ' tuning=0  regs=02 02 00 00 33 33 73 73 00 00 03
+
+[0x0a13] Chunk type 4 (4OP Instruments)  version=0  size=43
+
+[0x0a42] Chunk type 5 (WAV Instruments)  version=0  size=38
+
+[0x0a6c] Chunk type 6 (Patterns)  version=0  size=82
+  Count: 1 patterns, 14 channels each
+  --- Pattern 0 ---
+    CH 0: cum=16  [t1] NOTE_ON(36) VOL(0) INST(1) [t1] NOTE_ON(36) [t1] NOTE_ON(36) [t1] NOTE_ON(36) [t1] NOTE_ON(36) [t1] NOTE_ON(36) [t1] NOTE_ON(36) [t1] NOTE_OFF [t8]
+         raw: 81002405000401810024810024810024810024810024810024810188
+    CH 1: cum=16  [t6] NOTE_ON(36) VOL(0) INST(2) [t1] NOTE_ON(36) [t1] NOTE_ON(36) [t1] NOTE_ON(36) [t1] NOTE_ON(36) [t1] NOTE_ON(36) [t1] NOTE_ON(36) [t1] NOTE_OFF [t3]
+         raw: 86002405000402810024810024810024810024810024810024810183
+    CH 2: cum=16  [t13] NOTE_ON(36) VOL(0) INST(2) [t1] NOTE_ON(36) [t1] NOTE_OFF [t1]
+         raw: 8d002405000402810024810181
+    CH 3: cum=16  [t16]
+         raw: 90
+    CH 4: cum=16  [t16]
+         raw: 90
+    CH 5: cum=16  [t16]
+         raw: 90
+    CH 6: cum=16  [t16]
+         raw: 90
+    CH 7: cum=16  [t16]
+         raw: 90
+    CH 8: cum=16  [t16]
+         raw: 90
+    CH 9: cum=16  [t16]
+         raw: 90
+    CH10: cum=16  [t16]
+         raw: 90
+    CH11: cum=16  [t16]
+         raw: 90
+    CH12: cum=16  [t16]
+         raw: 90
+    CH13: cum=16  [t16]
+         raw: 90
+
+[0x0ac2] Chunk type 8 (Pitch Envelopes)  version=0  size=5
+
+[0x0acb] Chunk type 0 (Sentinel)  version=0  size=0
+  (end of file)
+

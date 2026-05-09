@@ -1,0 +1,17 @@
+;[name=T02P01 lpf=1]
+#opll_mode 0
+#tempo 180
+#title { "YM2413 Legate Note" }
+
+; 目的: 同一音高の高速な KeyOn/Off 繰り返しで KeyOn エッジ検出と残響処理を確認
+; パターン1: レガート C5 * 7
+; パターン2: レガート C6 * 7
+; パターン3: Retrigger x 2
+
+9 o5l8
+9 @1  V15 C& C& C& C& C& C& C& R  R  R  R  R  R  R
+a o6l8
+a @2  V15 R  R  R  R  R  R  R  C& C& C& C& C& C& C& 
+
+b o4l8
+B @2  V15 R  R  R  R  R  R  R  R R R R R R R C4 C5
