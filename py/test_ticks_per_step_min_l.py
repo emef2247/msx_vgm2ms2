@@ -40,10 +40,12 @@ def _build_ms2(segments: dict, bpm: int = 120, debug: bool = False) -> bytes:
 
 
 def _legacy_ticks_per_step(bpm: int) -> int:
+    # Legacy grid: 1 step = 1/16 note => freq_hz * 15 / bpm ticks per step.
     return max(1, round(_FREQ_NTSC * 15 / bpm))
 
 
 def _legacy_timer_divider(bpm: int) -> int:
+    # Legacy timer formula: freq_hz * 3840 / bpm (3840 = 256 * 15).
     return int(_FREQ_NTSC * 3840 // bpm)
 
 
