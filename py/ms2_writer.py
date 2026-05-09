@@ -943,7 +943,7 @@ def build_ms2_file(
         freq_hz = _FREQ_PAL
     else:
         freq_hz = _FREQ_NTSC
-    legacy_timer_divider = int(math.floor(freq_hz * 3840 / bpm))
+    legacy_timer_divider = int(freq_hz * 3840 / bpm)
     legacy_timer_divider = max(1, min(0xFFFF, legacy_timer_divider))
     ticks_per_step_16th = max(1, round(freq_hz * 15 / bpm))
 
@@ -967,10 +967,10 @@ def build_ms2_file(
         # preserve the existing contract expected by downstream tick mapping.
         min_l_int = int(min_l)
         ticks_per_step = max(1, min(min_l_int, ticks_per_step_16th))
+        ticks_per_step = min(ticks_per_step, 0xFFFF // 256)
         # Song settings timer_divider unit is 1/256 of a VDP tick.
         # Keeping timer_divider = 256 * ticks_per_step preserves 1-step duration.
         timer_divider = 256 * ticks_per_step
-        timer_divider = max(1, min(0xFFFF, timer_divider))
         if debug:
             print(
                 f"[ticks_per_step] min_l={min_l} int(min_l)={min_l_int} "

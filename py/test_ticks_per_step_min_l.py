@@ -47,7 +47,7 @@ def _legacy_ticks_per_step(bpm: int) -> int:
 
 def _legacy_timer_divider(bpm: int) -> int:
     # Legacy timer formula: freq_hz * 3840 / bpm (3840 = 256 * 15).
-    return int(_FREQ_NTSC * 3840 // bpm)
+    return int(_FREQ_NTSC * 3840 / bpm)
 
 
 def _read_song_settings_timer_divider(ms2_bytes: bytes) -> int:
