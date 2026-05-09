@@ -145,7 +145,7 @@ class _Segment:
         'kb',           # kbのbeat換算 [beat] keyonのposedgeでbeatにリセット.　kb > beat は同じkeyon状態が_Segmentを跨いで継続中であることを示す
         'vb',           # vlのbeat換算 [beat] keyonのposedgeでbeatにリセット.　vb > beat はkeyoffを挟まずにvolが変化していることを表す
         'keyon',        # keyonの状態
-        'is_legate',    # 一つ前のeventがkeyon=1であり、keyon=0を挟まずkeyon=1が続いている場合に1となる(スラー、タイ)
+        'is_legato',    # 一つ前のeventがkeyon=1であり、keyon=0を挟まずkeyon=1が続いている場合に1となる(スラー、タイ)
         'is_vibrato',   # keyon=1区間内でkeyon=0を挟まずfnumが変化
         'is_envelope',  # keyon=1区間内でkeyon=0を挟まずvolが変化
         'fnum',         # frequency
@@ -208,7 +208,7 @@ class _Segment:
         kb            ,
         vb            ,
         keyon         ,
-        is_legate     ,
+        is_legato     ,
         is_vibrato    ,
         is_envelope   ,
         fnum          ,
@@ -266,7 +266,7 @@ class _Segment:
         self.kb            = kb
         self.vb            = vb
         self.keyon         = keyon
-        self.is_legate     = is_legate
+        self.is_legato     = is_legato
         self.is_vibrato    = is_vibrato
         self.is_envelope   = is_envelope
         self.fnum          = fnum
@@ -1962,7 +1962,7 @@ def _build_segments(trace_csv_path,
                 kb            = _int(ev, "kb", 0),
                 vb            = _int(ev, "vb", 0),
                 keyon         = _int(ev, "keyon", 0),
-                is_legate     = _int(ev, "is_legate", 0),
+                is_legato     = _int(ev, "is_legato", 0),
                 is_vibrato    = _int(ev, "is_vibrato", 0),
                 is_envelope   = _int(ev, "is_envelope", 0),
                 fnum          = _int(ev, "fnum", 0),
