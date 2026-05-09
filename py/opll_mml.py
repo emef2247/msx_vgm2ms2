@@ -1839,7 +1839,7 @@ def _build_segments(trace_csv_path,
 
     # pass2 (2): fl,kl,vlを計算した後にl=0のeventを削除
     # ここで l=0 の keyon 0->1 (retrigger)のeventは削除される。(fl,kl,vlにはリセットとして反映済み)
-    # events = pass2_filter_l0(events)
+    events = pass2_filter_l0(events)
 
     # l=0を削除した後、fl,kl,blからlegato, vibrate, volume envelopeを判定
     events = pass2_mark_legato_vibrato_envelope(events)

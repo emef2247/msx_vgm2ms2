@@ -57,7 +57,7 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_SCRIPT_DIR, 'py'))
 
 from vgm_reader import parse_vgm
-from opll_mml import _build_segments, _assign_voice_ids, dump_segments
+from opll_mml import _build_segments, _assign_voice_ids, _assign_voice_ids
 from ms2_writer import build_ms2_file, build_instrument_library_ms2
 from ms2_dump import dump_ms2, compare_signatures
 from ms2_validate import validate_ms2_bytes
@@ -91,130 +91,6 @@ def export_inst_libraries(output_dir: str, raw_mode: bool = False) -> None:
             f.write(ms2_bytes)
         print(f"  {filename}  ({len(ms2_bytes)} bytes)  [{preset_key}]  mode={mode_label}")
 
-def analyze_fl_kl(events_by_ch):
-    fl_values = []
-    kl_values = []
-
-    for ch, segs in events_by_ch.items():
-        for seg in segs:
-            if seg.fl > 0:
-                fl_values.append(seg.fl)
-            if seg.kl > 0:
-                kl_values.append(seg.kl)
-
-    def stats(values):
-        if not values:
-            return dict(min=None, max=None, count=0)
-        return dict(
-            min=min(values),
-            max=max(values),
-            count=len(values),
-        )
-
-    return {
-        "fl": stats(fl_values),
-        "kl": stats(kl_values),
-    }
-
-from collections import Counter
-
-def most_common_fl(events_by_ch):
-    fl_values = []
-    for segs in events_by_ch.values():
-        for seg in segs:
-            if seg.fl > 0:
-                fl_values.append(seg.fl)
-    if not fl_values:
-        return None
-    return Counter(fl_values).most_common(1)[0]  # (fl, count)
-
-from collections import Counter
-
-def analyze_rhythm_intervals(segments):
-    """
-    Rhythm channels (bd, sd, tom, tc, hh) の keyon 間隔を計測する。
-    戻り値:
-      {
-        'bd': {'min':..., 'max':..., 'typ':..., 'count':...},
-        'sd': {...},
-        ...
-      }
-    """
-    # RHYTHM_CH_MAP は opll_mml.py 側の定義を使う
-    from opll_mml import RHYTHM_CH_MAP
-
-    rhythm_keys = ['bd', 'sd', 'tom', 'tc', 'hh']
-    rhythm_ch_map = RHYTHM_CH_MAP  # 例: {'bd':9, 'sd':10, ...}
-
-    results = {}
-
-    for key in rhythm_keys:
-        if key not in rhythm_ch_map:
-            continue
-
-        ch = rhythm_ch_map[key]
-        segs = segments.get(ch, [])
-
-        # keyon=1 の開始 tick を収集
-        starts = [seg.tick_start for seg in segs if seg.keyon == 1]
-
-        if len(starts) < 2:
-            results[key] = dict(min=None, max=None, typ=None, count=0)
-            continue
-
-        # tick 間隔を計算
-        intervals = [starts[i+1] - starts[i] for i in range(len(starts)-1)]
-
-        # 最頻値
-        typ = Counter(intervals).most_common(1)[0][0]
-
-        results[key] = dict(
-            min=min(intervals),
-            max=max(intervals),
-            typ=typ,
-            count=len(intervals),
-        )
-
-    return results
-
-def estimate_bpm(stats, rhythm_stats):
-    """
-    Melody fl_mode と Rhythm typ の両方から BPM を推定する。
-    3600 / ticks が BPM の基本式。
-    """
-
-    candidates = []
-
-    # Melody fl_mode
-    fl_values = []
-    for ch, segs in stats.get("events_by_ch", {}).items():
-        for seg in segs:
-            if seg.fl > 0:
-                fl_values.append(seg.fl)
-
-    if fl_values:
-        from collections import Counter
-        fl_mode = Counter(fl_values).most_common(1)[0][0]
-        bpm_fl = 3600 / fl_mode
-        candidates.append(bpm_fl)
-
-    # Rhythm typ
-    if rhythm_stats:
-        for key, info in rhythm_stats.items():
-            if info["typ"] is not None:
-                bpm_r = 3600 / info["typ"]
-                candidates.append(bpm_r)
-
-    # 候補が無い場合
-    if not candidates:
-        return None
-
-    # 最頻値に近い BPM を採用
-    # （候補が複数ある場合、中央値が安定）
-    candidates.sort()
-    bpm_est = candidates[len(candidates)//2]
-
-    return round(bpm_est)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -327,31 +203,21 @@ def main():
     # ── Build OPLL segments ───────────────────────────────────────────────
     print("Building OPLL segments …")
     num_ch = 18
-    #segments, bpm_detected = _build_segments(opll_trace_csv)
+    #segments = _build_segments(opll_trace_csv)
+    #segments = _build_segments_no_rhythm(opll_trace_csv)
     segments, bpm_detected = _build_segments(opll_trace_csv, include_rhythm=True)
-    dump_segments(segments)
-
     n_segs = sum(len(v) for v in segments.values())
     print(f"  {n_segs} segments across {num_ch} channels")
-
-    # ── BPM from beat-based segment model ────────────────────────────────
-    if bpm_detected is not None:
-        print(f"Detected BPM = {bpm_detected}")
-        args.bpm = bpm_detected
-    else:
-        print("BPM detection failed → using --bpm value")
-
+    
     # ── Generate MS2 binary ───────────────────────────────────────────────
-    print(f"Generating MS2 (BPM={args.bpm}, timer={args.timer}) …")
+    print(f"Generating MS2 (BPM={bpm_detected}, timer={args.timer}) …")
     if args.base_ms2:
         print(f"  Using base instrument library: {args.base_ms2}")
-
     ms2_bytes = build_ms2_file(
         segments       = segments,
         voice_csv_path = opll_voice_csv,
         stem           = base_name,
-        bpm            = args.bpm,
-        beat_sz        = 0,  # min_l not separately returned by _build_segments(); informational only
+        bpm            = bpm_detected,
         timer          = args.timer,
         base_ms2       = args.base_ms2,
         video          = args.video,
