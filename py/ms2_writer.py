@@ -567,54 +567,68 @@ def build_patterns_chunk_data(
 
 def _build_step_grid(
     segments: dict,
-    ticks_per_step: int,
+    ticks_per_step: int,  # もう使わないがシグネチャは維持
     total_steps: int,
 ) -> dict:
+    """Build a step grid mapping (ch, step) → (keyon, ms2_note, inst, vol, retrigger, at_token, is_legate)."""
     grid: dict[tuple, tuple] = {}
-    # Iterate over all channel indices present in 'segments' (not only NUM_CH).
-    # Rhythm channels may be added at indices >= NUM_CH, so include them.
+
     if segments:
         max_ch = max(segments.keys())
     else:
         max_ch = NUM_CH - 1
+
     for ch in range(max_ch + 1):
         segs = segments.get(ch, [])
         assignments: dict[int, tuple] = {}
-        keyoff_steps: set = set()
+
         for seg in segs:
-            if seg.keyon:
-                continue
-            start_step = seg.tick_start // ticks_per_step
-            if start_step < total_steps:
-                keyoff_steps.add(start_step)
-        for seg in segs:
-            start_step = seg.tick_start // ticks_per_step
+            # ★ ここを tick ではなく beat_pos にする
+            start_step = getattr(seg, "beat_pos", 0)
             if start_step >= total_steps:
                 continue
-            at_token = getattr(seg, 'at_token', '')
-            if getattr(seg, 'ev_type', 'note') == 'rhythm':
+
+            at_token = getattr(seg, "at_token", "")
+            ev_type  = getattr(seg, "ev_type", "note")
+
+            # -------------------------
+            # Rhythm channels
+            # -------------------------
+            if ev_type == "rhythm":
                 if seg.keyon:
                     ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
                     if ms2_note is None:
-                        ms2_note = DEFAULT_RHYTHM_NOTE  # Default note for unpitched rhythm
-                    retrigger = start_step in keyoff_steps
-                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token,getattr(seg, "is_legate", 0))
-                # Rhythm channels do not emit NOTE_OFF; drums decay naturally
-            elif seg.keyon:
+                        ms2_note = DEFAULT_RHYTHM_NOTE
+                    is_legate = getattr(seg, "is_legate", 0)
+                    retrigger = (is_legate == 0)
+                    assignments[start_step] = (
+                        1, ms2_note, seg.inst, seg.vol, retrigger, at_token, is_legate
+                    )
+                continue
+
+            # -------------------------
+            # Melody channels
+            # -------------------------
+            if seg.keyon:
                 ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
                 if ms2_note is not None:
-                    retrigger = start_step in keyoff_steps
-                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token,getattr(seg, "is_legate", 0))
+                    is_legate = getattr(seg, "is_legate", 0)
+                    retrigger = (is_legate == 0)
+                    assignments[start_step] = (
+                        1, ms2_note, seg.inst, seg.vol, retrigger, at_token, is_legate
+                    )
             else:
                 if start_step not in assignments or assignments[start_step][0] == 0:
-                    assignments[start_step] = (0, 0, seg.inst, seg.vol, False, at_token,0)
-        cur_state: tuple = (0, 0, 0, 0, False, '',0)
+                    assignments[start_step] = (
+                        0, 0, seg.inst, seg.vol, False, at_token, 0
+                    )
+
+        cur_state: tuple = (0, 0, 0, 0, False, "", 0)
         for step in range(total_steps):
             if step in assignments:
                 cur_state = assignments[step]
             else:
                 if cur_state[4]:
-                    # (keyon, note, inst, vol, retrigger, at_token, is_legate)
                     cur_state = (
                         cur_state[0],
                         cur_state[1],
@@ -625,8 +639,8 @@ def _build_step_grid(
                         cur_state[6],
                     )
             grid[(ch, step)] = cur_state
-    return grid
 
+    return grid
 
 def _build_instrument_table(
     segments: dict,
