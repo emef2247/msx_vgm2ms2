@@ -704,70 +704,111 @@ def segments_to_patterns(
     if user_patches is None:
         user_patches = {}
     total_steps = n_patterns * STEPS_PER_PATTERN
-    grid = _build_step_grid(segments, ticks_per_step, total_steps)
     channel_event_lists: list[list] = []
     for _ in range(n_patterns):
         channel_event_lists.append([[] for _ in range(n_channels)])
+
+    def _seg_tick_start(seg) -> int:
+        if hasattr(seg, 'tick_start'):
+            return int(getattr(seg, 'tick_start', 0))
+        return int(getattr(seg, 'beat_start', 0)) * ticks_per_step
+
     for ch in range(n_channels):
-        prev_state = (0, 0, 0, 0, False, '',0)
+        segs = sorted(segments.get(ch, []), key=_seg_tick_start)
         prev_inst_idx = -1
         prev_vol_ms2 = -1
-        for step in range(total_steps):
-            pat = step // STEPS_PER_PATTERN
-            step_in_pat = step % STEPS_PER_PATTERN
-            state = grid.get((ch, step), (0, 0, 0, 0, False, '', 0))
-            keyon, ms2_note, inst, vol_opll, retrigger, at_token, is_legate = state
-            prev_keyon = prev_state[0]
-            prev_note  = prev_state[1]
+        note_is_on = False
+        step_events: dict[int, dict[str, bytes | bool]] = {}
+
+        def _ensure_step_slot(step_idx: int) -> dict[str, bytes | bool]:
+            return step_events.setdefault(step_idx, {})
+
+        for seg in segs:
+            step = _seg_tick_start(seg) // ticks_per_step
+            if step >= total_steps:
+                continue
+            keyon = int(getattr(seg, 'keyon', 0))
+            inst = int(getattr(seg, 'inst', 0))
+            vol_opll = int(getattr(seg, 'vol', 0))
+            at_token = getattr(seg, 'at_token', '')
+            is_legate = int(getattr(seg, 'is_legate', 0))
+            if not is_legate:
+                is_legate = int(getattr(seg, 'is_legato', 0))
+            ioi = int(getattr(seg, 'ioi', 0))
+            l = int(getattr(seg, 'l', 0))
+            fl = int(getattr(seg, 'fl', 0))
+            vl = int(getattr(seg, 'vl', 0))
+            ev_type = getattr(seg, 'ev_type', '')
+            ms2_note = fnum_block_to_ms2_note(getattr(seg, 'fnum', 0), getattr(seg, 'block', 0))
+            if ms2_note is None and ev_type in ('rhythm', 'rhythy'):
+                ms2_note = DEFAULT_RHYTHM_NOTE
             vol_ms2 = opll_vol_to_ms2_vol(vol_opll)
+
+            if keyon:
+                seg_ms2_vol = getattr(seg, 'ms2_vol', None)
+                silent_keyon = (seg_ms2_vol == 63) or (vol_ms2 == 63) or (vol_opll == 63)
+                if silent_keyon:
+                    slot = _ensure_step_slot(step)
+                    slot.clear()
+                    slot['off'] = True
+                    note_is_on = False
+                elif ms2_note is not None:
+                    if inst == 0 and user_patches:
+                        v_num = _parse_user_v_num(at_token)
+                        if v_num is not None and v_num in user_patches:
+                            inst_idx = ref_count + (v_num - 1)
+                        else:
+                            inst_idx = 0
+                    else:
+                        inst_idx = _opll_inst_to_ms2_idx(inst, n_instruments)
+
+                    note_edge = (ioi == 1) or (l > 0 and l == fl)
+                    vol_edge = (ioi == 1) or (l > 0 and l == vl)
+                    inst_edge = (ioi == 1) or (l > 0 and l == fl)
+
+                    slot = _ensure_step_slot(step)
+                    if slot.get('off'):
+                        slot.clear()
+
+                    if note_edge:
+                        if is_legate == 1:
+                            slot['note'] = bytes([0x02, ms2_note & 0xFF])  # LEGATO
+                        else:
+                            slot['note'] = bytes([0x00, ms2_note & 0xFF])  # NOTE_ON
+                        note_is_on = True
+
+                    if inst_edge:
+                        force_inst = (step == 0)
+                        if (inst_idx != prev_inst_idx) or force_inst or (ioi == 1):
+                            slot['inst'] = bytes([0x04, inst_idx & 0xFF])
+                            prev_inst_idx = inst_idx
+
+                    if vol_edge:
+                        if (vol_ms2 != prev_vol_ms2) or (ioi == 1):
+                            slot['vol'] = bytes([0x05, vol_ms2 & 0xFF])
+                            prev_vol_ms2 = vol_ms2
+            elif note_is_on:
+                slot = _ensure_step_slot(step)
+                slot.clear()
+                slot['off'] = True
+                note_is_on = False
+
+        for step in sorted(step_events.keys()):
+            slot = step_events[step]
             evts_here: list[bytes] = []
-            if keyon and ms2_note is not None:
-                # instrument index
-                if inst == 0 and user_patches:
-                    v_num = _parse_user_v_num(at_token)
-                    if v_num is not None and v_num in user_patches:
-                        inst_idx = ref_count + (v_num - 1)
-                    else:
-                        inst_idx = 0
-                else:
-                    inst_idx = _opll_inst_to_ms2_idx(inst, n_instruments)
-
-                note_changed = (ms2_note != prev_note) or (not prev_keyon) or retrigger
-                inst_changed = (inst_idx != prev_inst_idx)
-                vol_changed  = (vol_ms2 != prev_vol_ms2)
-                force_inst = (pat == 0 and step_in_pat == 0)
-
-                emit_note = note_changed or inst_changed
-                emit_vol  = vol_changed
-                emit_inst = inst_changed or force_inst
-
-                # -------------------------
-                # LEGATO / NOTE_ON
-                # -------------------------
-                if emit_note:
-                    if is_legate == 1:
-                        evts_here.append(bytes([0x02, ms2_note & 0xFF]))  # LEGATO
-                        # LEGATO のときは INST/VOL を emit しない
-                        emit_inst = False
-                        emit_vol  = False
-                    else:
-                        evts_here.append(bytes([0x00, ms2_note & 0xFF]))  # NOTE_ON
-
-                # -------------------------
-                # VOL / INST
-                # -------------------------
-                if emit_vol:
-                    evts_here.append(bytes([0x05, vol_ms2 & 0xFF]))
-                    prev_vol_ms2 = vol_ms2
-
-                if emit_inst:
-                    evts_here.append(bytes([0x04, inst_idx & 0xFF]))
-                    prev_inst_idx = inst_idx
-            elif not keyon and prev_keyon:
+            if slot.get('off'):
                 evts_here.append(bytes([0x01]))
+            else:
+                if 'note' in slot:
+                    evts_here.append(slot['note'])  # type: ignore[arg-type]
+                if 'inst' in slot:
+                    evts_here.append(slot['inst'])  # type: ignore[arg-type]
+                if 'vol' in slot:
+                    evts_here.append(slot['vol'])  # type: ignore[arg-type]
             if evts_here:
+                pat = step // STEPS_PER_PATTERN
+                step_in_pat = step % STEPS_PER_PATTERN
                 channel_event_lists[pat][ch].append((step_in_pat, evts_here))
-            prev_state = state
     return channel_event_lists
 
 
