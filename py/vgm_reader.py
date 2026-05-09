@@ -445,7 +445,7 @@ class _OpllState:
 
     NUM_CH = 9   # 0..8:melody+rhythm
 
-    _HEADER = ('#type,time,ch,ticks,l,fl,kl,vl,beat_pos,beat,fb,kb,vb,keyon,is_legato,is_vibrato,is_envelope,fnum,block,inst,vol,sus,scale,ioi,onset,tempo,'
+    _HEADER = ('#type,time,ch,ticks,l,fl,kl,vl,tick_start,tick_end,beat_start,beat_end,beat_pos,beat,fb,kb,vb,keyon,is_legato,is_vibrato,is_envelope,fnum,block,inst,vol,sus,scale,ioi,onset,tempo,'
                'is_ryt,r_tempo,r_ioi,r_mode_ioi,r_hh_ioi,r_hh_mode_ioi,'
                'bd,sd,tom,tc,hh,'
                'fnum_ch6,vol_ch6,sus_ch6,block_ch6,'
@@ -525,7 +525,7 @@ class _OpllState:
         ticks = get_ticks(t)
         is_ryt, bd, sd, tom, tc, hh = self._rhythm_fields_at_tick(ticks)
         cols = [
-            type_, repr(t), str(ch), str(ticks),'','','','','','','','','',
+            type_, repr(t), str(ch), str(ticks),'','','','','','','','','','','','','',
             str(self._keyon(ch)),
             '','','',
             str(self.fnum9(ch)),
@@ -552,7 +552,7 @@ class _OpllState:
         ticks = get_ticks(t)
         is_ryt, bd, sd, tom, tc, hh = self._decode_rhythm_bits(regval)
         cols = [
-            type_, repr(t), '-1', str(ticks),'','','', '', '', '', '', '', '','','','','','','','','','','','','','',
+            type_, repr(t), '-1', str(ticks),'','','', '', '', '', '', '', '','','','','','','','','','','','','','','','','','',
             str(is_ryt),'','','','','',
             str(bd), str(sd), str(tom), str(tc), str(hh),
             str(self.fnum9(6)), str(self._vol(6)), str(self._sus(6)), str(self._block(6)),

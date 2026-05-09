@@ -778,6 +778,66 @@ def pass2_expand_rhythm(events, RHYTHM_CH_MAP, RHYTHM_VOICE_ID_MAP):
 
     return new_events
 
+def pass2_recompute_rhythm_lengths(events):
+    # rhythm チャンネルだけ抽出
+    rhythm_chs = [6, 7, 8]  # RHYTHM_CH_MAP の値に合わせる
+    events_by_ch = {ch: [] for ch in rhythm_chs}
+
+    # 1) rhythm イベントをチャンネルごとに集める
+    for ev in events:
+        ch = int(ev.get("ch", -1))
+        if ch in rhythm_chs:
+            events_by_ch[ch].append(ev)
+
+    # 2) 各チャンネルごとに tick/l を再計算
+    for ch, evs in events_by_ch.items():
+        # tick_start でソート
+        evs.sort(key=lambda e: int(e.get("ticks", 0)))
+
+        new_evs = []
+        for i, ev in enumerate(evs):
+            tick_start = int(ev.get("ticks", 0))
+
+            if i < len(evs) - 1:
+                next_tick = int(evs[i+1].get("ticks", 0))
+                l = max(1, next_tick - tick_start)
+            else:
+                l = 1  # 最後は最小長さ
+
+            ev["ticks"] = tick_start
+            ev["l"] = l
+            ev["tick_start"] = tick_start
+            ev["tick_end"] = tick_start + l
+
+            new_evs.append(ev)
+
+        # 3) keyon=0 の連続イベントをマージ
+        merged = []
+        for ev in new_evs:
+            if merged and merged[-1]["keyon"] == 0 and ev["keyon"] == 0:
+                # 長さを伸ばす
+                merged[-1]["l"] += ev["l"]
+                merged[-1]["tick_end"] = ev["tick_end"]
+            else:
+                merged.append(ev)
+
+        # 置き換え
+        events_by_ch[ch] = merged
+
+    # 4) 元の events に戻す
+    final = []
+    for ev in events:
+        ch = int(ev.get("ch", -1))
+        if ch in rhythm_chs:
+            continue
+        final.append(ev)
+
+    for ch in rhythm_chs:
+        final.extend(events_by_ch[ch])
+
+    return final
+
+
 def pass2_filter_l0(events):
     """
     PASS 2:
@@ -1371,11 +1431,6 @@ def compute_min_l(events):
         if vol == 15:
             continue
 
-        is_rhythm_on = ev["#type"] == "rhythm"
-        is_melody_on = ev["#type"] != "rhythm" and (0 <= ch <= 5)
-        # --- rhythm は除外 ---
-        if is_rhythm_on:
-            continue
 
         # --- instVol(keyon=1) と keyBlk(keyon=0) の両方を対象にする ---
         if l > 0:
@@ -1836,6 +1891,8 @@ def _build_segments(trace_csv_path,
 
     # type="rhythm", ch=-1のeventをRHYTHM_CH_MAP, RHYTHM_VOICE_ID_MAPをベースに展開
     events = pass2_expand_rhythm(events,RHYTHM_CH_MAP,RHYTHM_VOICE_ID_MAP)
+    # 展開後のchについてlの再計算
+    events = pass2_recompute_rhythm_lengths(events)
 
     # pass2 (2): fl,kl,vlを計算した後にl=0のeventを削除
     # ここで l=0 の keyon 0->1 (retrigger)のeventは削除される。(fl,kl,vlにはリセットとして反映済み)
@@ -2002,10 +2059,11 @@ def _build_segments(trace_csv_path,
             seg.beat_end   = _int(ev, "beat_pos", 0) + _int(ev, "beat", 0)
             seg.grid_sz    = 1
             seg.ms2_vol    = ms2_vol
-            seg.ms2_len    = _int(ev, "beat", 0)
+            seg.ms2_len    = _int(ev, "l", 0)
             seg.min_l      = min_l
             seg.beat_sz    = min_l
             seg.grid_sz    = 1
+
             if prev_seg:
                 seg.odiff = seg.block  - prev_seg.block
                 seg.vdiff = seg.vol - prev_seg.vol
