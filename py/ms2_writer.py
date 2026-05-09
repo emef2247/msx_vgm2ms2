@@ -580,13 +580,6 @@ def _build_step_grid(
     for ch in range(max_ch + 1):
         segs = segments.get(ch, [])
         assignments: dict[int, tuple] = {}
-        keyoff_steps: set = set()
-        for seg in segs:
-            if seg.keyon:
-                continue
-            start_step = seg.tick_start // ticks_per_step
-            if start_step < total_steps:
-                keyoff_steps.add(start_step)
         for seg in segs:
             start_step = seg.tick_start // ticks_per_step
             if start_step >= total_steps:
@@ -604,8 +597,11 @@ def _build_step_grid(
             elif seg.keyon:
                 ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
                 if ms2_note is not None:
-                    retrigger = start_step in keyoff_steps
-                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token,getattr(seg, "is_legato", 0))
+                    is_legato_val = getattr(seg, "is_legato", 0)
+                    # OPLL retrigger events are represented by is_legato=0 in pass4.
+                    # is_legato=1 means true legato and should not emit NOTE_ON.
+                    retrigger = (is_legato_val == 0)
+                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token, is_legato_val)
             else:
                 if start_step not in assignments or assignments[start_step][0] == 0:
                     assignments[start_step] = (0, 0, seg.inst, seg.vol, False, at_token,0)
