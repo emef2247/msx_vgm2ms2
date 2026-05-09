@@ -597,8 +597,9 @@ def _build_step_grid(
                     ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
                     if ms2_note is None:
                         ms2_note = DEFAULT_RHYTHM_NOTE  # Default note for unpitched rhythm
-                    retrigger = start_step in keyoff_steps
-                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, retrigger, at_token,getattr(seg, "is_legato", 0))
+                    # Rhythm hits always retrigger: drums have no explicit keyoff between
+                    # consecutive hits, so we cannot rely on keyoff_steps to detect retriggering.
+                    assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, True, at_token,getattr(seg, "is_legato", 0))
                 # Rhythm channels do not emit NOTE_OFF; drums decay naturally
             elif seg.keyon:
                 ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
