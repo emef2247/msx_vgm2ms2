@@ -943,9 +943,37 @@ def build_ms2_file(
         freq_hz = _FREQ_PAL
     else:
         freq_hz = _FREQ_NTSC
-    timer_divider = int(math.floor(freq_hz * 3840 / bpm))
-    timer_divider = max(1, min(0xFFFF, timer_divider))
-    ticks_per_step = max(1, round(freq_hz * 15 / bpm))
+    legacy_timer_divider = int(math.floor(freq_hz * 3840 / bpm))
+    legacy_timer_divider = max(1, min(0xFFFF, legacy_timer_divider))
+    ticks_per_step_16th = max(1, round(freq_hz * 15 / bpm))
+
+    min_l = None
+    for ch in range(NUM_CH):
+        for seg in segments.get(ch, []):
+            seg_min_l = getattr(seg, 'min_l', None)
+            if seg_min_l is None:
+                continue
+            try:
+                seg_min_l_f = float(seg_min_l)
+            except (TypeError, ValueError):
+                continue
+            if seg_min_l_f > 0:
+                min_l = seg_min_l_f if min_l is None else min(min_l, seg_min_l_f)
+
+    ticks_per_step = ticks_per_step_16th
+    timer_divider = legacy_timer_divider
+    if min_l is not None:
+        min_l_i = int(min_l)
+        if min_l_i > 0:
+            ticks_per_step = max(1, min(min_l_i, ticks_per_step_16th))
+            timer_divider = 256 * ticks_per_step
+            timer_divider = max(1, min(0xFFFF, timer_divider))
+            if debug:
+                print(
+                    f"[ticks_per_step] min_l={min_l} int(min_l)={min_l_i} "
+                    f"legacy={ticks_per_step_16th} → using ticks_per_step={ticks_per_step} "
+                    f"timer_divider={timer_divider}"
+                )
 
     # ==== パターン数自動推定 ====
     last_note_end_tick = 0
