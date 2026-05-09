@@ -2002,7 +2002,7 @@ def _build_segments(trace_csv_path,
             seg.beat_end   = _int(ev, "beat_pos", 0) + _int(ev, "beat", 0)
             seg.grid_sz    = 1
             seg.ms2_vol    = ms2_vol
-            seg.ms2_len    = _int(ev, "beat", 0)
+            seg.ms2_len    = _int(ev, "l", 0)
             seg.min_l      = min_l
             seg.beat_sz    = min_l
             seg.grid_sz    = 1
