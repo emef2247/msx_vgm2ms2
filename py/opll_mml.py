@@ -2612,14 +2612,14 @@ def process_opll_csv(trace_path, output_dir, stem=None,
             stem = stem[:-len('_trace')]
     os.makedirs(output_dir, exist_ok=True)
     # Build segments (tick-based final-state evaluation)
-    segments, _ = _build_segments(
+    segments_by_ch, _ = _build_segments(
         trace_path,
         include_rhythm=True,
         rhythm_reg_timeline=rhythm_reg_timeline,
     )
     
     # Assign voice IDs using the voice CSV (user-patch tracking)
-    voice_table, user_patches, warnings = _assign_voice_ids(segments, voice_csv_path)
+    voice_table, user_patches, warnings = _assign_voice_ids(segments_by_ch, voice_csv_path)
 
     if dump_passes:
         # Emit a simple segment dump for debugging
@@ -2627,16 +2627,16 @@ def process_opll_csv(trace_path, output_dir, stem=None,
         with open(seg_path, 'w', newline='\n') as fh:
             fh.write('#ch,beat_start,beat_end,keyon,fnum,block,inst,vol,voice_id,at_token\n')
             for ch in range(NUM_CH):
-                for seg in segments.get(ch, []):
+                for seg in segments_by_ch.get(ch, []):
                     fh.write(f'{ch},{seg.beat_start},{seg.beat_end},'
                              f'{seg.keyon},{seg.fnum},{seg.block},'
                              f'{seg.inst},{seg.vol},{seg.voice_id},{seg.at_token}\n')
 
     # ---- pass3.compress.MGS_pct.mml – always produced (merge source + non-debug output) ----
-    simple_mgs_pct_text = _generate_mml_mgs_pct(segments, stem,
-                                                  voice_table=voice_table,
-                                                  user_patches=user_patches,
-                                                  warnings=warnings)
+    simple_mgs_pct_text = _generate_mml_mgs_pct(segments_by_ch, stem,
+                                                   voice_table=voice_table,
+                                                   user_patches=user_patches,
+                                                   warnings=warnings)
     compress_mgs_pct_path = os.path.join(output_dir, f'{stem}.opll.pass3.compress.MGS_pct.mml')
     with open(compress_mgs_pct_path, 'w', newline='\n') as fh:
         fh.write(compress_mml_text(simple_mgs_pct_text))
@@ -2646,17 +2646,17 @@ def process_opll_csv(trace_path, output_dir, stem=None,
 
     # ---- debug-only variants ----
 
-    mml_text = _generate_mml(segments, stem, voice_table=voice_table,
+    mml_text = _generate_mml(segments_by_ch, stem, voice_table=voice_table,
                               user_patches=user_patches, warnings=warnings)
     mml_path = os.path.join(output_dir, f'{stem}.opll.mml')
     with open(mml_path, 'w', newline='\n') as fh:
         fh.write(mml_text)
 
     # pass3.simple.mml – raw tick (%N) notation, #tempo 75
-    simple_raw_text = _generate_mml_impl(segments, stem, raw_ticks=True,
-                                          voice_table=voice_table,
-                                          user_patches=user_patches,
-                                          warnings=warnings)
+    simple_raw_text = _generate_mml_impl(segments_by_ch, stem, raw_ticks=True,
+                                           voice_table=voice_table,
+                                           user_patches=user_patches,
+                                           warnings=warnings)
     simple_raw_path = os.path.join(output_dir, f'{stem}.opll.pass3.simple.mml')
     with open(simple_raw_path, 'w', newline='\n') as fh:
         fh.write(simple_raw_text)
