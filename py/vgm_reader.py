@@ -694,6 +694,17 @@ def parse_vgm(vgm_path: str, output_dir: str | None = None) -> tuple[str, str, s
     vgm_data_offset = struct.unpack_from('<I', raw, 0x34)[0]
     data_start = 0x34 + vgm_data_offset
 
+    # VGM spec: if a chip's clock is 0, the chip is not installed and its
+    # data commands must be ignored.
+    #
+    # K051649 (SCC/SCC+) clock is at header offset 0xCC, added in VGM 1.61.
+    # Only process 0xD2 (K051649) commands when the clock is non-zero.
+    vgm_version = struct.unpack_from('<I', raw, 0x08)[0] if len(raw) >= 0x0C else 0
+    has_k051649 = False
+    if vgm_version >= 0x161 and len(raw) >= 0xD0:
+        k051649_clock = struct.unpack_from('<I', raw, 0xCC)[0]
+        has_k051649 = (k051649_clock != 0)
+
     # ── Process data stream ──────────────────────────────────────
     psg  = _PsgState()
     scc  = _SccState()
@@ -733,8 +744,12 @@ def parse_vgm(vgm_path: str, output_dir: str | None = None) -> tuple[str, str, s
             pp = raw[pos]; pos += 1
             aa = raw[pos]; pos += 1
             dd = raw[pos]; pos += 1
-            base = {0: 0x9800, 1: 0x9880, 2: 0x988A, 3: 0x988F}.get(pp, 0x9800)
-            scc.write_scc(global_time, base + aa, dd)
+            # Only route to SCC state machine when the K051649 chip is
+            # declared in the VGM header.  A clock of 0 means the chip is
+            # absent; writing to it would produce spurious SCC output.
+            if has_k051649:
+                base = {0: 0x9800, 1: 0x9880, 2: 0x988A, 3: 0x988F}.get(pp, 0x9800)
+                scc.write_scc(global_time, base + aa, dd)
         # Other commands: single byte already consumed, skip
 
     # ── Write CSVs ───────────────────────────────────────────────
