@@ -1871,7 +1871,7 @@ def _build_segments(trace_csv_path,
     events, min_l, min_ioi, mode_ioi, bpm = pass4_compute_beats(events)
     pass4_dump_csv(events, trace_csv_path)
     # ticks_per_step (Nyquist)
-    ticks_per_step   = max(1,int(mode_ioi /2 ))
+    ticks_per_step   = max(2,int(mode_ioi /2 ))
     print(f"[SEGMENT] tiks per step:{ticks_per_step} min_ioi:{min_ioi} mode_ioi:{mode_ioi}")
 
     # ------------------------------------------------------
