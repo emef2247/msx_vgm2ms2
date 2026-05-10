@@ -874,6 +874,7 @@ def build_ms2_file(
     video: str = 'ntsc',
     debug: bool = False,
     rhythm_instruments: dict | None = None,
+    ticks_per_step_override: int | None = None,
 ) -> bytes:
     """
     MS2ファイル生成: メロディはbase_ms2優先(1～15、index 0～14)、16～はリズム etc.
@@ -972,6 +973,16 @@ def build_ms2_file(
                 f"[ticks_per_step] min_l={min_l} int(min_l)={min_l_int} "
                 f"legacy={ticks_per_step_16th} → using ticks_per_step={ticks_per_step} "
                 f"timer_divider={timer_divider}"
+            )
+
+    # ticks_per_step_override が指定されていれば上書き
+    if ticks_per_step_override is not None:
+        ticks_per_step = max(2, int(ticks_per_step_override))
+        timer_divider = 256 * ticks_per_step
+        if debug:
+            print(
+                f"[ticks_per_step] override={ticks_per_step_override} "
+                f"→ using ticks_per_step={ticks_per_step} timer_divider={timer_divider}"
             )
 
     # ==== パターン数自動推定 ====
