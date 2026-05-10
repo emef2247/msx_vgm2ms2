@@ -16,6 +16,9 @@ Arguments:
     --timer <0|1>               0 = VDP timer (default), 1 = 50 Hz timer.
     --video <ntsc|pal>          Video system for VDP timer (default: ntsc).
                                 Ignored when --timer 1.
+    --ticks-per-step <N>        Override ticks per step for MS2 grid quantization
+                                (minimum: 2). When not specified, automatically
+                                calculated as mode_ioi // 2 (Nyquist condition).
     --base-ms2 <path>           MS2 file to use as the base preset instrument
                                 library for song export.  The first 16
                                 instruments from this file map to OPLL presets
@@ -122,6 +125,15 @@ def main():
         help='Video system: ntsc (default) or pal; only used when --timer 0',
     )
     parser.add_argument(
+        '--ticks-per-step', type=int, default=None, metavar='N',
+        help=(
+            'Override ticks_per_step used for MS2 step grid quantization. '
+            'When specified, this value is used instead of the automatically '
+            'calculated value (Nyquist: mode_ioi // 2). '
+            'Minimum value: 2. Must be a positive integer >= 2.'
+        ),
+    )
+    parser.add_argument(
         '--debug', action='store_true',
         help='Print extra information and dump the generated MS2 structure'
     )
@@ -153,6 +165,8 @@ def main():
         ),
     )
     args = parser.parse_args()
+    if args.ticks_per_step is not None and args.ticks_per_step < 2:
+        parser.error('--ticks-per-step must be >= 2')
 
     # ── Instrument-library export mode ────────────────────────────────────
     if args.export_inst_libraries is not None:
@@ -205,7 +219,11 @@ def main():
     num_ch = 18
     #segments = _build_segments(opll_trace_csv)
     #segments = _build_segments_no_rhythm(opll_trace_csv)
-    segments, bpm_detected = _build_segments(opll_trace_csv, include_rhythm=True)
+    segments, bpm_detected = _build_segments(
+        opll_trace_csv,
+        include_rhythm=True,
+        ticks_per_step_override=args.ticks_per_step,
+    )
     n_segs = sum(len(v) for v in segments.values())
     print(f"  {n_segs} segments across {num_ch} channels")
     
@@ -222,6 +240,7 @@ def main():
         base_ms2       = args.base_ms2,
         video          = args.video,
         debug          = args.debug,
+        ticks_per_step_override = args.ticks_per_step,
     )
 
     # ── Write output file ─────────────────────────────────────────────────

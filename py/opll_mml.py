@@ -1822,7 +1822,8 @@ def estimate_bpm_from_segments(segments_by_ch, vgm_rate):
 
 def _build_segments(trace_csv_path,
                     include_rhythm=True,
-                    rhythm_reg_timeline=None):
+                    rhythm_reg_timeline=None,
+                    ticks_per_step_override=None):
     # ------------------------------------------------------
     # vgmの情報 (trace_csv_path)からevent情報を作成
     # ------------------------------------------------------
@@ -1870,9 +1871,12 @@ def _build_segments(trace_csv_path,
     # beat_pos は前のeventのbeatの累計。そのeventのスタート地点を表す
     events, min_l, min_ioi, mode_ioi, bpm = pass4_compute_beats(events)
     pass4_dump_csv(events, trace_csv_path)
-    # ticks_per_step (Nyquist)
-    ticks_per_step   = max(2,int(mode_ioi /2 ))
-    print(f"[SEGMENT] tiks per step:{ticks_per_step} min_ioi:{min_ioi} mode_ioi:{mode_ioi}")
+    if ticks_per_step_override is not None:
+        ticks_per_step = max(2, int(ticks_per_step_override))
+        print(f"[SEGMENT] ticks_per_step:{ticks_per_step} (override) min_ioi:{min_ioi} mode_ioi:{mode_ioi}")
+    else:
+        ticks_per_step = max(2, int(mode_ioi // 2))
+        print(f"[SEGMENT] ticks_per_step:{ticks_per_step} (auto, Nyquist) min_ioi:{min_ioi} mode_ioi:{mode_ioi}")
 
     # ------------------------------------------------------
     # pass4まで処理されたeventsをベースに_Segmentを生成する
