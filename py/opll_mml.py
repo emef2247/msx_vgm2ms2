@@ -17,6 +17,9 @@ from mml_utils import (
 )
 
 CH_OFFSET = 9        # OPLL ch0 → MGSDRV track 9
+_MML_MELODY_CHS = list(range(0, 6))       # ch 0-5 -> MGSDRV track 9-e
+_MML_RHYTHM_CHS = {9, 10, 11, 12, 13}     # RHYTHM_CH_MAP values
+_MML_RHYTHM_TRACK = 15                     # MGSDRV track 'f'
 
 # Trace CSV column indices (existing)
 _COL_TYPE   = 0
@@ -2305,6 +2308,68 @@ def _voice_table_comments(voice_table: dict) -> list[str]:
     return lines
 
 
+def _collect_rhythm_segments(segments: dict) -> list:
+    rhythm_segs = []
+    for rch in sorted(_MML_RHYTHM_CHS):
+        rhythm_segs.extend(segments.get(rch, []))
+    rhythm_segs.sort(key=lambda s: s.ticks)
+    return rhythm_segs
+
+
+def _rhythm_scale(seg) -> str:
+    tokens = []
+    if getattr(seg, 'bd', 0) == 1:
+        tokens.append('b')
+    if getattr(seg, 'sd', 0) == 1:
+        tokens.append('s')
+    if getattr(seg, 'tom', 0) == 1:
+        tokens.append('m')
+    if getattr(seg, 'tc', 0) == 1:
+        tokens.append('c')
+    if getattr(seg, 'hh', 0) == 1:
+        tokens.append('h')
+    return ''.join(tokens) if tokens else 'r'
+
+
+def _build_rhythm_mml_buffer(rhythm_segs: list, rhythm_track_id: str) -> list[str]:
+    rhythm_mml_buffer: list[str] = [f'\n\n;ch{rhythm_track_id} start']
+    l_cnt = 0
+    note_cnt = 0
+    mml = ''
+
+    for seg in rhythm_segs:
+        length = seg.beat_end - seg.beat_start
+        if length <= 0:
+            continue
+
+        scale = _rhythm_scale(seg)
+        remaining = length
+        while remaining > 0:
+            ltmp = min(remaining, 255)
+            if note_cnt == 0:
+                mml = f'\n{rhythm_track_id}'
+
+            mml += f' {scale}%{ltmp}'
+            l_cnt += ltmp
+            remaining -= ltmp
+
+            if remaining > 0:
+                rhythm_mml_buffer.append(mml)
+                mml = ''
+
+        note_cnt += 1
+        if note_cnt >= 8:
+            rhythm_mml_buffer.append(mml)
+            mml = ''
+            rhythm_mml_buffer.append(f'\n;tick count: {l_cnt}\n')
+            note_cnt = 0
+
+    if mml:
+        rhythm_mml_buffer.append(mml)
+    rhythm_mml_buffer.append(f'\n;ch{rhythm_track_id} end: tick count: {l_cnt}\n')
+    return rhythm_mml_buffer
+
+
 
 # ---------------------------------------------------------------------------
 # MML generation
@@ -2320,9 +2385,9 @@ def _generate_mml_impl(segments: dict, stem: str, raw_ticks: bool = False,
     ``#tempo 75`` (pass3.simple.mml style).  When False (default), emit
     standard divisor notation with ``#tempo 225``.
     """
-    mml_buffer: dict[int, list] = {ch: [] for ch in range(NUM_CH)}
+    mml_buffer: dict[int, list] = {ch: [] for ch in _MML_MELODY_CHS}
 
-    for ch in range(NUM_CH):
+    for ch in _MML_MELODY_CHS:
         ch_num   = ch + CH_OFFSET
         track_id = track_id_to_mgsdrv(ch_num)
         mml_buffer[ch].append(f'\n\n;ch{track_id} start')
@@ -2408,6 +2473,12 @@ def _generate_mml_impl(segments: dict, stem: str, raw_ticks: bool = False,
 
         mml_buffer[ch].append(f'\n;ch{track_id} end: tick count: {l_cnt}\n')
 
+    rhythm_segs = _collect_rhythm_segments(segments)
+    rhythm_mml_buffer: list[str] = []
+    if rhythm_segs:
+        rhythm_track_id = track_id_to_mgsdrv(_MML_RHYTHM_TRACK)
+        rhythm_mml_buffer = _build_rhythm_mml_buffer(rhythm_segs, rhythm_track_id)
+
     # Build header
     tempo = 75 if raw_ticks else 225
     lines = []
@@ -2415,12 +2486,17 @@ def _generate_mml_impl(segments: dict, stem: str, raw_ticks: bool = False,
     lines.append('#opll_mode 1')
     lines.append(f'#tempo {tempo}')
     lines.append(f'#title {{ "{stem}"}}')
-    for ch in range(NUM_CH):
+    for ch in _MML_MELODY_CHS:
         ch_num   = ch + CH_OFFSET
         track_id = track_id_to_mgsdrv(ch_num)
         used  = estimate_mml_used(mml_buffer[ch])
         alloc = estimate_alloc(used)
         lines.append(f'#alloc {track_id}={alloc}')
+    if rhythm_segs:
+        rhythm_track_id = track_id_to_mgsdrv(_MML_RHYTHM_TRACK)
+        used = estimate_mml_used(rhythm_mml_buffer)
+        alloc = estimate_alloc(used)
+        lines.append(f'#alloc {rhythm_track_id}={alloc}')
     if user_patches:
         lines.append('')
         lines.extend(_user_patch_mml_defs(user_patches))
@@ -2434,8 +2510,11 @@ def _generate_mml_impl(segments: dict, stem: str, raw_ticks: bool = False,
     header_text = '\n'.join(lines)
 
     body_parts = [header_text]
-    for ch in range(NUM_CH):
+    for ch in _MML_MELODY_CHS:
         for item in mml_buffer[ch]:
+            body_parts.append(item)
+    if rhythm_mml_buffer:
+        for item in rhythm_mml_buffer:
             body_parts.append(item)
 
     result = ''.join(body_parts)
@@ -2468,9 +2547,9 @@ def _generate_mml_mgs_pct(segments: dict, stem: str,
 
     This is the OPLL equivalent of the PSG/SCC ``MGS_pct`` variants.
     """
-    mml_buffer: dict[int, list] = {ch: [] for ch in range(NUM_CH)}
+    mml_buffer: dict[int, list] = {ch: [] for ch in _MML_MELODY_CHS}
 
-    for ch in range(NUM_CH):
+    for ch in _MML_MELODY_CHS:
         ch_num   = ch + CH_OFFSET
         track_id = track_id_to_mgsdrv(ch_num)
         mml_buffer[ch].append(f'\n\n;ch{track_id} start')
@@ -2542,18 +2621,29 @@ def _generate_mml_mgs_pct(segments: dict, stem: str,
 
         mml_buffer[ch].append(f'\n;ch{track_id} end: tick count: {l_cnt}\n')
 
+    rhythm_segs = _collect_rhythm_segments(segments)
+    rhythm_mml_buffer: list[str] = []
+    if rhythm_segs:
+        rhythm_track_id = track_id_to_mgsdrv(_MML_RHYTHM_TRACK)
+        rhythm_mml_buffer = _build_rhythm_mml_buffer(rhythm_segs, rhythm_track_id)
+
     # Build header
     lines = []
     lines.append(';[name=opll]')
     lines.append('#opll_mode 1')
     lines.append('#tempo 75')
     lines.append(f'#title {{ "{stem}"}}')
-    for ch in range(NUM_CH):
+    for ch in _MML_MELODY_CHS:
         ch_num   = ch + CH_OFFSET
         track_id = track_id_to_mgsdrv(ch_num)
         used  = estimate_mml_used(mml_buffer[ch])
         alloc = estimate_alloc(used)
         lines.append(f'#alloc {track_id}={alloc}')
+    if rhythm_segs:
+        rhythm_track_id = track_id_to_mgsdrv(_MML_RHYTHM_TRACK)
+        used = estimate_mml_used(rhythm_mml_buffer)
+        alloc = estimate_alloc(used)
+        lines.append(f'#alloc {rhythm_track_id}={alloc}')
     if user_patches:
         lines.append('')
         lines.extend(_user_patch_mml_defs(user_patches))
@@ -2567,8 +2657,11 @@ def _generate_mml_mgs_pct(segments: dict, stem: str,
     header_text = '\n'.join(lines)
 
     body_parts = [header_text]
-    for ch in range(NUM_CH):
+    for ch in _MML_MELODY_CHS:
         for item in mml_buffer[ch]:
+            body_parts.append(item)
+    if rhythm_mml_buffer:
+        for item in rhythm_mml_buffer:
             body_parts.append(item)
 
     result = ''.join(body_parts)
