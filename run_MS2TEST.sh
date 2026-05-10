@@ -55,4 +55,73 @@ python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII06.MS2 > MS2TEST/OPLL/GFIISMS/GF
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII07.vgm
 python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII07.MS2 > MS2TEST/OPLL/GFIISMS/GFII07.MS2.dump
 
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest201.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest201.MS2 >  MS2TEST/OPLL/Aleste2/Alest201.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest202.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest202.MS2 >  MS2TEST/OPLL/Aleste2/Alest202.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest203.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest203.MS2 >  MS2TEST/OPLL/Aleste2/Alest203.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest204.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest204.MS2 >  MS2TEST/OPLL/Aleste2/Alest204.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest205.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest205.MS2 >  MS2TEST/OPLL/Aleste2/Alest205.MS2.dump
+
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC01.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/FMPAC/FMPAC01.MS2 >  MS2TEST/OPLL/FMPAC/FMPAC01.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC02.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/FMPAC/FMPAC02.MS2 >  MS2TEST/OPLL/FMPAC/FMPAC02.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC03.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/FMPAC/FMPAC03.MS2 >  MS2TEST/OPLL/FMPAC/FMPAC03.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC04.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/FMPAC/FMPAC04.MS2 >  MS2TEST/OPLL/FMPAC/FMPAC04.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC05.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/FMPAC/FMPAC05.MS2 >  MS2TEST/OPLL/FMPAC/FMPAC05.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D01.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D01.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D01.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D02.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D02.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D02.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D03.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D03.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D03.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D04.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D04.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D04.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D05.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D05.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D05.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D06.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D06.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D06.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D07.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D07.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D07.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D08.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D08.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D08.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D09.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D09.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D09.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D10.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D10.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D10.MS2.dump
+
+python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D11.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D11.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D11.MS2.dump
+
+
+
+
+
+
 

@@ -47,13 +47,19 @@ def _make_keyoff_seg(tick_start: int, tick_end: int, min_l=None):
     return seg
 
 
-def _build_ms2(segments: dict, bpm: int = 120, debug: bool = False) -> bytes:
+def _build_ms2(
+    segments: dict,
+    bpm: int = 120,
+    debug: bool = False,
+    ticks_per_step_override: int | None = None,
+) -> bytes:
     return build_ms2_file(
         segments=segments,
         voice_csv_path=None,
         stem='test',
         bpm=bpm,
         debug=debug,
+        ticks_per_step_override=ticks_per_step_override,
     )
 
 
@@ -184,3 +190,23 @@ def test_is_legato_one_event_emits_legato_instead_of_note_on():
     legatos = [step for step, opcode in ch0 if opcode == 0x02]
     assert note_ons == [1]
     assert legatos == [2]
+
+
+def test_ticks_per_step_override_uses_override_value_for_timer_divider():
+    segs = _empty_segments()
+    segs[0].append(_make_note_seg(0, 50, min_l=1.0))
+
+    ms2_bytes = _build_ms2(segs, bpm=120, ticks_per_step_override=3)
+    timer_divider = _read_song_settings_timer_divider(ms2_bytes)
+
+    assert timer_divider == 768  # 256 * 3
+
+
+def test_ticks_per_step_override_is_clamped_to_minimum_two():
+    segs = _empty_segments()
+    segs[0].append(_make_note_seg(0, 50, min_l=10.0))
+
+    ms2_bytes = _build_ms2(segs, bpm=120, ticks_per_step_override=1)
+    timer_divider = _read_song_settings_timer_divider(ms2_bytes)
+
+    assert timer_divider == 512  # 256 * 2
