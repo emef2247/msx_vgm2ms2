@@ -2705,7 +2705,7 @@ def process_opll_csv(trace_path, output_dir, stem=None,
             stem = stem[:-len('_trace')]
     os.makedirs(output_dir, exist_ok=True)
     # Build segments (tick-based final-state evaluation)
-    segments_by_ch, _ = _build_segments(
+    segments_by_ch, _bpm = _build_segments(
         trace_path,
         include_rhythm=True,
         rhythm_reg_timeline=rhythm_reg_timeline,
@@ -2719,8 +2719,9 @@ def process_opll_csv(trace_path, output_dir, stem=None,
         seg_path = os.path.join(output_dir, f'{stem}.opll.pass0.csv')
         with open(seg_path, 'w', newline='\n') as fh:
             fh.write('#ch,beat_start,beat_end,keyon,fnum,block,inst,vol,voice_id,at_token\n')
-            for ch in range(NUM_CH):
-                for seg in segments_by_ch.get(ch, []):
+            # Dump all channels (melody 0-5 and rhythm 9-13) for full debug visibility.
+            for ch in sorted(segments_by_ch):
+                for seg in segments_by_ch[ch]:
                     fh.write(f'{ch},{seg.beat_start},{seg.beat_end},'
                              f'{seg.keyon},{seg.fnum},{seg.block},'
                              f'{seg.inst},{seg.vol},{seg.voice_id},{seg.at_token}\n')
