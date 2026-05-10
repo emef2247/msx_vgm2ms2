@@ -2612,7 +2612,11 @@ def process_opll_csv(trace_path, output_dir, stem=None,
             stem = stem[:-len('_trace')]
     os.makedirs(output_dir, exist_ok=True)
     # Build segments (tick-based final-state evaluation)
-    segments, NUM_CH = _build_segments(trace_path,rhythm_reg_timeline=rhythm_reg_timeline)
+    segments, _ = _build_segments(
+        trace_path,
+        include_rhythm=True,
+        rhythm_reg_timeline=rhythm_reg_timeline,
+    )
     
     # Assign voice IDs using the voice CSV (user-patch tracking)
     voice_table, user_patches, warnings = _assign_voice_ids(segments, voice_csv_path)
