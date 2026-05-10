@@ -44,7 +44,7 @@ def _rhythm_seg(kind: str, *, ticks: int, beat_start: int, beat_end: int) -> _Se
     )
 
 
-def test_generate_mgs_pct_uses_only_9_to_f_tracks_and_merges_rhythm():
+def test_generate_mml_mgs_pct_uses_only_9_to_e_tracks_and_merges_rhythm():
     segments = {
         0: [_melody_seg()],
         9: [_rhythm_seg('bd', ticks=20, beat_start=4, beat_end=6)],
@@ -58,6 +58,7 @@ def test_generate_mgs_pct_uses_only_9_to_f_tracks_and_merges_rhythm():
     assert '#alloc e=' in mml
     assert '#alloc f=' in mml
     assert '#alloc g=' not in mml
+    assert 'f s%2 b%2' in mml
     assert mml.find(' s%2') < mml.find(' b%2')  # sorted by ticks (sd before bd)
 
 
