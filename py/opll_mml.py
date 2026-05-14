@@ -1826,7 +1826,8 @@ def estimate_bpm_from_segments(segments_by_ch, vgm_rate):
 def _build_segments(trace_csv_path,
                     include_rhythm=True,
                     rhythm_reg_timeline=None,
-                    ticks_per_step_override=None):
+                    ticks_per_step_override=None,
+                    debug=False):
     # ------------------------------------------------------
     # vgmの情報 (trace_csv_path)からevent情報を作成
     # ------------------------------------------------------
@@ -1836,7 +1837,8 @@ def _build_segments(trace_csv_path,
     # pass1 : ticksの差分から各eventのlを算出
     # Next eventのticks = ticks + l
     events = pass1_compute_l(events)
-    pass1_dump_csv(events, trace_csv_path)
+    if debug:
+        pass1_dump_csv(events, trace_csv_path)
 
     # pass2 (1): fl, kl, vlの算出
     # fl : 同じfnumが継続する期間[ticks]
@@ -1857,7 +1859,8 @@ def _build_segments(trace_csv_path,
 
     # l=0を削除した後、fl,kl,blからlegato, vibrate, volume envelopeを判定
     events = pass2_mark_legato_vibrato_envelope(events)
-    pass2_dump_csv(events, trace_csv_path)
+    if debug:
+        pass2_dump_csv(events, trace_csv_path)
 
     # 無音状態(v=15 又は keyon=0) の連続したeventをマージ
     events = pass3_merge_silent_rests(events)
@@ -1867,13 +1870,17 @@ def _build_segments(trace_csv_path,
     events = pass3_merge_retrigger_note(events) 
     # fnumの揺れ(vibrato / pitch envelope ), software envelopをマージ
     #events = pass3_merge_pitch_volume_wobble(events)
-    pass3_dump_csv(events, trace_csv_path)
+
+    if debug:
+        pass3_dump_csv(events, trace_csv_path)
 
     # beat, beat_posを算出
     # beatは最小の音価 (min_l)で正規化した単位。grid幅を示す
     # beat_pos は前のeventのbeatの累計。そのeventのスタート地点を表す
     events, min_l, min_ioi, mode_ioi, bpm = pass4_compute_beats(events)
-    pass4_dump_csv(events, trace_csv_path)
+    if debug:
+        pass4_dump_csv(events, trace_csv_path)
+        
     if ticks_per_step_override is not None:
         ticks_per_step = max(2, int(ticks_per_step_override))
         print(f"[SEGMENT] ticks_per_step:{ticks_per_step} (override) min_ioi:{min_ioi} mode_ioi:{mode_ioi}")
