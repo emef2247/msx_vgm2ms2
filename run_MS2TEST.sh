@@ -57,7 +57,7 @@ python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII07.MS2 > MS2TEST/OPLL/GFIISMS/GF
 
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest201.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest201.MS2 >  MS2TEST/OPLL/Aleste2/Alest201.MS2.dump
-jjjjjjjjjjjjj
+
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest202.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest202.MS2 >  MS2TEST/OPLL/Aleste2/Alest202.MS2.dump
 
