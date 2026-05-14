@@ -817,6 +817,39 @@ def segments_to_patterns(
             if evts_here:
                 channel_event_lists[pat][ch].append((step_in_pat, evts_here))
             prev_state = state
+
+    rhythm_channels: set[int] = set()
+    for ch_key, segs in segments.items():
+        for seg in segs:
+            if getattr(seg, 'ev_type', 'note') == 'rhythm':
+                rhythm_channels.add(ch_key)
+                break
+
+    for ch in rhythm_channels:
+        if ch >= n_channels:
+            continue
+
+        occupied_steps: set[int] = set()
+        note_on_steps: set[int] = set()
+        for pat_idx, pattern in enumerate(channel_event_lists):
+            for step_in_pat, evts in pattern[ch]:
+                abs_step = pat_idx * STEPS_PER_PATTERN + step_in_pat
+                occupied_steps.add(abs_step)
+                if any(evt and evt[0] == 0x00 for evt in evts):
+                    note_on_steps.add(abs_step)
+
+        for step in sorted(note_on_steps):
+            if step == 0:
+                continue
+
+            prev_step = step - 1
+            if prev_step in occupied_steps:
+                continue
+
+            prev_pat = prev_step // STEPS_PER_PATTERN
+            prev_step_in_pat = prev_step % STEPS_PER_PATTERN
+            channel_event_lists[prev_pat][ch].append((prev_step_in_pat, [bytes([0x01])]))
+            occupied_steps.add(prev_step)
     return channel_event_lists
 
 
