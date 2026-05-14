@@ -223,6 +223,7 @@ def main():
         opll_trace_csv,
         include_rhythm=True,
         ticks_per_step_override=args.ticks_per_step,
+        debug = args.debug,
     )
     n_segs = sum(len(v) for v in segments.values())
     print(f"  {n_segs} segments across {num_ch} channels")
