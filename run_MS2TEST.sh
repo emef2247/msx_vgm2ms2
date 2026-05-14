@@ -57,7 +57,7 @@ python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII07.MS2 > MS2TEST/OPLL/GFIISMS/GF
 
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest201.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest201.MS2 >  MS2TEST/OPLL/Aleste2/Alest201.MS2.dump
-
+jjjjjjjjjjjjj
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest202.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest202.MS2 >  MS2TEST/OPLL/Aleste2/Alest202.MS2.dump
 
@@ -70,6 +70,33 @@ python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest204.MS2 >  MS2TEST/OPLL/Aleste
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest205.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest205.MS2 >  MS2TEST/OPLL/Aleste2/Alest205.MS2.dump
 
+python3 vgm2ms2.py --ticks-per-step 4 --outdir MS2TEST/OPLL/DEBUG4 MS2TEST/OPLL/Aleste2/reference/Alest202.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/DEBUG4/Alest202.MS2 >  MS2TEST/OPLL/DEBUG4/Alest202.MS2.dump
+
+python3 vgm2ms2.py --ticks-per-step 5 --outdir MS2TEST/OPLL/DEBUG5 MS2TEST/OPLL/Aleste2/reference/Alest202.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/DEBUG5/Alest202.MS2 >  MS2TEST/OPLL/DEBUG5/Alest202.MS2.dump
+
+python3 vgm2ms2.py --ticks-per-step 6 --outdir MS2TEST/OPLL/DEBUG6 MS2TEST/OPLL/Aleste2/reference/Alest202.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/DEBUG6/Alest202.MS2 >  MS2TEST/OPLL/DEBUG6/Alest202.MS2.dump
+
+python3 vgm2ms2.py --ticks-per-step 7 --outdir MS2TEST/OPLL/DEBUG7 MS2TEST/OPLL/Aleste2/reference/Alest202.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/DEBUG7/Alest202.MS2 >  MS2TEST/OPLL/DEBUG7/Alest202.MS2.dump
+
+python3 vgm2ms2.py --ticks-per-step 8 --outdir MS2TEST/OPLL/DEBUG8 MS2TEST/OPLL/Aleste2/reference/Alest202.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/DEBUG8/Alest202.MS2 >  MS2TEST/OPLL/DEBUG8/Alest202.MS2.dump
+
+python3 vgm2ms2.py --ticks-per-step 9 --outdir MS2TEST/OPLL/DEBUG9 MS2TEST/OPLL/Aleste2/reference/Alest202.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/DEBUG9/Alest202.MS2 >  MS2TEST/OPLL/DEBUG9/Alest202.MS2.dump
+
+
+python3 vgm2ms2.py --ticks-per-step 10 --outdir MS2TEST/OPLL/DEBUG10 MS2TEST/OPLL/Aleste2/reference/Alest202.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/DEBUG10/Alest202.MS2 >  MS2TEST/OPLL/DEBUG10/Alest202.MS2.dump
+
+python3 vgm2ms2.py --ticks-per-step 11 --outdir MS2TEST/OPLL/DEBUG11 MS2TEST/OPLL/Aleste2/reference/Alest202.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/DEBUG11/Alest202.MS2 >  MS2TEST/OPLL/DEBUG11/Alest202.MS2.dump
+
+python3 vgm2ms2.py --ticks-per-step 12 --outdir MS2TEST/OPLL/DEBUG12 MS2TEST/OPLL/Aleste2/reference/Alest202.vgm
+python3 py/ms2_dump.py  MS2TEST/OPLL/DEBUG12/Alest202.MS2 >  MS2TEST/OPLL/DEBUG12/Alest202.MS2.dump
 
 python3 vgm2ms2.py --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC01.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/FMPAC/FMPAC01.MS2 >  MS2TEST/OPLL/FMPAC/FMPAC01.MS2.dump
