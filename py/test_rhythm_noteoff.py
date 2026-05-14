@@ -9,6 +9,9 @@ sys.path.insert(0, _this_dir)
 
 from ms2_writer import NUM_CH, STEPS_PER_PATTERN, _build_step_grid, segments_to_patterns
 
+NOTE_ON_OPCODE = 0x00
+NOTE_OFF_OPCODE = 0x01
+
 
 def _empty_segments() -> dict:
     return {ch: [] for ch in range(NUM_CH)}
@@ -51,9 +54,9 @@ def _collect_note_steps(channel_event_lists: list[list], ch: int) -> tuple[list[
         for step_in_pat, evts in pat[ch]:
             abs_step = pat_idx * STEPS_PER_PATTERN + step_in_pat
             for evt in evts:
-                if evt[0] == 0x00:
+                if evt[0] == NOTE_ON_OPCODE:
                     note_on_steps.append(abs_step)
-                elif evt[0] == 0x01:
+                elif evt[0] == NOTE_OFF_OPCODE:
                     note_off_steps.append(abs_step)
     return note_on_steps, note_off_steps
 
@@ -106,7 +109,7 @@ def test_note_off_not_inserted_when_prev_step_occupied():
     note_ons, note_offs = _collect_note_steps(channel_event_lists, 9)
     step_events = _collect_step_events(channel_event_lists, 9)
     assert note_ons == [3, 4]
-    assert step_events[3].count(0x01) == 0
+    assert step_events[3].count(NOTE_OFF_OPCODE) == 0
     assert _drop_initial_note_off(note_offs) == [2, 7]
 
 
@@ -175,7 +178,7 @@ def test_note_off_not_inserted_for_non_rhythm_channel():
     step_events = _collect_step_events(channel_event_lists, 0)
     assert note_ons == [4]
     assert 3 not in note_offs
-    assert step_events.get(3, []).count(0x01) == 0
+    assert step_events.get(3, []).count(NOTE_OFF_OPCODE) == 0
 
 
 if __name__ == '__main__':
