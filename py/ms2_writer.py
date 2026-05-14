@@ -626,10 +626,16 @@ def _build_step_grid(
                     ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
                     if ms2_note is None:
                         ms2_note = DEFAULT_RHYTHM_NOTE  # Default note for unpitched rhythm
-                    # Rhythm hits always retrigger: drums have no explicit keyoff between
-                    # consecutive hits, so we cannot rely on keyoff_steps to detect retriggering.
+                    # Rhythm hits always retrigger.
                     assignments[start_step] = (1, ms2_note, seg.inst, seg.vol, True, at_token,getattr(seg, "is_legato", 0))
-                # Rhythm channels do not emit NOTE_OFF; drums decay naturally
+                    # Place NOTE_OFF at end_step; if a later NOTE_ON lands on the same step,
+                    # processing order naturally overwrites this with the retrigger NOTE_ON.
+                    end_tick = getattr(seg, 'tick_end', None)
+                    if end_tick is not None:
+                        end_step_idx = end_tick // ticks_per_step
+                        if 0 < end_step_idx < total_steps:
+                            if assignments.get(end_step_idx, (0,))[0] != 1:
+                                assignments[end_step_idx] = (0, 0, seg.inst, seg.vol, False, at_token, 0)
             elif seg.keyon:
                 ms2_note = fnum_block_to_ms2_note(seg.fnum, seg.block)
                 if ms2_note is not None:
