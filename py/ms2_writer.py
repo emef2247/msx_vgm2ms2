@@ -125,6 +125,7 @@ _BPM_TO_DIVIDER: dict[int, int] = {
 STEPS_PER_PATTERN = 16      # MS2 whole-note = 16 steps (16th-note granularity)
 TICKS_PER_STEP_75BPM = 12   # at 60 fps, 75 BPM: 1/16 note = 12 ticks
 DEFAULT_RHYTHM_NOTE = 36    # Default MS2 note (C3) for rhythm hits with no explicit fnum
+MAX_PATTERN_CHUNK_SIZE = 16384  # MS2 tool hangs if a Patterns chunk exceeds this
 
 def build_tunings_chunk_data_from_list(tuning_defs):
     """
@@ -561,6 +562,41 @@ def build_patterns_chunk_data(
     return buf
 
 
+def build_patterns_chunks(
+    channel_event_lists: list[list],
+    n_patterns: int,
+    n_channels: int,
+) -> bytes:
+    """Build one or more type-6 Patterns chunks, splitting at MAX_PATTERN_CHUNK_SIZE.
+
+    Returns the concatenated raw bytes of all type-6 chunks ready to embed
+    directly in the MS2 file byte stream.
+    """
+    pattern_data_list: list[bytes] = []
+    for pat in range(n_patterns):
+        pat_bytes = bytearray()
+        for ch in range(n_channels):
+            evts = channel_event_lists[pat][ch] if pat < len(channel_event_lists) else []
+            pat_bytes += _encode_channel_in_pattern(evts)
+        pattern_data_list.append(bytes(pat_bytes))
+
+    result = bytearray()
+    i = 0
+    while i < n_patterns:
+        chunk_patterns: list[bytes] = []
+        payload_size = 2  # 2-byte pattern count field
+        while i < n_patterns:
+            psize = len(pattern_data_list[i])
+            if payload_size + psize > MAX_PATTERN_CHUNK_SIZE and chunk_patterns:
+                break
+            chunk_patterns.append(pattern_data_list[i])
+            payload_size += psize
+            i += 1
+        chunk_payload = struct.pack('<H', len(chunk_patterns)) + b''.join(chunk_patterns)
+        result += _build_chunk(6, chunk_payload)
+    return bytes(result)
+
+
 # ---------------------------------------------------------------------------
 # Segment → step grid conversion
 # ---------------------------------------------------------------------------
@@ -843,11 +879,6 @@ def build_instrument_library_ms2(
         timer              = 0,
         timer_divider      = 0x0C00,
     )
-    patterns_data = build_patterns_chunk_data(
-        channel_event_lists=[[[]]],
-        n_patterns=1,
-        n_channels=1,
-    )
     four_op_data   = build_4op_instruments_chunk_data(1)
     wav_data       = build_wav_instruments_chunk_data(1)
     pitch_env_data = build_pitch_envelopes_chunk_data(1)
@@ -858,7 +889,11 @@ def build_instrument_library_ms2(
         + _build_chunk(3, instruments_bytes)
         + _build_chunk(4, four_op_data)
         + _build_chunk(5, wav_data)
-        + _build_chunk(6, patterns_data)
+        + build_patterns_chunks(
+            channel_event_lists=[[[]]],
+            n_patterns=1,
+            n_channels=1,
+        )
         + _build_chunk(8, pitch_env_data)
         + _sentinel_chunk()
     )
@@ -1022,7 +1057,7 @@ def build_ms2_file(
         timer=timer,
         timer_divider=timer_divider,
     )
-    patterns_data   = build_patterns_chunk_data(channel_event_lists, n_patterns, NUM_CH)
+    patterns_chunks = build_patterns_chunks(channel_event_lists, n_patterns, NUM_CH)
     four_op_data    = build_4op_instruments_chunk_data(1)
     wav_data        = build_wav_instruments_chunk_data(1)
     pitch_env_data  = build_pitch_envelopes_chunk_data(1)
@@ -1034,7 +1069,7 @@ def build_ms2_file(
         + _build_chunk(3, instruments_data)
         + _build_chunk(4, four_op_data)
         + _build_chunk(5, wav_data)
-        + _build_chunk(6, patterns_data)
+        + patterns_chunks
         + _build_chunk(8, pitch_env_data)
         + _sentinel_chunk()
     )
