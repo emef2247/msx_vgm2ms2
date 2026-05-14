@@ -754,17 +754,17 @@ def segments_to_patterns(
             prev_note  = prev_state[1]
             vol_ms2 = opll_vol_to_ms2_vol(vol_opll)
             evts_here: list[bytes] = []
-            if keyon and ms2_note is not None:
-                # instrument index
-                if inst == 0 and user_patches:
-                    v_num = _parse_user_v_num(at_token)
-                    if v_num is not None and v_num in user_patches:
-                        inst_idx = ref_count + (v_num - 1)
-                    else:
-                        inst_idx = 0
+            # instrument index
+            if inst == 0 and user_patches:
+                v_num = _parse_user_v_num(at_token)
+                if v_num is not None and v_num in user_patches:
+                    inst_idx = ref_count + (v_num - 1)
                 else:
-                    inst_idx = _opll_inst_to_ms2_idx(inst, n_instruments)
+                    inst_idx = 0
+            else:
+                inst_idx = _opll_inst_to_ms2_idx(inst, n_instruments)
 
+            if keyon and ms2_note is not None:
                 note_changed = (ms2_note != prev_note) or (not prev_keyon) or retrigger
                 inst_changed = (inst_idx != prev_inst_idx)
                 vol_changed  = (vol_ms2 != prev_vol_ms2)
@@ -796,8 +796,18 @@ def segments_to_patterns(
                 if emit_inst:
                     evts_here.append(bytes([0x04, inst_idx & 0xFF]))
                     prev_inst_idx = inst_idx
-            elif not keyon and prev_keyon:
-                evts_here.append(bytes([0x01]))
+            else:
+                inst_changed_off = (inst_idx != prev_inst_idx)
+                vol_changed_off  = (vol_ms2 != prev_vol_ms2)
+
+                if prev_keyon or inst_changed_off or vol_changed_off:
+                    evts_here.append(bytes([0x01]))
+                    if vol_changed_off:
+                        evts_here.append(bytes([0x05, vol_ms2 & 0xFF]))
+                        prev_vol_ms2 = vol_ms2
+                    if inst_changed_off:
+                        evts_here.append(bytes([0x04, inst_idx & 0xFF]))
+                        prev_inst_idx = inst_idx
             if evts_here:
                 channel_event_lists[pat][ch].append((step_in_pat, evts_here))
             prev_state = state

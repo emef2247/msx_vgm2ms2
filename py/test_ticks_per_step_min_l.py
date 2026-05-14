@@ -192,6 +192,37 @@ def test_is_legato_one_event_emits_legato_instead_of_note_on():
     assert legatos == [2]
 
 
+def test_keyoff_inst_vol_changes_emit_note_off_and_updates():
+    segs = _empty_segments()
+    segs[0].append(_make_note_seg(0, 4, min_l=2.4))
+    segs[0].append(_make_keyoff_seg(4, 6, min_l=2.4))
+    off_change = _make_keyoff_seg(6, 8, min_l=2.4)
+    off_change.inst = 2
+    off_change.vol = 5
+    off_change.fnum = 1
+    off_change.block = 0
+    segs[0].append(off_change)
+
+    channel_event_lists = segments_to_patterns(
+        segs,
+        ticks_per_step=2,
+        n_patterns=1,
+        n_channels=NUM_CH,
+        n_instruments=20,
+    )
+
+    step_events = {}
+    for step_in_pat, evts in channel_event_lists[0][0]:
+        step_events[step_in_pat] = [bytes(evt) for evt in evts]
+
+    assert step_events[2] == [bytes([0x01])]
+    assert step_events[3] == [
+        bytes([0x01]),
+        bytes([0x05, 13]),
+        bytes([0x04, 1]),
+    ]
+
+
 def test_ticks_per_step_override_uses_override_value_for_timer_divider():
     segs = _empty_segments()
     segs[0].append(_make_note_seg(0, 50, min_l=1.0))
