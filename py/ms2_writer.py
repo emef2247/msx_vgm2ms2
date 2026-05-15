@@ -24,8 +24,6 @@ from opll_mml import _build_segments, _opll_note, detect_num_ch,NUM_CH
 # ---------------------------------------------------------------------------
 
 MS2_SIGNATURE = bytes([0x4D, 0x53, 0xC2, 0xB2, 0x0D, 0x0A, 0x00, 0x1A])
-NOTE_ON_OPCODE = 0x00
-NOTE_OFF_OPCODE = 0x01
 
 # Path to the reference YM2413.MS2 file containing the MoonBlaster v1.4 instrument library.
 _REFERENCE_YM2413_MS2 = os.path.join(
@@ -792,7 +790,7 @@ def segments_to_patterns(
                         emit_inst = False
                         emit_vol  = False
                     else:
-                        evts_here.append(bytes([NOTE_ON_OPCODE, ms2_note & 0xFF]))  # NOTE_ON
+                        evts_here.append(bytes([0x00, ms2_note & 0xFF]))  # NOTE_ON
 
                 # -------------------------
                 # VOL / INST
@@ -809,7 +807,7 @@ def segments_to_patterns(
                 vol_changed_off  = (vol_ms2 != prev_vol_ms2)
 
                 if prev_keyon or inst_changed_off or vol_changed_off:
-                    evts_here.append(bytes([NOTE_OFF_OPCODE]))
+                    evts_here.append(bytes([0x01]))
                     if vol_changed_off:
                         evts_here.append(bytes([0x05, vol_ms2 & 0xFF]))
                         prev_vol_ms2 = vol_ms2
@@ -819,39 +817,6 @@ def segments_to_patterns(
             if evts_here:
                 channel_event_lists[pat][ch].append((step_in_pat, evts_here))
             prev_state = state
-
-    rhythm_channels: set[int] = set()
-    for ch_key, segs in segments.items():
-        for seg in segs:
-            if getattr(seg, 'ev_type', 'note') == 'rhythm':
-                rhythm_channels.add(ch_key)
-                break
-
-    for ch in rhythm_channels:
-        if ch >= n_channels:
-            continue
-
-        occupied_steps: set[int] = set()
-        note_on_steps: set[int] = set()
-        for pat_idx, pattern in enumerate(channel_event_lists):
-            for step_in_pat, evts in pattern[ch]:
-                abs_step = pat_idx * STEPS_PER_PATTERN + step_in_pat
-                occupied_steps.add(abs_step)
-                if any(evt and evt[0] == NOTE_ON_OPCODE for evt in evts):
-                    note_on_steps.add(abs_step)
-
-        for step in sorted(note_on_steps):
-            if step == 0:
-                continue
-
-            prev_step = step - 1
-            if prev_step in occupied_steps:
-                continue
-
-            prev_pat = prev_step // STEPS_PER_PATTERN
-            prev_step_in_pat = prev_step % STEPS_PER_PATTERN
-            channel_event_lists[prev_pat][ch].append((prev_step_in_pat, [bytes([NOTE_OFF_OPCODE])]))
-            occupied_steps.add(prev_step)
     return channel_event_lists
 
 
