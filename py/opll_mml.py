@@ -1908,19 +1908,10 @@ def _build_segments(trace_csv_path,
         if ev_type == "rhythm":
             if is_ryt != 1:
                 continue
-
-            if _int(ev, "bd", 0) == 1:
-                ch = 6
-            elif _int(ev, "sd", 0) == 1:
-                ch = 7
-            elif (_int(ev, "tom", 0) == 1 or
-                  _int(ev, "tc", 0) == 1 or
-                  _int(ev, "hh", 0) == 1):
-                ch = 8
-            else:
-                # NOTE_ON ではない rhythm 行は無視
+            # ch は pass2_expand_rhythm によって RHYTHM_CH_MAP (9-13) に設定済み
+            # keyon=1 のイベントのみ対象
+            if _int(ev, "keyon", 0) != 1:
                 continue
-
             events_by_ch[ch].append(ev)
             continue
 
@@ -2243,7 +2234,7 @@ def _assign_voice_ids(segments: dict,
     # collect user_patches ordered dict for @vNN definition generation.
     user_patch_ids: dict[bytes, int] = {}   # patch_bytes -> at_v_num
     user_patches: dict[int, bytes]   = {}   # at_v_num -> patch_bytes
-    next_user_v  = 1
+    next_user_v  = 15
 
     def _get_voice_id(key: tuple) -> int:
         nonlocal next_id
@@ -2269,7 +2260,7 @@ def _assign_voice_ids(segments: dict,
                 seg.at_token = f'@{seg.inst}'
             else:
                 if has_voice_csv:
-                    patch = _get_patch_at_tick(seg.beat_start)
+                    patch = _get_patch_at_tick(seg.tick_start)
                     # Warn once if user patch registers were never written
                     if not has_patch_events and not warned_no_patch_events:
                         warnings.append(
@@ -2345,7 +2336,7 @@ def _build_rhythm_mml_buffer(rhythm_segs: list, rhythm_track_id: str) -> list[st
     mml = ''
 
     for seg in rhythm_segs:
-        length = seg.beat_end - seg.beat_start
+        length = seg.tick_end - seg.tick_start
         if length <= 0:
             continue
 
@@ -2413,7 +2404,7 @@ def _generate_mml_impl(segments: dict, stem: str, raw_ticks: bool = False,
         for seg_idx, seg in enumerate(segs):
             if ch >= 6 and getattr(seg, "is_ryt", 0) == 1:
                 continue  
-            length = seg.beat_end - seg.beat_start
+            length = seg.tick_end - seg.tick_start
             if length <= 0:
                 continue
 
@@ -2571,7 +2562,7 @@ def _generate_mml_mgs_pct(segments: dict, stem: str,
         note_cnt = 0
 
         for seg in segs:
-            length = seg.beat_end - seg.beat_start
+            length = seg.tick_end - seg.tick_start
             if length <= 0:
                 continue
 

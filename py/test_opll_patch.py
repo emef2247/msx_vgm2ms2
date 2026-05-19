@@ -159,7 +159,7 @@ def test_assign_voice_ids_preset():
 
 
 def test_assign_voice_ids_user_patch():
-    """inst=0 with a voice CSV gets @v1 at_token and user_patches populated."""
+    """inst=0 with a voice CSV gets @v15 at_token and user_patches populated."""
     # A known patch: TL=27, FB=4, etc.
     patch_hex = '211bc2f001147411'
     voice_csv = _make_voice_csv([
@@ -171,10 +171,10 @@ def test_assign_voice_ids_user_patch():
     os.unlink(voice_csv)
 
     for seg in segs[0]:
-        assert seg.at_token == '@v1', f"ch0 at_token: {seg.at_token}"
+        assert seg.at_token == '@v15', f"ch0 at_token: {seg.at_token}"
 
-    assert 1 in user_patches, f"user_patches missing @v1: {user_patches}"
-    patch_bytes = user_patches[1]
+    assert 15 in user_patches, f"user_patches missing @v15: {user_patches}"
+    patch_bytes = user_patches[15]
     assert patch_bytes == bytes.fromhex(patch_hex), \
         f"Patch bytes mismatch: {patch_bytes.hex()} != {patch_hex}"
     print('PASS: test_assign_voice_ids_user_patch')
@@ -199,8 +199,8 @@ def test_assign_voice_ids_multiple_patches():
     voice_table, user_patches, warnings = _assign_voice_ids(segs, voice_csv)
     os.unlink(voice_csv)
 
-    assert s0.at_token == '@v1', f"s0 at_token: {s0.at_token}"
-    assert s1.at_token == '@v2', f"s1 at_token: {s1.at_token}"
+    assert s0.at_token == '@v15', f"s0 at_token: {s0.at_token}"
+    assert s1.at_token == '@v16', f"s1 at_token: {s1.at_token}"
     assert len(user_patches) == 2, f"Expected 2 user patches, got {len(user_patches)}"
     print('PASS: test_assign_voice_ids_multiple_patches')
 
@@ -221,8 +221,8 @@ def test_assign_voice_ids_same_patch_deduplication():
     voice_table, user_patches, warnings = _assign_voice_ids(segs, voice_csv)
     os.unlink(voice_csv)
 
-    assert s0.at_token == '@v1'
-    assert s1.at_token == '@v1'
+    assert s0.at_token == '@v15'
+    assert s1.at_token == '@v15'
     assert len(user_patches) == 1, f"Expected 1 unique patch, got {len(user_patches)}"
     print('PASS: test_assign_voice_ids_same_patch_deduplication')
 
