@@ -528,6 +528,7 @@ def _assign_voice_ids(segments: dict,
     # Build a sorted list of (tick, patch_bytes) for all 'patch' events.
     # These are global user-patch register updates (addr 0x00-0x07).
     patch_timeline: list[tuple[int, bytes]] = []   # (tick, patch_bytes)
+    instVol_timeline_by_ch: dict[int, list[tuple[int, bytes]]] = {}
 
     has_voice_csv = False
     has_patch_events = False
@@ -552,16 +553,43 @@ def _assign_voice_ids(segments: dict,
                 if vtype == 'patch':
                     patch_timeline.append((ticks, patch_bytes))
                     has_patch_events = True
-    # patch_timeline is already in chronological order (voice CSV is ordered)
+                elif vtype == 'instVol':
+                    try:
+                        ch = int(parts[_VCOL_CH])
+                        inst = int(parts[_VCOL_INST])
+                    except (ValueError, IndexError):
+                        continue
+                    if inst == 0:
+                        if ch not in instVol_timeline_by_ch:
+                            instVol_timeline_by_ch[ch] = []
+                        instVol_timeline_by_ch[ch].append((ticks, patch_bytes))
+                        has_patch_events = True
+    # patch_timeline and instVol_timeline_by_ch are in chronological order
+    # (voice CSV is ordered)
 
     def _get_patch_at_tick(tick: int) -> bytes:
-        """Return the effective user patch at or before *tick*."""
+        """Return the effective user patch at or before *tick* (global fallback)."""
         result = bytes(8)
         for t, p in patch_timeline:
             if t <= tick:
                 result = p
             else:
                 break
+        return result
+
+    def _get_patch_at_tick_for_ch(ch: int, tick: int) -> bytes:
+        """Return the effective user patch for *ch* at or before *tick*.
+        Uses per-channel instVol snapshots; falls back to global patch timeline."""
+        timeline = instVol_timeline_by_ch.get(ch, [])
+        result = bytes(8)
+        for t, p in timeline:
+            if t <= tick:
+                result = p
+            else:
+                break
+        # If no channel-specific data found, fall back to global patch timeline
+        if result == bytes(8) and not timeline:
+            result = _get_patch_at_tick(tick)
         return result
 
     # ── Assign voice IDs ─────────────────────────────────────────
@@ -598,7 +626,7 @@ def _assign_voice_ids(segments: dict,
                 seg.at_token = f'@{seg.inst}'
             else:
                 if has_voice_csv:
-                    patch = _get_patch_at_tick(seg.tick_start)
+                    patch = _get_patch_at_tick_for_ch(seg.ch, seg.tick_start)
                     # Warn once if user patch registers were never written
                     if not has_patch_events and not warned_no_patch_events:
                         warnings.append(
