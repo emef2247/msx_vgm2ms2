@@ -416,7 +416,7 @@ def _ym2413_patch_to_mgsdrv(patch_bytes: bytes) -> dict:
         00: M AM/VB/EG/KR/ML
         01: C AM/VB/EG/KR/ML
         02: M KL/TL
-        03: C KL
+        03: C KL/DC/DM/FB
         04: M AR/DR
         05: C AR/DR
         06: M SL/RR
@@ -445,8 +445,7 @@ def _ym2413_patch_to_mgsdrv(patch_bytes: bytes) -> dict:
     m_sl = (r[6] >> 4) & 0x0F
     m_rr =  r[6] & 0x0F
 
-    # YM2413 has no DT; MGSDRV expects DT=0
-    m_dt = 0
+    m_dt = 0   # OPLL has no DT
 
     # -------------------------
     # Carrier (C)
@@ -458,8 +457,7 @@ def _ym2413_patch_to_mgsdrv(patch_bytes: bytes) -> dict:
     c_am = (r[1] >> 7) & 0x01
 
     c_kl = (r[3] >> 6) & 0x03
-    # Carrier has no TL → always 0
-    c_tl = 0
+    c_tl = 0   # carrier has no TL
 
     c_ar = (r[5] >> 4) & 0x0F
     c_dr =  r[5] & 0x0F
@@ -467,17 +465,16 @@ def _ym2413_patch_to_mgsdrv(patch_bytes: bytes) -> dict:
     c_sl = (r[7] >> 4) & 0x0F
     c_rr =  r[7] & 0x0F
 
-    c_dt = 0
+    c_dt = 0   # OPLL has no DT
 
     # -------------------------
     # Feedback (FB)
     # -------------------------
-    # FB はキャリア側 MULT レジスタの下位3bit
-    fb = r[1] & 0x07
+    fb = (r[3] >> 1) & 0x07   # ★正しい FB
 
     return {
-        'tl': m_tl,   # MGSDRV @v の TL はモジュレータ TL
-        'fb': fb,
+        'tl':  m_tl,
+        'fb':  fb,
         'mod': (m_ar, m_dr, m_sl, m_rr, m_kl, m_mt, m_am, m_vb, m_eg, m_kr, m_dt),
         'car': (c_ar, c_dr, c_sl, c_rr, c_kl, c_mt, c_am, c_vb, c_eg, c_kr, c_dt),
     }

@@ -181,24 +181,32 @@ def build_tunings_chunk_data_from_defs(defs):
 # ---------------------------------------------------------------------------
 
 def opll_patch_to_opl4(patch_bytes: bytes) -> dict:
-    """Convert 8-byte YM2413 user-patch (R0..R7) to OPL4 2OP FM register values.
+    """Convert YM2413 user-patch (R0..R7) to OPL4 2OP registers."""
 
-    Returns a dict: {20: byte, 21: byte, 40: byte, 41: byte, 60: byte, 61: byte,
-                     80: byte, 81: byte, E0: byte, E1: byte, C0: byte}
-    """
     r = (bytes(patch_bytes)[:8] + bytes(max(0, 8 - len(patch_bytes))))[:8]
 
-    reg20 = r[0]                                # mod AM/VIB/EGT/KSR/MULT
-    reg21 = r[4]                                # car AM/VIB/EGT/KSR/MULT
-    reg40 = r[1] & 0xFF                         # mod KSL/TL (all 8 bits)
-    reg41 = r[5] & 0xC0                         # car KSL only (TL=0)
-    reg60 = r[2]                                # mod AR/DR
-    reg61 = r[6]                                # car AR/DR
-    reg80 = r[3]                                # mod SL/RR
-    reg81 = r[7]                                # car SL/RR
-    reg_e0 = (r[5] >> 3) & 0x01                # mod waveform: DM bit
-    reg_e1 = (r[5] >> 4) & 0x01                # car waveform: DC bit
-    reg_c0 = (r[5] & 0x07) << 1                # FB in bits 3:1, CNT=0
+    # 20h: AM/VIB/EGT/KSR/MULT
+    reg20 = r[0]      # M
+    reg21 = r[1]      # C
+
+    # 40h: KSL/TL
+    reg40 = r[2]                  # M KL/TL
+    reg41 = r[3] & 0xC0           # C KL only
+
+    # 60h: AR/DR
+    reg60 = r[4]                  # M
+    reg61 = r[5]                  # C
+
+    # 80h: SL/RR
+    reg80 = r[6]                  # M
+    reg81 = r[7]                  # C
+
+    # E0/E1: DT1 (OPL4)
+    reg_e0 = 0                    # M: OPLL has no DT
+    reg_e1 = (r[3] >> 5) & 0x01   # C: DC bit
+
+    # C0: FB (from R03 bits 3:1)
+    reg_c0 = ((r[3] >> 1) & 0x07) << 1   # CNT=0
 
     return {
         0x20: reg20, 0x21: reg21,
@@ -209,24 +217,28 @@ def opll_patch_to_opl4(patch_bytes: bytes) -> dict:
         0xC0: reg_c0,
     }
 
-
 def opll_patch_raw(patch_bytes: bytes) -> dict:
-    """Pack 8-byte YM2413 patch (R0..R7) directly into OPL4 2OP register fields."""
+    """Pack YM2413 patch (R0..R7) into OPL4 2OP registers (direct mapping)."""
 
     r = (bytes(patch_bytes)[:8] + b'\x00' * max(0, 8 - len(patch_bytes)))[:8]
 
     return {
-        0x20: r[0],                  # mod AM/VIB/EGT/KSR/MULT – direct
-        0x21: r[4],                  # car AM/VIB/EGT/KSR/MULT – direct
-        0x40: r[1],                  # mod KSL/TL – all 8 bits, direct
-        0x41: r[5] & 0xC0,           # car KSL [7:6]; TL=0 (no carrier TL in OPLL)
-        0x60: r[2],                  # mod AR/DR – direct
-        0x61: r[6],                  # car AR/DR – direct
-        0x80: r[3],                  # mod SL/RR – direct
-        0x81: r[7],                  # car SL/RR – direct
-        0xE0: (r[5] >> 3) & 0x01,   # mod waveform: DM bit
-        0xE1: (r[5] >> 4) & 0x01,   # car waveform: DC bit
-        0xC0: (r[5] & 0x07) << 1,   # feedback FB, CNT=0
+        0x20: r[0],          # M AM/VB/EG/KR/ML
+        0x21: r[1],          # C AM/VB/EG/KR/ML
+
+        0x40: r[2],          # M KL/TL
+        0x41: r[3] & 0xC0,   # C KL only
+
+        0x60: r[4],          # M AR/DR
+        0x61: r[5],          # C AR/DR
+
+        0x80: r[6],          # M SL/RR
+        0x81: r[7],          # C SL/RR
+
+        0xE0: 0,                     # M DT (none)
+        0xE1: (r[3] >> 5) & 0x01,    # C DT (DC bit)
+
+        0xC0: ((r[3] >> 1) & 0x07) << 1,  # FB
     }
 
 
