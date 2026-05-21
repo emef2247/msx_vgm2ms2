@@ -409,66 +409,78 @@ _OPLL_PRESET_NAMES = [
 ]
 
 def _ym2413_patch_to_mgsdrv(patch_bytes: bytes) -> dict:
-    """Decode YM2413 user patch registers (0x00–0x07) into MGSDRV ``@v`` parameters.
-
-    YM2413 user-patch register layout
-    ──────────────────────────────────
-    R0: AM(7) PM/VIB(6) EG(5) KR(4) MULT(3:0)  – Modulator
-    R1: KL(7:6) TL(5:0)                          – Modulator
-    R2: AR(7:4) DR(3:0)                           – Modulator
-    R3: SL(7:4) RR(3:0)                           – Modulator
-    R4: AM(7) PM/VIB(6) EG(5) KR(4) MULT(3:0)  – Carrier
-    R5: KL(7:6) DC(4) DM(3) FB(2:0)             – Carrier
-    R6: AR(7:4) DR(3:0)                           – Carrier
-    R7: SL(7:4) RR(3:0)                           – Carrier
-
-    MGSDRV ``@v`` format
-    ────────────────────
-    ``@vNN = { TL, FB, mod_AR, mod_DR, ..., mod_DT, car_AR, car_DR, ..., car_DT }``
-
-    Returns a dict with keys ``tl``, ``fb``, ``mod`` (11-tuple), ``car`` (11-tuple).
-    Each operator tuple is: (AR, DR, SL, RR, KL, MT, AM, VB, EG, KR, DT).
     """
+    Correct YM2413 user-patch decoder (0x00–0x07).
+    Matches the official OPLL register map:
+
+        00: M AM/VB/EG/KR/ML
+        01: C AM/VB/EG/KR/ML
+        02: M KL/TL
+        03: C KL
+        04: M AR/DR
+        05: C AR/DR
+        06: M SL/RR
+        07: C SL/RR
+    """
+
     r = patch_bytes
     if len(r) < 8:
         r = bytes(r) + bytes(8 - len(r))
 
-    tl = r[1] & 0x3F
-    fb = r[5] & 0x07
-
-    # Modulator operator fields
-    m_ar = (r[2] >> 4) & 0x0F
-    m_dr =  r[2]       & 0x0F
-    m_sl = (r[3] >> 4) & 0x0F
-    m_rr =  r[3]       & 0x0F
-    m_kl = (r[1] >> 6) & 0x03
-    m_mt =  r[0]       & 0x0F
+    # -------------------------
+    # Modulator (M)
+    # -------------------------
+    m_mt =  r[0] & 0x0F
+    m_kr = (r[0] >> 4) & 0x01
+    m_eg = (r[0] >> 5) & 0x01
+    m_vb = (r[0] >> 6) & 0x01
     m_am = (r[0] >> 7) & 0x01
-    m_vb = (r[0] >> 6) & 0x01   # VB (vibrato/PM)
-    m_eg = (r[0] >> 5) & 0x01   # EG type (sustain)
-    m_kr = (r[0] >> 4) & 0x01   # key-scale rate
-    m_dt = (r[5] >> 3) & 0x01   # DT: waveform (0=sine, 1=half-sine); DM in YM2413 R5
 
-    # Carrier operator fields
-    c_ar = (r[6] >> 4) & 0x0F
-    c_dr =  r[6]       & 0x0F
+    m_kl = (r[2] >> 6) & 0x03
+    m_tl =  r[2] & 0x3F
+
+    m_ar = (r[4] >> 4) & 0x0F
+    m_dr =  r[4] & 0x0F
+
+    m_sl = (r[6] >> 4) & 0x0F
+    m_rr =  r[6] & 0x0F
+
+    # YM2413 has no DT; MGSDRV expects DT=0
+    m_dt = 0
+
+    # -------------------------
+    # Carrier (C)
+    # -------------------------
+    c_mt =  r[1] & 0x0F
+    c_kr = (r[1] >> 4) & 0x01
+    c_eg = (r[1] >> 5) & 0x01
+    c_vb = (r[1] >> 6) & 0x01
+    c_am = (r[1] >> 7) & 0x01
+
+    c_kl = (r[3] >> 6) & 0x03
+    # Carrier has no TL → always 0
+    c_tl = 0
+
+    c_ar = (r[5] >> 4) & 0x0F
+    c_dr =  r[5] & 0x0F
+
     c_sl = (r[7] >> 4) & 0x0F
-    c_rr =  r[7]       & 0x0F
-    c_kl = (r[5] >> 6) & 0x03
-    c_mt =  r[4]       & 0x0F
-    c_am = (r[4] >> 7) & 0x01
-    c_vb = (r[4] >> 6) & 0x01   # VB (vibrato/PM)
-    c_eg = (r[4] >> 5) & 0x01   # EG type (sustain)
-    c_kr = (r[4] >> 4) & 0x01   # key-scale rate
-    c_dt = (r[5] >> 4) & 0x01   # DT: waveform (0=sine, 1=half-sine); DC in YM2413 R5
+    c_rr =  r[7] & 0x0F
+
+    c_dt = 0
+
+    # -------------------------
+    # Feedback (FB)
+    # -------------------------
+    # FB はキャリア側 MULT レジスタの下位3bit
+    fb = r[1] & 0x07
 
     return {
-        'tl':  tl,
-        'fb':  fb,
+        'tl': m_tl,   # MGSDRV @v の TL はモジュレータ TL
+        'fb': fb,
         'mod': (m_ar, m_dr, m_sl, m_rr, m_kl, m_mt, m_am, m_vb, m_eg, m_kr, m_dt),
         'car': (c_ar, c_dr, c_sl, c_rr, c_kl, c_mt, c_am, c_vb, c_eg, c_kr, c_dt),
     }
-
 
 def _user_patch_mml_defs(user_patches: dict) -> list[str]:
     """Return MML lines for all ``@vNN = {...}`` user-patch definitions.
