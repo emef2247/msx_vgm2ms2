@@ -446,8 +446,9 @@ class _OpllState:
     NUM_CH = 9   # 0..8:melody+rhythm
 
     _HEADER = ('#type,time,ch,ticks,l,fl,kl,vl,beat_pos,beat,fb,kb,vb,keyon,is_legato,is_vibrato,is_envelope,fnum,block,inst,vol,sus,scale,ioi,onset,tempo,'
-               'is_ryt,r_tempo,r_ioi,r_mode_ioi,r_hh_ioi,r_hh_mode_ioi,'
+               'is_ryt,r_tempo,r_ioi,r_mode_ioi,r_hh_ioi,r_hh_mode_ioi,BdSdTomTcHH,'
                'bd,sd,tom,tc,hh,'
+               'bd_vol,sd_vol,tom_vol,tc_vol,hh_vol,'
                'fnum_ch6,vol_ch6,sus_ch6,block_ch6,'
                'fnum_ch7,vol_ch7,sus_ch7,block_ch7,'
                'fnum_ch8,vol_ch8,sus_ch8,block_ch8,')
@@ -495,9 +496,26 @@ class _OpllState:
         return (self.inst_vol[ch] >> 4) & 0x0F
 
     def _vol(self, ch: int) -> int:
-        return self.inst_vol[ch] & 0x0F
+        if self.rhythm_mode:
+            return self.inst_vol[ch] & 0xFF
+        else:
+            return self.inst_vol[ch] & 0x0F
 
-    
+    def _bd_vol(self) -> int:
+        return self.inst_vol[6] & 0x0F
+
+    def _sd_vol(self) -> int:
+        return self.inst_vol[7] & 0x0F
+
+    def _hh_vol(self) -> int:
+        return (self.inst_vol[7] >> 4) & 0x0F
+
+    def _tc_vol(self) -> int:
+        return self.inst_vol[8] & 0x0F
+
+    def _tom_vol(self) -> int:
+        return (self.inst_vol[8] >> 4) & 0x0F
+
     def _patch_hex(self) -> str:
         return ''.join(f'{b:02x}' for b in self.user_patch)
 
@@ -534,8 +552,9 @@ class _OpllState:
             str(self._vol(ch)),
             str(self._sus(ch)),
             '','','','',
-            str(is_ryt),'','','','','',
+            str(is_ryt),'','','','','','',
             str(bd), str(sd), str(tom), str(tc), str(hh),
+            str(self._bd_vol()), str(self._sd_vol()), str(self._tom_vol()), str(self._tc_vol()), str(self._hh_vol()),
             str(self.fnum9(6)), str(self._vol(6)), str(self._sus(6)), str(self._block(6)),
             str(self.fnum9(7)), str(self._vol(7)), str(self._sus(7)), str(self._block(7)),
             str(self.fnum9(8)), str(self._vol(8)), str(self._sus(8)), str(self._block(8)),
@@ -550,11 +569,13 @@ class _OpllState:
     def _log_rhythm_event(self, type_: str, regval: int):
         t     = self._common_time
         ticks = get_ticks(t)
+        BdSdTomTcHH = f"0x{(regval & 0x1F):02X}"
         is_ryt, bd, sd, tom, tc, hh = self._decode_rhythm_bits(regval)
         cols = [
             type_, repr(t), '-1', str(ticks),'','','', '', '', '', '', '', '','','','','','','','','','','','','','',
-            str(is_ryt),'','','','','',
+            str(is_ryt),'','','','','',BdSdTomTcHH,
             str(bd), str(sd), str(tom), str(tc), str(hh),
+            str(self._bd_vol()), str(self._sd_vol()), str(self._tom_vol()), str(self._tc_vol()), str(self._hh_vol()),
             str(self.fnum9(6)), str(self._vol(6)), str(self._sus(6)), str(self._block(6)),
             str(self.fnum9(7)), str(self._vol(7)), str(self._sus(7)), str(self._block(7)),
             str(self.fnum9(8)), str(self._vol(8)), str(self._sus(8)), str(self._block(8)),
@@ -620,15 +641,15 @@ class _OpllState:
 
         elif 0x30 <= a <= 0x38:
             ch = a - 0x30
-            _type, _ch = 'instVol', ch
-            self.inst_vol[ch] = v & 0xFF
-
-            # ch6–8: rhythm_mode=1 のときは記録しない
-            if not (self.rhythm_mode and ch >= 6):
+            if not self.rhythm_mode:
+                _type, _ch = 'instVol', ch
+                self.inst_vol[ch] = v & 0xFF
                 self._log(ch, 'instVol')
                 row = self._voice_row('instVol', ch, self._inst(ch), self._vol(ch))
                 self.voice_trace_buf.append(row)
-
+            elif ch >= 6:
+                _type, _ch = 'rhythmVol', ch
+                self._log(ch, 'rhythmVol')
 
         # 全レジスタの生トレース
         self.regs_trace_buf.append(self._regs_row(_type, a, v, _ch))

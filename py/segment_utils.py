@@ -280,7 +280,7 @@ def pass0_read_csv(trace_csv_path):
 
 def pass1_compute_l(events):
     """
-    PASS 1（簡易版）:
+    PASS 1 (l: ticksの差分から導出‘)
       - ch ごとに ticks 昇順で並べる
       - l = next_ticks - ticks
       - fl, kl はまだ計算しない（0 のまま）
@@ -323,7 +323,7 @@ def pass1_compute_l(events):
 
 def pass1_compute_l_from_time(events):
     """
-    PASS 1（改良版）:
+    PASS 1 (l: timeの差分から導出): 
       - l = get_ticks(next_time) - get_ticks(current_time)
       - time の丸め誤差による l=1 の発生を防ぐ
     """
@@ -598,6 +598,7 @@ def pass2_expand_rhythm(events, RHYTHM_CH_MAP, RHYTHM_VOICE_ID_MAP):
         ev_type = ev.get("#type", "")
         ch      = int(ev.get("ch", 0))
         is_ryt  = int(ev.get("is_ryt", 0))
+        BdSdTomTcHH = ev.get("BdSdTomTcHH","");
 
         # rhythm 以外はそのまま
         if not ((ev_type == "rhythm") or (ch == -1 and is_ryt == 1)):
@@ -615,34 +616,34 @@ def pass2_expand_rhythm(events, RHYTHM_CH_MAP, RHYTHM_VOICE_ID_MAP):
             if key == "bd":
                 keyonX = int(ev.get("bd", 0))
                 fnumX = int(ev.get("fnum_ch6", 0))
-                volX  = int(ev.get("vol_ch6", 0))
+                volX  = int(ev.get("bd_vol", 0))
                 susX  = int(ev.get("sus_ch6", 0))
                 blockX= int(ev.get("block_ch6", 0))
             elif key == "sd":
                 keyonX = int(ev.get("sd", 0))
                 fnumX = int(ev.get("fnum_ch7", 0))
-                volX  = int(ev.get("vol_ch7", 0))
+                volX  = int(ev.get("sd_vol", 0))
                 susX  = int(ev.get("sus_ch7", 0))
                 blockX= int(ev.get("block_ch7", 0))
             elif key == "tom":
                 keyonX = int(ev.get("tom", 0))
                 # tom / tc / hh
                 fnumX = int(ev.get("fnum_ch8", 0))
-                volX  = int(ev.get("vol_ch8", 0))
+                volX  = int(ev.get("tom_vol", 0))
                 susX  = int(ev.get("sus_ch8", 0))
                 blockX= int(ev.get("block_ch8", 0))
             elif key == "tc": 
                 keyonX = int(ev.get("tc", 0))
                 # tom / tc / hh
                 fnumX = int(ev.get("fnum_ch8", 0))
-                volX  = int(ev.get("vol_ch8", 0))
+                volX  = int(ev.get("tc_vol", 0))
                 susX  = int(ev.get("sus_ch8", 0))
                 blockX= int(ev.get("block_ch8", 0))
             elif key == "hh":  
                 keyonX = int(ev.get("hh", 0))
                 # tom / tc / hh
                 fnumX = int(ev.get("fnum_ch8", 0)) 
-                volX  = int(ev.get("vol_ch8", 0))
+                volX  = int(ev.get("hh_vol", 0))
                 susX  = int(ev.get("sus_ch8", 0))
                 blockX= int(ev.get("block_ch8", 0))
             # 新しい ev を作成
