@@ -523,11 +523,11 @@ class _OpllState:
     def _decode_rhythm_bits(regval):
         is_ryt = (regval >> 5) & 1
         bits = regval & 0x1F
-        bd  = (bits >> 0) & 1
-        sd  = (bits >> 1) & 1
+        bd  = (bits >> 4) & 1
+        sd  = (bits >> 3) & 1
         tom = (bits >> 2) & 1
-        tc  = (bits >> 3) & 1
-        hh  = (bits >> 4) & 1
+        tc  = (bits >> 1) & 1
+        hh  = (bits >> 0) & 1
         return is_ryt, bd, sd, tom, tc, hh
 
     def _rhythm_fields_at_tick(self, ticks):
@@ -553,17 +553,36 @@ class _OpllState:
             str(self._sus(ch)),
             '','','','',
             str(is_ryt),'','','','','','',
-            str(bd), str(sd), str(tom), str(tc), str(hh),
+            '', '', '', '', '',
+            '', '', '', '', '',
+            '', '', '', '',
+            '', '', '', '',
+            '', '', '', '',
+        ]
+        return ','.join(cols)
+
+    def _row_rhythm_vol(self, ch: int, type_: str) -> str:
+        t     = self._common_time
+        ticks = get_ticks(t)
+        is_ryt, bd, sd, tom, tc, hh = self._rhythm_fields_at_tick(ticks)
+        cols = [
+            type_, repr(t), str(ch), str(ticks),'','','', '', '', '', '', '', '','','','','','','','','','','','','','',
+            str(is_ryt),'','','','','','',
+            '', '', '', '', '',
             str(self._bd_vol()), str(self._sd_vol()), str(self._tom_vol()), str(self._tc_vol()), str(self._hh_vol()),
-            str(self.fnum9(6)), str(self._vol(6)), str(self._sus(6)), str(self._block(6)),
-            str(self.fnum9(7)), str(self._vol(7)), str(self._sus(7)), str(self._block(7)),
-            str(self.fnum9(8)), str(self._vol(8)), str(self._sus(8)), str(self._block(8)),
+            '', '', '', '',
+            '', '', '', '',
+            '', '', '', '',
         ]
         return ','.join(cols)
 
     def _log(self, ch: int, type_: str):
         row = self._row(ch, type_)
         self.log_buf[ch].append(row)
+        self.trace_buf.append(row)
+
+    def _log_rhythm_vol(self, ch: int, type_: str):
+        row = self._row_rhythm_vol(ch, type_)
         self.trace_buf.append(row)
 
     def _log_rhythm_event(self, type_: str, regval: int):
@@ -647,9 +666,16 @@ class _OpllState:
                 self._log(ch, 'instVol')
                 row = self._voice_row('instVol', ch, self._inst(ch), self._vol(ch))
                 self.voice_trace_buf.append(row)
-            elif ch >= 6:
+            elif ch < 6:
+                _type, _ch = 'instVol', ch
+                self.inst_vol[ch] = v & 0xFF
+                self._log(ch, 'instVol')
+                row = self._voice_row('instVol', ch, self._inst(ch), self._vol(ch))
+                self.voice_trace_buf.append(row)
+            else :
                 _type, _ch = 'rhythmVol', ch
-                self._log(ch, 'rhythmVol')
+                self.inst_vol[ch] = v & 0xFF
+                self._log_rhythm_vol(ch, 'rhythmVol')
 
         # 全レジスタの生トレース
         self.regs_trace_buf.append(self._regs_row(_type, a, v, _ch))

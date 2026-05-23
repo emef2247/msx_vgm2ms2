@@ -187,15 +187,15 @@ def _build_segments(trace_csv_path,
     # 但しこれらはkeyon 0->1でlと同じ値にリセットされる
     events = pass2_compute_fl_kl_vl(events)
 
-    # onsetの検出とIOI(Inter‑Onset Interval:IOIの間隔)の算出, tempoの導出
-    events = pass2_compute_onsets_and_ioi(events)
-
     # type="rhythm", ch=-1のeventをRHYTHM_CH_MAP, RHYTHM_VOICE_ID_MAPをベースに展開
     events = pass2_expand_rhythm(events,RHYTHM_CH_MAP,RHYTHM_VOICE_ID_MAP)
 
+    # onsetの検出とIOI(Inter‑Onset Interval:IOIの間隔)の算出, tempoの導出
+    events = pass2_compute_onsets_and_ioi(events)
+    
     # pass2 (2): fl,kl,vlを計算した後にl=0のeventを削除
     # ここで l=0 の keyon 0->1 (retrigger)のeventは削除される。(fl,kl,vlにはリセットとして反映済み)
-    events = pass2_filter_l0(events)
+    #events = pass2_filter_l0(events)
 
     # l=0を削除した後、fl,kl,blからlegato, vibrate, volume envelopeを判定
     events = pass2_mark_legato_vibrato_envelope(events)
@@ -245,7 +245,7 @@ def _build_segments(trace_csv_path,
         # ------------------------------------------------------
         # 1. リズムイベント（0x0E の行）だけ特別扱い
         # ------------------------------------------------------
-        if ev_type == "rhythm":
+        if ev_type == "rhythm_expand":
             if is_ryt != 1:
                 continue
             # ch は pass2_expand_rhythm によって RHYTHM_CH_MAP (9-13) に設定済み

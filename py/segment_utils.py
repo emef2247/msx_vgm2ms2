@@ -389,23 +389,34 @@ def pass1_dump_csv(events, trace_csv_path):
 def pass2_compute_onsets_and_ioi(events):
 
     def _ival(v, default=0):
+        if v is None or v == "":
+            return default
+
         try:
             return int(v)
         except:
             return default
 
+    from statistics import mode, median
+
     # ------------------------------------------------------------
     # 1. scale をセット
     # ------------------------------------------------------------
     for ev in events:
+
         fnum = _ival(ev.get("fnum"))
         ev["scale"] = get_scale(fnum)
 
     # ------------------------------------------------------------
-    # 2. melody onset / ioi（既存処理）
+    # 2. melody onset / ioi
     # ------------------------------------------------------------
     events_by_ch = {}
+
     for idx, ev in enumerate(events):
+
+        if ev.get("#type") == "rhythm_expand":
+            continue
+
         ch = _ival(ev.get("ch"))
         events_by_ch.setdefault(ch, []).append((idx, ev))
 
@@ -416,34 +427,50 @@ def pass2_compute_onsets_and_ioi(events):
         prev_keyon = 0
         prev_vol   = 15
 
+        # --------------------------------------------------------
         # onset
+        # --------------------------------------------------------
         for i in range(len(lst)):
+
             idx, ev = lst[i]
+
             keyon = _ival(ev.get("keyon"))
             vol   = _ival(ev.get("vol"))
 
             if ev.get("#type") == "rhythm":
+
                 ev["onset"] = 0
+
             else:
+
                 is_onset = False
+
                 if prev_keyon == 0 and keyon == 1 and vol < 15:
                     is_onset = True
+
                 elif prev_keyon == 1 and keyon == 1 and prev_vol == 15 and vol < 15:
                     is_onset = True
+
                 ev["onset"] = 1 if is_onset else 0
 
             prev_keyon = keyon
             prev_vol   = vol
 
+        # --------------------------------------------------------
         # ioi
+        # --------------------------------------------------------
         total_l = 0
+
         for i in range(len(lst)):
+
             idx, ev = lst[i]
+
             keyon = _ival(ev.get("keyon"))
             vol   = _ival(ev.get("vol"))
             l     = _ival(ev.get("l"))
 
             if vol == 15 or ev.get("#type") == "rhythm" or keyon == 0:
+
                 total_l = 0
                 ev["ioi"] = 0
                 continue
@@ -454,36 +481,111 @@ def pass2_compute_onsets_and_ioi(events):
                 total_l += l
 
             if i + 1 < len(lst):
-                next_ev = lst[i+1][1]
+
+                next_ev = lst[i + 1][1]
+
                 next_keyon = _ival(next_ev.get("keyon"))
                 next_vol   = _ival(next_ev.get("vol"))
 
                 if next_keyon == 0 or next_vol == 15:
+
                     ev["ioi"] = total_l
                     total_l = 0
+
                 else:
+
                     ev["ioi"] = 0
+
             else:
+
                 ev["ioi"] = total_l
                 total_l = 0
 
     # ------------------------------------------------------------
-    # 3. rhythm: r_ioi = l（l=0 は無視）
+    # 3. rhythm_expand onset / r_ioi
     # ------------------------------------------------------------
-    for ev in events:
-        if ev.get("#type") == "rhythm":
-            l = _ival(ev.get("l"))
-            ev["r_ioi"] = l if l > 0 else 0
+    rhythm_expand_by_ch = {}
+
+    for idx, ev in enumerate(events):
+
+        if ev.get("#type") != "rhythm_expand":
+            continue
+
+        ch = _ival(ev.get("ch"))
+        rhythm_expand_by_ch.setdefault(ch, []).append((idx, ev))
+
+    for ch, lst in rhythm_expand_by_ch.items():
+
+        lst.sort(key=lambda x: _ival(x[1].get("ticks")))
+
+        # --------------------------------------------------------
+        # onset
+        # --------------------------------------------------------
+        for idx, ev in lst:
+
+            keyon = _ival(ev.get("keyon"))
+
+            # posedge 済みなので keyon=1 が onset
+            ev["onset"] = 1 if keyon == 1 else 0
+
+        # --------------------------------------------------------
+        # r_ioi
+        # --------------------------------------------------------
+        total_l = 0
+
+        for i in range(len(lst)):
+
+            idx, ev = lst[i]
+
+            l      = _ival(ev.get("l"))
+            onset  = _ival(ev.get("onset"))
+            keyon  = _ival(ev.get("keyon"))
+
+            # l=0 は timing edge のみ
+            if l <= 0:
+
+                ev["r_ioi"] = 0
+                continue
+
+            if onset == 1:
+                total_l = l
+            else:
+                total_l += l
+
+            # ----------------------------------------------------
+            # 次 onset で確定
+            # ----------------------------------------------------
+            if i + 1 < len(lst):
+
+                next_ev = lst[i + 1][1]
+
+                next_keyon = _ival(next_ev.get("keyon"))
+
+                if next_keyon == 1:
+
+                    ev["r_ioi"] = total_l
+                    total_l = 0
+
+                else:
+
+                    ev["r_ioi"] = 0
+
+            else:
+
+                ev["r_ioi"] = total_l
+                total_l = 0
 
     # ------------------------------------------------------------
-    # 4. rhythm: r_hh_ioi（hh=1 の間隔を l の積算で求める）
+    # 4. rhythm HH interval
     # ------------------------------------------------------------
     _r_hh_ioi = 0
+
     for ev in events:
+
         if ev.get("#type") != "rhythm":
             continue
 
-        l = _ival(ev.get("l"))
+        l  = _ival(ev.get("l"))
         hh = _ival(ev.get("hh"))
 
         if l == 0:
@@ -492,41 +594,65 @@ def pass2_compute_onsets_and_ioi(events):
         _r_hh_ioi += l
 
         if hh == 1:
+
             ev["r_hh_ioi"] = _r_hh_ioi
             _r_hh_ioi = 0
+
         else:
+
             ev["r_hh_ioi"] = 0
 
     # ------------------------------------------------------------
-    # 5. r_mode_ioi / r_hh_mode_ioi / r_tempo を計算
+    # 5. global rhythm statistics
     # ------------------------------------------------------------
-    r_ioi_list = [ _ival(ev.get("r_ioi")) for ev in events
-                   if ev.get("#type") == "rhythm" and _ival(ev.get("r_ioi")) > 0 ]
+    r_ioi_list = [
+        _ival(ev.get("r_ioi"))
+        for ev in events
+        if ev.get("#type") == "rhythm_expand"
+        and _ival(ev.get("r_ioi")) > 0
+    ]
 
-    r_hh_ioi_list = [ _ival(ev.get("r_hh_ioi")) for ev in events
-                      if ev.get("#type") == "rhythm" and _ival(ev.get("r_hh_ioi")) > 0 ]
+    r_hh_ioi_list = [
+        _ival(ev.get("r_hh_ioi"))
+        for ev in events
+        if ev.get("#type") == "rhythm"
+        and _ival(ev.get("r_hh_ioi")) > 0
+    ]
 
-    from statistics import mode, median
-
+    # ------------------------------------------------------------
+    # helper
+    # ------------------------------------------------------------
     def pick_mode(lst):
+
         if not lst:
             return 0
+
         try:
             return mode(lst)
+
         except:
+
             return int(median(lst))
 
+    # ------------------------------------------------------------
+    # statistics
+    # ------------------------------------------------------------
     r_mode_ioi    = pick_mode(r_ioi_list)
     r_hh_mode_ioi = pick_mode(r_hh_ioi_list)
-    r_tempo       = 3600.0 / r_mode_ioi if r_mode_ioi > 0 else 0.0
 
+    r_tempo = 3600.0 / r_mode_ioi if r_mode_ioi > 0 else 0.0
+
+    # ------------------------------------------------------------
+    # broadcast
+    # ------------------------------------------------------------
     for ev in events:
-        ev["r_mode_ioi"] = r_mode_ioi
+
+        ev["r_mode_ioi"]    = r_mode_ioi
         ev["r_hh_mode_ioi"] = r_hh_mode_ioi
-        ev["r_tempo"] = r_tempo
+        ev["r_tempo"]       = r_tempo
 
     return events
-
+    
 def pass2_mark_legato_vibrato_envelope(events):
 
     def _ival(v, default=0):
@@ -592,69 +718,147 @@ def pass2_mark_legato_vibrato_envelope(events):
     return merged
 
 def pass2_expand_rhythm(events, RHYTHM_CH_MAP, RHYTHM_VOICE_ID_MAP):
+    """
+    OPLL rhythm event を
+    MS2 用 melody channel event に展開する。
+
+    YM2413 rhythm bits (D0-D4) は
+    posedge sensitive なので、
+
+        0 -> 1
+
+    の瞬間のみ keyon=1 を生成する。
+
+    l=0 event を保持している前提なので、
+    同一bitが連続して1になるケースでは
+    keyonは再生成されない。
+    """
+
+    def _ival(v, default=0):
+        if v is None or v == "":
+            return default
+
+        try:
+            return int(v)
+        except:
+            return default
+
     new_events = []
 
-    for ev in events:
-        ev_type = ev.get("#type", "")
-        ch      = int(ev.get("ch", 0))
-        is_ryt  = int(ev.get("is_ryt", 0))
-        BdSdTomTcHH = ev.get("BdSdTomTcHH","");
+    # ------------------------------------------------------------
+    # 前回 rhythm bit 状態
+    # ------------------------------------------------------------
+    prev_state = {
+        "bd":  0,
+        "sd":  0,
+        "tom": 0,
+        "tc":  0,
+        "hh":  0,
+    }
 
-        # rhythm 以外はそのまま
+    RHY_KEYS = ["bd", "sd", "tom", "tc", "hh"]
+
+    # ------------------------------------------------------------
+    # main loop
+    # ------------------------------------------------------------
+    for ev in events:
+
+        ev_type = ev.get("#type", "")
+        ch      = _ival(ev.get("ch"))
+        is_ryt  = _ival(ev.get("is_ryt"))
+
+        # --------------------------------------------------------
+        # rhythm 以外
+        # --------------------------------------------------------
         if not ((ev_type == "rhythm") or (ch == -1 and is_ryt == 1)):
             new_events.append(ev)
             continue
 
-        # rhythm 行を 5 種類に分解
-        for key in ["bd", "sd", "tom", "tc", "hh"]:
-            keyon = int(ev.get(key, 0))
+        # --------------------------------------------------------
+        # rhythm を 5 channel に展開
+        # --------------------------------------------------------
+        for key in RHY_KEYS:
 
-            # チャンネル割り当て
+            current  = _ival(ev.get(key))
+            previous = prev_state[key]
+
+            # ----------------------------------------------------
+            # posedge detection
+            # ----------------------------------------------------
+            # 0 -> 1 の瞬間のみ keyon
+            # ----------------------------------------------------
+            keyonX = 1 if (previous == 0 and current == 1) else 0
+
+            # 状態更新
+            prev_state[key] = current
+
+            # ----------------------------------------------------
+            # channel mapping
+            # ----------------------------------------------------
             ch_new = RHYTHM_CH_MAP[key]
 
-            # fnum/vol/sus は ch6/7/8 から取得
+            # ----------------------------------------------------
+            # parameter extraction
+            # ----------------------------------------------------
             if key == "bd":
-                keyonX = int(ev.get("bd", 0))
-                fnumX = int(ev.get("fnum_ch6", 0))
-                volX  = int(ev.get("bd_vol", 0))
-                susX  = int(ev.get("sus_ch6", 0))
-                blockX= int(ev.get("block_ch6", 0))
+
+                fnumX  = _ival(ev.get("fnum_ch6"))
+                volX   = _ival(ev.get("bd_vol"))
+                susX   = _ival(ev.get("sus_ch6"))
+                blockX = _ival(ev.get("block_ch6"))
+
             elif key == "sd":
-                keyonX = int(ev.get("sd", 0))
-                fnumX = int(ev.get("fnum_ch7", 0))
-                volX  = int(ev.get("sd_vol", 0))
-                susX  = int(ev.get("sus_ch7", 0))
-                blockX= int(ev.get("block_ch7", 0))
+
+                fnumX  = _ival(ev.get("fnum_ch7"))
+                volX   = _ival(ev.get("sd_vol"))
+                susX   = _ival(ev.get("sus_ch7"))
+                blockX = _ival(ev.get("block_ch7"))
+
             elif key == "tom":
-                keyonX = int(ev.get("tom", 0))
-                # tom / tc / hh
-                fnumX = int(ev.get("fnum_ch8", 0))
-                volX  = int(ev.get("tom_vol", 0))
-                susX  = int(ev.get("sus_ch8", 0))
-                blockX= int(ev.get("block_ch8", 0))
-            elif key == "tc": 
-                keyonX = int(ev.get("tc", 0))
-                # tom / tc / hh
-                fnumX = int(ev.get("fnum_ch8", 0))
-                volX  = int(ev.get("tc_vol", 0))
-                susX  = int(ev.get("sus_ch8", 0))
-                blockX= int(ev.get("block_ch8", 0))
-            elif key == "hh":  
-                keyonX = int(ev.get("hh", 0))
-                # tom / tc / hh
-                fnumX = int(ev.get("fnum_ch8", 0)) 
-                volX  = int(ev.get("hh_vol", 0))
-                susX  = int(ev.get("sus_ch8", 0))
-                blockX= int(ev.get("block_ch8", 0))
-            # 新しい ev を作成
+
+                fnumX  = _ival(ev.get("fnum_ch8"))
+                volX   = _ival(ev.get("tom_vol"))
+                susX   = _ival(ev.get("sus_ch8"))
+                blockX = _ival(ev.get("block_ch8"))
+
+            elif key == "tc":
+
+                fnumX  = _ival(ev.get("fnum_ch8"))
+                volX   = _ival(ev.get("tc_vol"))
+                susX   = _ival(ev.get("sus_ch8"))
+                blockX = _ival(ev.get("block_ch8"))
+
+            elif key == "hh":
+
+                fnumX  = _ival(ev.get("fnum_ch8"))
+                volX   = _ival(ev.get("hh_vol"))
+                susX   = _ival(ev.get("sus_ch8"))
+                blockX = _ival(ev.get("block_ch8"))
+
+            # ----------------------------------------------------
+            # new event
+            # ----------------------------------------------------
             ev_new = dict(ev)
-            ev_new["ch"]   = ch_new
-            ev_new["keyon"]= keyonX
-            ev_new["fnum"] = fnumX
-            ev_new["block"]= blockX
-            ev_new["inst"] = RHYTHM_VOICE_ID_MAP[key]
-            ev_new["vol"]  = volX
-            ev_new["sus"]  = susX
+
+            # channel
+            ev_new["ch"] = ch_new
+
+            # keyon (posedge only)
+            ev_new["keyon"] = keyonX
+
+            # note params
+            ev_new["fnum"]  = fnumX
+            ev_new["block"] = blockX
+
+            # rhythm -> dedicated MS2 voice
+            ev_new["inst"]  = RHYTHM_VOICE_ID_MAP[key]
+
+            # volume/sustain
+            ev_new["vol"]   = volX
+            ev_new["sus"]   = susX
+
+            # type clarification
+            ev_new["#type"] = "rhythm_expand"
 
             new_events.append(ev_new)
 
@@ -1431,6 +1635,10 @@ def pass4_compute_beats(events):
       3. fb/kb/vb を計算
       4. min_ioi（音符長の最小単位）を計算
       5. tempo（BPM）を IOI ベースで計算し ev["tempo"] に格納
+
+    rhythm-only VGM に対応:
+      - ioi が存在しない場合は r_ioi を使用
+      - 完全に IOI が存在しない場合も安全に fallback
     """
 
     def _ival(v, default=0):
@@ -1441,6 +1649,21 @@ def pass4_compute_beats(events):
         except:
             return default
 
+    def get_effective_ioi(ev):
+        """
+        melody の ioi を優先し、
+        無ければ rhythm 用 r_ioi を使う
+        """
+        ioi = _ival(ev.get("ioi"))
+        if ioi > 0:
+            return ioi
+
+        r_ioi = _ival(ev.get("r_ioi"))
+        if r_ioi > 0:
+            return r_ioi
+
+        return 0
+
     # ------------------------------------------------------------
     # 1. min_l を 最小値又は「最小クラスタ」から決定
     # ------------------------------------------------------------
@@ -1448,6 +1671,7 @@ def pass4_compute_beats(events):
 
     min_l = min_l_exp1
     base  = base_exp1
+
     print(f"[PASS4]        min_l={min_l} base={base}")
 
     # ------------------------------------------------------------
@@ -1459,12 +1683,14 @@ def pass4_compute_beats(events):
         if l > 0:
             ev["beat"] = max(1, int(l / min_l))
         else:
-            ev["beat"] = 0  # retrigger or 無音
+            ev["beat"] = 0
 
     # ------------------------------------------------------------
     # 3. beat_pos（チャンネル独立）
     # ------------------------------------------------------------
     from collections import defaultdict
+    from statistics import mode, median
+
     ch_events = defaultdict(list)
 
     for ev in events:
@@ -1472,7 +1698,9 @@ def pass4_compute_beats(events):
 
     for ch, buf in ch_events.items():
         buf.sort(key=lambda e: _ival(e.get("ticks")))
+
         beat_pos = 0
+
         for ev in buf:
             ev["beat_pos"] = beat_pos
             beat_pos += ev["beat"]
@@ -1481,6 +1709,7 @@ def pass4_compute_beats(events):
     # 4. fb/kb/vb（レガート対応）
     # ------------------------------------------------------------
     ch_events_fb = defaultdict(list)
+
     for ev in events:
         ch_events_fb[_ival(ev.get("ch"), -1)].append(ev)
 
@@ -1493,7 +1722,9 @@ def pass4_compute_beats(events):
         vol_prev   = None
         keyon_prev = 0
 
-        fb_acc = kb_acc = vb_acc = 0
+        fb_acc = 0
+        kb_acc = 0
+        vb_acc = 0
 
         for ev in buf:
             beat  = _ival(ev.get("beat"))
@@ -1504,14 +1735,27 @@ def pass4_compute_beats(events):
             keyon = _ival(ev.get("keyon"))
 
             if keyon == 0:
-                fb_acc = kb_acc = vb_acc = beat
+                fb_acc = beat
+                kb_acc = beat
+                vb_acc = beat
+
             else:
-                if keyon_prev == 1 and fnum == fnum_prev and block == block_prev and inst == inst_prev and vol == vol_prev:
+                same_note = (
+                    keyon_prev == 1 and
+                    fnum  == fnum_prev and
+                    block == block_prev and
+                    inst  == inst_prev and
+                    vol   == vol_prev
+                )
+
+                if same_note:
                     fb_acc += beat
                     kb_acc += beat
                     vb_acc += beat
                 else:
-                    fb_acc = kb_acc = vb_acc = beat
+                    fb_acc = beat
+                    kb_acc = beat
+                    vb_acc = beat
 
             ev["fb"] = fb_acc
             ev["kb"] = kb_acc
@@ -1526,20 +1770,33 @@ def pass4_compute_beats(events):
     # ------------------------------------------------------------
     # 5. min_ioi（音符長の最小単位）を計算
     # ------------------------------------------------------------
-    ioi_list = [ _ival(ev.get("ioi")) for ev in events if _ival(ev.get("ioi")) > 0 ]
+    ioi_list = [
+        get_effective_ioi(ev)
+        for ev in events
+        if get_effective_ioi(ev) > 0
+    ]
 
     if not ioi_list:
-        print("[PASS4] No IOI found")
-        return events, min_l, None
+        print("[PASS4] No IOI found even with r_ioi fallback")
 
+        # 完全 fallback
+        min_ioi = 1
+        mode_ioi = 1
+        bpm_clamped = 120.0
+
+        for ev in events:
+            ev["tempo"] = bpm_clamped
+
+        return events, min_l, min_ioi, mode_ioi, bpm_clamped
+
+    # ------------------------------------------------------------
     # mode が最も安定（最頻値）
-    from statistics import mode, median
+    # ------------------------------------------------------------
     try:
         mode_ioi = mode(ioi_list)
     except:
         mode_ioi = median(ioi_list)
 
-    # 最小値も確認
     min_ioi = min(ioi_list)
 
     print(f"[PASS4] min_ioi={min_ioi}, mode_ioi={mode_ioi}")
@@ -1547,13 +1804,21 @@ def pass4_compute_beats(events):
     # ------------------------------------------------------------
     # 6. tempo（BPM）を IOI ベースで計算
     # ------------------------------------------------------------
-    # tick=1/60sec → dt = ioi / 60
-    # BPM = 60 / dt = 3600 / ioi
+    # tick = 1/60 sec
+    # BPM = 3600 / ioi
     bpm_per_grid = 3600.0 / mode_ioi
 
-    # grid_per_beat は min_l ベースの beat_pos から推定
-    beat_pos_all = sorted(set(ev["beat_pos"] for ev in events if ev["beat"] > 0))
-    intervals = [b - a for a, b in zip(beat_pos_all, beat_pos_all[1:]) if (b - a) > 0]
+    beat_pos_all = sorted(set(
+        ev["beat_pos"]
+        for ev in events
+        if _ival(ev.get("beat")) > 0
+    ))
+
+    intervals = [
+        b - a
+        for a, b in zip(beat_pos_all, beat_pos_all[1:])
+        if (b - a) > 0
+    ]
 
     if intervals:
         try:
@@ -1561,12 +1826,19 @@ def pass4_compute_beats(events):
         except:
             grid_per_beat = int(round(median(intervals)))
     else:
-        grid_per_beat = 4  # fallback
+        grid_per_beat = 4
 
     bpm_raw = bpm_per_grid / grid_per_beat
+
     bpm_clamped = max(30.0, min(225.0, bpm_raw))
 
-    print(f"[PASS4 BPM] mode_ioi={mode_ioi}, bpm_raw={bpm_raw:.3f}, bpm={bpm_clamped:.3f}")
+    print(
+        f"[PASS4 BPM] "
+        f"mode_ioi={mode_ioi}, "
+        f"grid_per_beat={grid_per_beat}, "
+        f"bpm_raw={bpm_raw:.3f}, "
+        f"bpm={bpm_clamped:.3f}"
+    )
 
     # ------------------------------------------------------------
     # 7. tempo を ev に書き込む
@@ -1575,19 +1847,24 @@ def pass4_compute_beats(events):
         ev["tempo"] = bpm_clamped
 
     # ------------------------------------------------------------
-    # rhythm の beat_pos を melody に同期させる
+    # 8. rhythm の beat_pos を melody に同期
     # ------------------------------------------------------------
-    events_sorted = sorted(events, key=lambda e: _ival(e.get("ticks")))
+    events_sorted = sorted(
+        events,
+        key=lambda e: _ival(e.get("ticks"))
+    )
+
     last_melody_beat_pos = 0
 
     for ev in events_sorted:
-        is_ryt = ev.get("is_ryt") == 1 or ev.get("#type") == "rhythm"
+        is_ryt = (
+            ev.get("is_ryt") == 1 or
+            ev.get("#type") == "rhythm"
+        )
 
         if not is_ryt:
-            # melody
             last_melody_beat_pos = _ival(ev.get("beat_pos"))
         else:
-            # rhythm
             ev["beat_pos"] = last_melody_beat_pos
 
     return events, min_l, min_ioi, mode_ioi, bpm_clamped
