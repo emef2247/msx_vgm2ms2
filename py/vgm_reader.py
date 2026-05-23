@@ -496,7 +496,7 @@ class _OpllState:
         return (self.inst_vol[ch] >> 4) & 0x0F
 
     def _vol(self, ch: int) -> int:
-        if self.rhythm_mode:
+        if self.rhythm_mode & ch >= 6:
             return self.inst_vol[ch] & 0xFF
         else:
             return self.inst_vol[ch] & 0x0F
