@@ -695,8 +695,8 @@ def pass2_mark_legato_vibrato_envelope(events):
             if prev_keyon == 0 and keyon == 1:
                 ev["is_legato"] = 0
 
-            # legato 条件：prev_keyon=1 かつ kl > l
-            elif prev_keyon == 1 and kl > l:
+            # legato 条件：prev_keyon=1 かつ kl > l かつ flが変更した場合
+            elif prev_keyon == 1 and kl > l and kl != fl:
                 ev["is_legato"] = 1
 
             else:
@@ -1280,72 +1280,165 @@ def pass3_merge_same_note(events):
 def pass3_merge_retrigger_note(events):
     """
     PASS3(4):
-      keyoff → keyon（同じ音）→ keyoff の retrigger を
-      1 つの NOTE_ON にまとめる。
+      melody 系のみ retrigger merge を行う。
+
+      merge 対象:
+        keyon=1 -> keyon=0 -> keyon=1
+        かつ同一音色・同一音高
+
+      merge 非対象:
+        rhythm_expand
+
+      OPLL rhythm は posedge sensitive のため、
+      rhythm_expand の keyon=1 は独立発音として扱う。
     """
 
     from collections import defaultdict
 
     def _ival(v, default=0):
+
         if v is None or v == "":
             return default
+
         try:
             return int(v)
+
         except:
             return default
 
-    # tick_start / tick_end は pass3 で付与済み
+    # ------------------------------------------------------------
+    # tick_start / tick_end を再計算
+    # ------------------------------------------------------------
     for ev in events:
+
         ev["ticks"] = _ival(ev.get("ticks"))
         ev["l"]     = _ival(ev.get("l"))
+
         ev["tick_start"] = ev["ticks"]
         ev["tick_end"]   = ev["ticks"] + ev["l"]
 
+    # ------------------------------------------------------------
+    # same note 判定
+    # ------------------------------------------------------------
     def same_note(a, b):
+
         return (
-            _ival(a["fnum"])  == _ival(b["fnum"])  and
-            _ival(a["block"]) == _ival(b["block"]) and
-            _ival(a["inst"])  == _ival(b["inst"])  and
-            _ival(a["vol"])   == _ival(b["vol"])   and
-            _ival(a["sus"])   == _ival(b["sus"])
+            _ival(a.get("fnum"))  == _ival(b.get("fnum"))  and
+            _ival(a.get("block")) == _ival(b.get("block")) and
+            _ival(a.get("inst"))  == _ival(b.get("inst"))  and
+            _ival(a.get("vol"))   == _ival(b.get("vol"))   and
+            _ival(a.get("sus"))   == _ival(b.get("sus"))
         )
 
+    # ------------------------------------------------------------
+    # ch ごとに整理
+    # ------------------------------------------------------------
     ch_events = defaultdict(list)
+
     for ev in events:
-        ch_events[_ival(ev.get("ch"), -1)].append(ev)
+
+        ch = _ival(ev.get("ch"), -1)
+        ch_events[ch].append(ev)
 
     merged_all = []
 
+    # ------------------------------------------------------------
+    # merge
+    # ------------------------------------------------------------
     for ch, buf in ch_events.items():
-        buf.sort(key=lambda e: e["tick_start"])
+
+        buf.sort(key=lambda e: (
+            _ival(e.get("tick_start")),
+            _ival(e.get("keyon"))
+        ))
 
         merged = []
+
         i = 0
+
         while i < len(buf):
+
             ev = buf[i]
 
-            # retrigger パターンを検出
-            if (
-                i + 2 < len(buf) and
-                _ival(ev["keyon"]) == 1 and
-                _ival(buf[i+1]["keyon"]) == 0 and
-                _ival(buf[i+2]["keyon"]) == 1 and
-                same_note(ev, buf[i+2]) and
-                ev["tick_end"] == buf[i+1]["tick_start"] and
-                buf[i+1]["tick_end"] == buf[i+2]["tick_start"]
-            ):
-                # マージ：ev の終端を buf[i+2] に伸ばす
-                ev["tick_end"] = buf[i+2]["tick_end"]
-                ev["l"] = ev["tick_end"] - ev["tick_start"]
+            ev_type = ev.get("#type", "")
+
+            # ----------------------------------------------------
+            # rhythm_expand は merge 禁止
+            # ----------------------------------------------------
+            if ev_type == "rhythm_expand":
 
                 merged.append(ev)
-                i += 3
+
+                i += 1
                 continue
 
+            # ----------------------------------------------------
+            # retrigger merge pattern
+            # ----------------------------------------------------
+            can_merge = (
+                i + 2 < len(buf)
+            )
+
+            if can_merge:
+
+                ev1 = ev
+                ev2 = buf[i + 1]
+                ev3 = buf[i + 2]
+
+                if (
+                    _ival(ev1.get("keyon")) == 1 and
+                    _ival(ev2.get("keyon")) == 0 and
+                    _ival(ev3.get("keyon")) == 1 and
+
+                    same_note(ev1, ev3) and
+
+                    _ival(ev1.get("tick_end")) ==
+                    _ival(ev2.get("tick_start")) and
+
+                    _ival(ev2.get("tick_end")) ==
+                    _ival(ev3.get("tick_start"))
+                ):
+
+                    # --------------------------------------------
+                    # merge
+                    # --------------------------------------------
+                    ev_new = dict(ev1)
+
+                    ev_new["tick_end"] = _ival(ev3.get("tick_end"))
+                    ev_new["l"] = (
+                        ev_new["tick_end"] -
+                        _ival(ev_new.get("tick_start"))
+                    )
+
+                    merged.append(ev_new)
+
+                    i += 3
+                    continue
+
+            # ----------------------------------------------------
+            # no merge
+            # ----------------------------------------------------
             merged.append(ev)
+
             i += 1
 
         merged_all.extend(merged)
+
+    # ------------------------------------------------------------
+    # ticks 再同期
+    # ------------------------------------------------------------
+    for ev in merged_all:
+
+        ev["ticks"] = _ival(ev.get("tick_start"))
+
+    # ------------------------------------------------------------
+    # 全体ソート
+    # ------------------------------------------------------------
+    merged_all.sort(key=lambda e: (
+        _ival(e.get("ticks")),
+        _ival(e.get("ch")),
+        _ival(e.get("keyon"))
+    ))
 
     return merged_all
 
