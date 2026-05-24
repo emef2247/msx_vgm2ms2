@@ -84,10 +84,10 @@ def main():
 
     print(f"Parsing VGM: {vgm_path}")
     (
-        _psg_log, _scc_log,
-        _psg_trace, _scc_trace,
-        _opll_log, opll_trace_csv,
-        opll_voice_csv, _opll_regs_csv,
+        psg_log_csv, scc_log_csv,
+        psg_trace_csv, scc_trace_csv,
+        opll_log_csv, opll_trace_csv,
+        opll_voice_csv, opll_regs_csv,
     ) = parse_vgm(vgm_path, output_dir)
 
     print(f"  OPLL trace CSV: {opll_trace_csv}")
@@ -124,6 +124,15 @@ def main():
         f.write(mml_text)
 
     print(f"Written: {out_path}  ({len(mml_text)} bytes)")
+
+    if not args.debug:
+        for _csv in [psg_log_csv, scc_log_csv, psg_trace_csv, scc_trace_csv,
+                     opll_log_csv, opll_trace_csv, opll_voice_csv, opll_regs_csv]:
+            try:
+                if _csv and os.path.isfile(_csv):
+                    os.remove(_csv)
+            except OSError:
+                pass
 
 
 if __name__ == '__main__':
