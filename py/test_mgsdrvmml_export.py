@@ -78,3 +78,20 @@ def test_build_mgsdrvmml_file_emits_user_patch_and_rhythm_merge():
     assert '\n9 ' in mml
     assert 'c16' in mml
     assert '\nf bs16' in mml
+
+
+def test_build_mgsdrvmml_file_tempo_derived_from_ticks_per_step():
+    """#tempo は bpm_detected ではなく ticks_per_step から逆算した実効BPMになること"""
+    segs = _empty_segments()
+    segs[0].append(_seg(ch=0, keyon=1, tick_start=0, tick_end=2, inst=1, min_l=2))
+    segs[0].append(_seg(ch=0, keyon=0, tick_start=2, tick_end=4, inst=1, min_l=2))
+
+    mml = build_mgsdrvmml_file(
+        segments=segs,
+        voice_csv_path=None,
+        stem='unit',
+        bpm=499,
+    )
+
+    assert '#tempo 450' in mml
+    assert '#tempo 499' not in mml
