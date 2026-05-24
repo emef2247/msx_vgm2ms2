@@ -95,3 +95,24 @@ def test_build_mgsdrvmml_file_tempo_derived_from_ticks_per_step():
 
     assert '#tempo 450' in mml
     assert '#tempo 499' not in mml
+
+
+def test_build_mgsdrvmml_file_keeps_direct_at_token_mapping_per_channel():
+    segs = _empty_segments()
+    segs[0].append(_seg(ch=0, keyon=1, tick_start=0, tick_end=16, inst=1, min_l=4))
+    segs[0].append(_seg(ch=0, keyon=0, tick_start=16, tick_end=20, inst=1, min_l=4))
+    segs[1].append(_seg(ch=1, keyon=1, tick_start=0, tick_end=16, inst=2, min_l=4))
+    segs[1].append(_seg(ch=1, keyon=0, tick_start=16, tick_end=20, inst=2, min_l=4))
+
+    mml = build_mgsdrvmml_file(
+        segments=segs,
+        voice_csv_path=None,
+        stem='unit',
+        bpm=120,
+    )
+
+    line9 = next(line for line in mml.splitlines() if line.startswith('9 '))
+    linea = next(line for line in mml.splitlines() if line.startswith('a '))
+
+    assert '@1' in line9
+    assert '@2' in linea
