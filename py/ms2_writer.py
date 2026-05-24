@@ -15,9 +15,11 @@ import math
 import os
 import re
 import sys
+from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(__file__))
 from opll_mml import _build_segments, _opll_note, detect_num_ch,NUM_CH
+from mml_utils import track_id_to_mgsdrv, estimate_mml_used, estimate_alloc, compress_mml_text
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -944,7 +946,7 @@ def build_ms2_file(
     """
 
     from opll_mml import _assign_voice_ids
-    voice_table, user_patches, _warnings = _assign_voice_ids(segments, voice_csv_path)
+    _voice_table, user_patches, _warnings = _assign_voice_ids(segments, voice_csv_path)
 
     NUM_CH = 18
 
@@ -1102,3 +1104,376 @@ def build_ms2_file(
         + _sentinel_chunk()
     )
     return ms2_bytes
+
+
+_SCALE_NAMES = ['c', 'c+', 'd', 'd+', 'e', 'f', 'f+', 'g', 'g+', 'a', 'a+', 'b']
+_STEP_TABLE: list[tuple[int, str]] = [
+    (16, '1'),
+    (12, '2.'),
+    (8, '2'),
+    (6, '4.'),
+    (4, '4'),
+    (3, '8.'),
+    (2, '8'),
+    (1, '16'),
+]
+_MML_MELODY_CHANNELS = (0, 1, 2, 3, 4, 5)
+_MML_RHYTHM_CHANNELS = (9, 10, 11, 12, 13)
+_RHYTHM_NOTE_SYMBOLS = {
+    9: 'b',
+    10: 's',
+    11: 'm',
+    12: 'c',
+    13: 'h',
+}
+
+
+def _ms2_vol_to_mml_v(ms2_vol: int) -> int:
+    opll_vol = round(int(ms2_vol) * 3 / 8)
+    return max(0, min(15, 15 - opll_vol))
+
+
+def _ms2_note_to_octave_scale(ms2_note: int) -> tuple[int, str]:
+    note = int(ms2_note)
+    return note // 12 + 1, _SCALE_NAMES[note % 12]
+
+
+def _steps_to_mml_lengths(step_count: int) -> list[str]:
+    remain = max(0, int(step_count))
+    parts: list[str] = []
+    for size, token in _STEP_TABLE:
+        while remain >= size:
+            parts.append(token)
+            remain -= size
+    return parts if parts else ['16']
+
+
+def _emit_note_with_lengths(scale: str, lengths: list[str], tie_from_prev: bool = False) -> str:
+    if not lengths:
+        lengths = ['16']
+    text = ''
+    for i, ln in enumerate(lengths):
+        if i == 0:
+            prefix = '&' if tie_from_prev else ''
+            text += f'{prefix}{scale}{ln}'
+        else:
+            text += f'&{scale}{ln}'
+    return text
+
+
+def _emit_rest_tokens(step_count: int) -> list[str]:
+    return [f'r{ln}' for ln in _steps_to_mml_lengths(step_count)]
+
+
+def _build_inst_idx_to_at_token(n_melody: int, ref_count: int, user_patches: dict) -> dict[int, str]:
+    mapping: dict[int, str] = {}
+    for idx in range(max(0, int(n_melody))):
+        mapping[idx] = f'@{idx + 1}'
+    for v_num in sorted(user_patches):
+        idx = ref_count + (int(v_num) - 1)
+        mapping[idx] = f'@v{int(v_num)}'
+    return mapping
+
+
+def _emit_melody_pattern_tokens(
+    events: list[tuple[int, list[bytes]]],
+    pattern_steps: int,
+    state: dict,
+    inst_idx_to_at_token: dict[int, str],
+) -> list[str]:
+    tokens: list[str] = []
+    pos = 0
+    event_steps = [step for step, _ in events]
+    for i, (step, evts) in enumerate(events):
+        if step > pos:
+            if state['note_active'] and state['note'] is not None:
+                octave, scale = _ms2_note_to_octave_scale(state['note'])
+                if state['octave'] != octave:
+                    tokens.append(f'o{octave}')
+                    state['octave'] = octave
+                tokens.append(_emit_note_with_lengths(scale, _steps_to_mml_lengths(step - pos), tie_from_prev=True))
+            else:
+                tokens.extend(_emit_rest_tokens(step - pos))
+        next_step = event_steps[i + 1] if i + 1 < len(event_steps) else pattern_steps
+        dur_steps = max(0, next_step - step)
+        note_evt: tuple[int, int] | None = None
+        for evt in evts:
+            if not evt:
+                continue
+            op = evt[0]
+            if op == 0x04 and len(evt) >= 2:
+                at_token = inst_idx_to_at_token.get(int(evt[1]))
+                if at_token and at_token != state['at_token']:
+                    tokens.append(at_token)
+                    state['at_token'] = at_token
+            elif op == 0x05 and len(evt) >= 2:
+                mml_v = _ms2_vol_to_mml_v(int(evt[1]))
+                if mml_v != state['mml_v']:
+                    tokens.append(f'v{mml_v}')
+                    state['mml_v'] = mml_v
+            elif op in (0x00, 0x01, 0x02):
+                note_evt = (op, int(evt[1]) if len(evt) >= 2 else 0)
+        if dur_steps > 0:
+            if note_evt is None:
+                if state['note_active'] and state['note'] is not None:
+                    octave, scale = _ms2_note_to_octave_scale(state['note'])
+                    if state['octave'] != octave:
+                        tokens.append(f'o{octave}')
+                        state['octave'] = octave
+                    tokens.append(_emit_note_with_lengths(scale, _steps_to_mml_lengths(dur_steps), tie_from_prev=True))
+                else:
+                    tokens.extend(_emit_rest_tokens(dur_steps))
+            else:
+                op, note = note_evt
+                if op == 0x01:
+                    state['note_active'] = False
+                    state['note'] = None
+                    tokens.extend(_emit_rest_tokens(dur_steps))
+                else:
+                    octave, scale = _ms2_note_to_octave_scale(note)
+                    if state['octave'] != octave:
+                        tokens.append(f'o{octave}')
+                        state['octave'] = octave
+                    tokens.append(_emit_note_with_lengths(
+                        scale,
+                        _steps_to_mml_lengths(dur_steps),
+                        tie_from_prev=(op == 0x02 and state['note_active']),
+                    ))
+                    state['note_active'] = True
+                    state['note'] = note
+        pos = next_step
+    if pos < pattern_steps:
+        remain = pattern_steps - pos
+        if state['note_active'] and state['note'] is not None:
+            octave, scale = _ms2_note_to_octave_scale(state['note'])
+            if state['octave'] != octave:
+                tokens.append(f'o{octave}')
+                state['octave'] = octave
+            tokens.append(_emit_note_with_lengths(scale, _steps_to_mml_lengths(remain), tie_from_prev=True))
+        else:
+            tokens.extend(_emit_rest_tokens(remain))
+    return tokens if tokens else ['r1']
+
+
+def _emit_rhythm_pattern_tokens(
+    channel_event_lists: list[list],
+    pat: int,
+    pattern_steps: int,
+) -> list[str]:
+    by_ch_step: dict[int, dict[int, list[bytes]]] = {}
+    for ch in _MML_RHYTHM_CHANNELS:
+        by_ch_step[ch] = {step: evts for step, evts in channel_event_lists[pat][ch]}
+    active = {ch: False for ch in _MML_RHYTHM_CHANNELS}
+    step_symbols: list[str] = []
+    for step in range(pattern_steps):
+        for ch in _MML_RHYTHM_CHANNELS:
+            for evt in by_ch_step[ch].get(step, []):
+                if not evt:
+                    continue
+                op = evt[0]
+                if op in (0x00, 0x02):
+                    active[ch] = True
+                elif op == 0x01:
+                    active[ch] = False
+        symbols = ''.join(_RHYTHM_NOTE_SYMBOLS[ch] for ch in _MML_RHYTHM_CHANNELS if active[ch])
+        step_symbols.append(symbols if symbols else 'r')
+    tokens: list[str] = []
+    i = 0
+    while i < len(step_symbols):
+        sym = step_symbols[i]
+        run = 1
+        while i + run < len(step_symbols) and step_symbols[i + run] == sym:
+            run += 1
+        if sym == 'r':
+            tokens.extend(_emit_rest_tokens(run))
+        else:
+            for ln in _steps_to_mml_lengths(run):
+                tokens.append(f'{sym}{ln}')
+        i += run
+    return tokens if tokens else ['r1']
+
+
+def _channel_event_lists_to_mml_text(
+    channel_event_lists: list[list],
+    n_patterns: int,
+    n_channels: int,
+    stem: str,
+    bpm: int,
+    inst_idx_to_at_token: dict[int, str],
+    user_patches: dict,
+    n_melody: int,
+    ref_count: int,
+) -> str:
+    from opll_mml import _user_patch_mml_defs
+
+    melody_track_ids = {ch: track_id_to_mgsdrv(ch + 9) for ch in _MML_MELODY_CHANNELS}
+    rhythm_track_id = track_id_to_mgsdrv(15)
+    state_by_ch = {
+        ch: {'at_token': None, 'mml_v': None, 'octave': None, 'note_active': False, 'note': None}
+        for ch in _MML_MELODY_CHANNELS
+    }
+    body_lines: list[str] = []
+    per_track_lines: dict[str, list[str]] = defaultdict(list)
+    for pat in range(n_patterns):
+        body_lines.append(f'; === Pattern {pat} ===')
+        for ch in _MML_MELODY_CHANNELS:
+            track_id = melody_track_ids[ch]
+            events = channel_event_lists[pat][ch] if ch < n_channels else []
+            tokens = _emit_melody_pattern_tokens(events, STEPS_PER_PATTERN, state_by_ch[ch], inst_idx_to_at_token)
+            line = f'{track_id} {" ".join(tokens)}'
+            body_lines.append(line)
+            per_track_lines[track_id].append(line)
+        rtokens = _emit_rhythm_pattern_tokens(channel_event_lists, pat, STEPS_PER_PATTERN)
+        rline = f'{rhythm_track_id} {" ".join(rtokens)}'
+        body_lines.append(rline)
+        per_track_lines[rhythm_track_id].append(rline)
+
+    lines: list[str] = [
+        ';[name=opll]',
+        '#opll_mode 1',
+        f'#tempo {int(bpm)}',
+        f'#title {{ "{stem}" }}',
+    ]
+    for ch in _MML_MELODY_CHANNELS:
+        track_id = melody_track_ids[ch]
+        lines.append(f'#alloc {track_id}={estimate_alloc(estimate_mml_used(per_track_lines[track_id]))}')
+    lines.append(f'#alloc {rhythm_track_id}={estimate_alloc(estimate_mml_used(per_track_lines[rhythm_track_id]))}')
+
+    if user_patches:
+        lines.append('')
+        lines.extend(_user_patch_mml_defs(user_patches))
+
+    lines.append('; === Voice Table ===')
+    for idx in sorted(inst_idx_to_at_token):
+        tok = inst_idx_to_at_token[idx]
+        if tok.startswith('@v'):
+            lines.append(f'; @voice {idx:02d} user {tok}')
+        elif 0 <= idx < n_melody:
+            inst_num = idx + 1
+            name = OPLL_PRESET_NAMES.get(inst_num, f'Preset {inst_num}')
+            lines.append(f'; @voice {idx:02d} preset inst={inst_num} ({name})')
+        elif idx < ref_count:
+            lines.append(f'; @voice {idx:02d} rhythm')
+    lines.append('')
+    lines.extend(body_lines)
+    lines.append('')
+    return compress_mml_text('\n'.join(lines) + '\n')
+
+
+def build_mgsdrvmml_file(
+    segments: dict,
+    voice_csv_path: str | None,
+    stem: str,
+    bpm: int = 120,
+    base_ms2: str | None = None,
+    video: str = 'ntsc',
+    debug: bool = False,
+    ticks_per_step_override: int | None = None,
+) -> str:
+    from opll_mml import _assign_voice_ids
+
+    voice_table, user_patches, _warnings = _assign_voice_ids(segments, voice_csv_path)
+    NUM_CH = 18
+
+    if base_ms2 is not None:
+        _tunings_data, instruments_data, _n_tunings, melody_count = _load_library_from_ms2(base_ms2, max_presets=15)
+    else:
+        _tunings_data, instruments_data, _n_tunings, melody_count = _load_reference_library()
+
+    n_melody = min(melody_count, 15)
+    melody_records = [instruments_data[2 + i * 30:2 + (i + 1) * 30] for i in range(n_melody)]
+    all_instruments = list(melody_records)
+
+    for inst in MS2_RHYTHM_INSTRUMENTS:
+        _idx, name, tuning_idx, bytes11 = inst
+        buf = bytearray(30)
+        buf[0] = tuning_idx
+        buf[3:14] = bytes11
+        buf[14:30] = (name.encode('ascii', 'replace') + b' ' * 16)[:16]
+        all_instruments.append(bytes(buf))
+
+    n_2op_inst = len(all_instruments)
+    ref_count = n_2op_inst
+
+    if user_patches:
+        for v_num in sorted(user_patches):
+            patch_bytes = user_patches[v_num]
+            reg = opll_patch_to_opl4(patch_bytes)
+            reg_order = [0x20, 0x21, 0x40, 0x41, 0x60, 0x61, 0x80, 0x81, 0xE0, 0xE1, 0xC0]
+            buf = bytearray(30)
+            buf[0] = 0
+            buf[3:14] = bytes([reg[r] & 0xFF for r in reg_order])
+            name = f'User Patch v{v_num}'
+            buf[14:30] = (name.encode('ascii', 'replace') + b' ' * 16)[:16]
+            all_instruments.append(bytes(buf))
+    n_2op_inst = len(all_instruments)
+
+    if debug:
+        print(f"[build_mgsdrvmml_file] base_ms2={base_ms2} melody_count={melody_count} n2op={n_2op_inst}")
+
+    if video == 'pal':
+        freq_hz = _FREQ_PAL
+    else:
+        freq_hz = _FREQ_NTSC
+    ticks_per_step_16th = max(1, round(freq_hz * 15 / bpm))
+
+    min_l = None
+    for ch in range(NUM_CH):
+        for seg in segments.get(ch, []):
+            seg_min_l = getattr(seg, 'min_l', None)
+            if seg_min_l is None:
+                continue
+            try:
+                seg_min_l_f = float(seg_min_l)
+            except (TypeError, ValueError):
+                continue
+            if seg_min_l_f > 0:
+                min_l = seg_min_l_f if min_l is None else min(min_l, seg_min_l_f)
+
+    ticks_per_step = ticks_per_step_16th
+    if min_l is not None:
+        min_l_int = int(min_l)
+        ticks_per_step = max(1, min(min_l_int, ticks_per_step_16th))
+        ticks_per_step = min(ticks_per_step, 0xFFFF // 256)
+        if debug:
+            print(
+                f"[ticks_per_step] min_l={min_l} int(min_l)={min_l_int} "
+                f"legacy={ticks_per_step_16th} → using ticks_per_step={ticks_per_step}"
+            )
+
+    if ticks_per_step_override is not None:
+        ticks_per_step = max(2, int(ticks_per_step_override))
+        if debug:
+            print(f"[ticks_per_step] override={ticks_per_step_override} → using ticks_per_step={ticks_per_step}")
+
+    last_note_end_tick = 0
+    for ch in range(NUM_CH):
+        for seg in segments.get(ch, []):
+            if seg.keyon:
+                last_note_end_tick = max(last_note_end_tick, seg.tick_end)
+    if last_note_end_tick == 0:
+        for ch in range(NUM_CH):
+            for seg in segments.get(ch, []):
+                last_note_end_tick = max(last_note_end_tick, seg.tick_end)
+    n_patterns = max(1, math.ceil(last_note_end_tick / (ticks_per_step * STEPS_PER_PATTERN)))
+
+    channel_event_lists = segments_to_patterns(
+        segments, ticks_per_step, n_patterns, NUM_CH, n_2op_inst,
+        user_patches=user_patches, ref_count=ref_count
+    )
+    inst_idx_to_at_token = _build_inst_idx_to_at_token(
+        n_melody=n_melody,
+        ref_count=ref_count,
+        user_patches=user_patches,
+    )
+    return _channel_event_lists_to_mml_text(
+        channel_event_lists=channel_event_lists,
+        n_patterns=n_patterns,
+        n_channels=NUM_CH,
+        stem=stem,
+        bpm=bpm,
+        inst_idx_to_at_token=inst_idx_to_at_token,
+        user_patches=user_patches,
+        n_melody=n_melody,
+        ref_count=ref_count,
+    )
