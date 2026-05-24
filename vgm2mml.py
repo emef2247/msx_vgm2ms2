@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(_SCRIPT_DIR, 'py'))
 from vgm_reader import parse_vgm
 from scc_mml import process_scc_csv
 from psg_mml import process_psg_csv
-from opll_mml import process_opll_csv
+from opll_mml import process_opll_csv, _build_segments
 
 
 def _has_chip_data(csv_path: str) -> bool:
@@ -65,7 +65,8 @@ def _extract_from_alloc(mml_path: str) -> str:
 
 
 def _build_merged_mml(stem: str, song_dir: str,
-                      has_psg: bool, has_scc: bool, has_opll: bool) -> str:
+                      has_psg: bool, has_scc: bool, has_opll: bool,
+                      bpm: int = 75) -> str:
     """Build the merged MML text from per-chip compress.MGS_pct outputs.
 
     The merged file has a single global header followed by PSG, SCC, and OPLL
@@ -76,7 +77,7 @@ def _build_merged_mml(stem: str, song_dir: str,
     lines = []
     lines.append(';[name=psg lpf=1]')
     lines.append('#opll_mode 1')
-    lines.append('#tempo 75')
+    lines.append(f'#tempo {bpm}')
     lines.append(f'#title {{ "{stem}"}}')
     lines.append('')
 
@@ -191,8 +192,12 @@ def main():
         print(f"OPLL MML: {opll_mml_path}")
 
     # ── Step 5: Build merged MML ──────────────────────────────────
+    # Detect BPM from OPLL trace; fall back to 75 if none found
+    _segments, bpm_detected = _build_segments(opll_trace_csv, include_rhythm=True)
+    bpm = int(round(bpm_detected)) if bpm_detected else 75
     merged_text = _build_merged_mml(base_name, song_dir,
-                                    has_psg, has_scc, has_opll)
+                                    has_psg, has_scc, has_opll,
+                                    bpm=bpm)
     merged_path = os.path.join(song_dir, f'{base_name}.mml')
     with open(merged_path, 'w', newline='\n') as fh:
         fh.write(merged_text)
