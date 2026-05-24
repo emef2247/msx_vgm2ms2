@@ -1446,6 +1446,11 @@ def build_mgsdrvmml_file(
         if debug:
             print(f"[ticks_per_step] override={ticks_per_step_override} → using ticks_per_step={ticks_per_step}")
 
+    # #tempo はticks_per_stepから逆算した実効BPMを使う
+    mgs_bpm = max(1, round(freq_hz * 15 / ticks_per_step))
+    if debug:
+        print(f"[mgs_bpm] ticks_per_step={ticks_per_step} freq_hz={freq_hz:.4f} → mgs_bpm={mgs_bpm}")
+
     last_note_end_tick = 0
     for ch in range(NUM_CH):
         for seg in segments.get(ch, []):
@@ -1471,7 +1476,7 @@ def build_mgsdrvmml_file(
         n_patterns=n_patterns,
         n_channels=NUM_CH,
         stem=stem,
-        bpm=bpm,
+        bpm=mgs_bpm,
         inst_idx_to_at_token=inst_idx_to_at_token,
         user_patches=user_patches,
         n_melody=n_melody,
