@@ -210,6 +210,7 @@ def process_vgm_to_midi(
     output_dir: str | None = None,
     ticks_per_step_override: int | None = None,
     ppq: int = DEFAULT_PPQ,
+    debug: bool = False,
 ) -> str:
     base_name = os.path.splitext(os.path.basename(vgm_path))[0]
     if output_dir is None:
@@ -217,11 +218,11 @@ def process_vgm_to_midi(
     os.makedirs(output_dir, exist_ok=True)
 
     (
-        _psg_log,
-        _scc_log,
-        _psg_trace,
-        _scc_trace,
-        _opll_log,
+        psg_log_csv,
+        scc_log_csv,
+        psg_trace_csv,
+        scc_trace_csv,
+        opll_log_csv,
         opll_trace_csv,
         opll_voice_csv,
         opll_regs_csv,
@@ -250,6 +251,16 @@ def process_vgm_to_midi(
     out_path = os.path.join(output_dir, f"{base_name}.mid")
     with open(out_path, "wb") as fh:
         fh.write(midi_bytes)
+
+    if not debug:
+        for _csv in [psg_log_csv, scc_log_csv, psg_trace_csv, scc_trace_csv,
+                     opll_log_csv, opll_trace_csv, opll_voice_csv, opll_regs_csv]:
+            try:
+                if _csv and os.path.isfile(_csv):
+                    os.remove(_csv)
+            except OSError:
+                pass
+
     return out_path
 
 
@@ -271,6 +282,11 @@ def main() -> None:
         metavar="N",
         help=f"MIDI ticks per quarter note (default: {DEFAULT_PPQ})",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Print extra information and keep intermediate CSV files",
+    )
     args = parser.parse_args()
 
     if args.ppq <= 0:
@@ -286,6 +302,7 @@ def main() -> None:
         output_dir=args.output_dir,
         ticks_per_step_override=args.ticks_per_step,
         ppq=args.ppq,
+        debug=args.debug,
     )
     print(f"Written: {out_path}")
 
