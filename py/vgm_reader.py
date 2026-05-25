@@ -445,7 +445,7 @@ class _OpllState:
 
     NUM_CH = 9   # 0..8:melody+rhythm
 
-    _HEADER = ('#type,time,ch,ticks,l,fl,kl,vl,beat_pos,beat,fb,kb,vb,keyon,is_legato,is_vibrato,is_envelope,fnum,block,inst,vol,sus,scale,ioi,onset,tempo,'
+    _HEADER = ('#type,time,ch,ticks,l,fl,kl,vl,beat_pos,beat,fb,kb,vb,keyon,is_legato,is_vibrato,is_portamento,is_envelope,fnum,block,inst,vol,sus,scale,ioi,onset,tempo,'
                'is_ryt,r_tempo,r_ioi,r_mode_ioi,r_hh_ioi,r_hh_mode_ioi,BdSdTomTcHH,'
                'bd,sd,tom,tc,hh,'
                'bd_vol,sd_vol,tom_vol,tc_vol,hh_vol,'
@@ -545,7 +545,7 @@ class _OpllState:
         cols = [
             type_, repr(t), str(ch), str(ticks),'','','','','','','','','',
             str(self._keyon(ch)),
-            '','','',
+            '','','','',
             str(self.fnum9(ch)),
             str(self._block(ch)),
             str(self._inst(ch)),
@@ -566,7 +566,7 @@ class _OpllState:
         ticks = get_ticks(t)
         is_ryt, bd, sd, tom, tc, hh = self._rhythm_fields_at_tick(ticks)
         cols = [
-            type_, repr(t), str(ch), str(ticks),'','','', '', '', '', '', '', '','','','','','','','','','','','','','',
+            type_, repr(t), str(ch), str(ticks),'','','', '', '', '', '', '', '','','','','','','','','','','','','','','',
             str(is_ryt),'','','','','','',
             '', '', '', '', '',
             str(self._bd_vol()), str(self._sd_vol()), str(self._tom_vol()), str(self._tc_vol()), str(self._hh_vol()),

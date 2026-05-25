@@ -85,7 +85,8 @@ class _Segment:
         'vb',           # vlのbeat換算 [beat] keyonのposedgeでbeatにリセット.　vb > beat はkeyoffを挟まずにvolが変化していることを表す
         'keyon',        # keyonの状態
         'is_legato',    # 一つ前のeventがkeyon=1であり、keyon=0を挟まずkeyon=1が続いている場合に1となる(スラー、タイ)
-        'is_vibrato',   # keyon=1区間内でkeyon=0を挟まずfnumが変化
+        'is_vibrato',   # keyon=1区間内でkeyon=0を挟まずfnumが変化、但し同一scale(note)内での微小な変化
+        'is_portamento', # keyon=1区間内でkeyon=0を挟まずscale(note)が変化
         'is_envelope',  # keyon=1区間内でkeyon=0を挟まずvolが変化
         'fnum',         # frequency
         'block',        # block, octave
@@ -150,6 +151,7 @@ class _Segment:
         keyon         ,
         is_legato     ,
         is_vibrato    ,
+        is_portamento ,
         is_envelope   ,
         fnum          ,
         block         ,
@@ -209,6 +211,7 @@ class _Segment:
         self.keyon         = keyon
         self.is_legato     = is_legato
         self.is_vibrato    = is_vibrato
+        self.is_portamento = is_portamento
         self.is_envelope   = is_envelope
         self.fnum          = fnum
         self.block         = block
@@ -692,6 +695,9 @@ def pass2_mark_legato_vibrato_envelope(events):
         lst.sort(key=lambda ev: _ival(ev.get("ticks")))
 
         prev_keyon = 0
+        prev_fnum  = 0
+        prev_vol   = 0
+        prev_scale = ''
 
         # --------------------------------------------------------
         # 2. 各 ch 内で legato / vibrato / vol_envelope を判定
@@ -701,10 +707,15 @@ def pass2_mark_legato_vibrato_envelope(events):
             if ev.get("#type") == "rhythm":
                 ev["is_legato"] = 0
                 ev["is_vibrato"] = 0
+                ev["is_portamento"] = 0
                 ev["is_envelope"] = 0
                 continue
 
             keyon = _ival(ev.get("keyon"))
+            fnum  = _ival(ev.get("fnum"))
+            scale = _ival(ev.get("scale"))
+            vol   = _ival(ev.get("vol"))
+
             l  = _ival(ev.get("l"))
             kl = _ival(ev.get("kl"))
             fl = _ival(ev.get("fl"))
@@ -714,18 +725,22 @@ def pass2_mark_legato_vibrato_envelope(events):
             if prev_keyon == 0 and keyon == 1:
                 ev["is_legato"] = 0
 
-            # legato 条件：prev_keyon=1 かつ kl > l かつ flが変更した場合
-            elif prev_keyon == 1 and kl > l and kl != fl:
+            # legato 条件：prev_keyon=1 かつ kl > l
+            elif prev_keyon == 1 and kl > l:
                 ev["is_legato"] = 1
 
             else:
                 ev["is_legato"] = 0
 
             # vibrato / vol envelope は legato のときだけ
-            ev["is_vibrato"] = 1 if (ev["is_legato"] == 1 and fl != kl) else 0
-            ev["is_envelope"] = 1 if (ev["is_legato"] == 1 and vl != kl) else 0
+            ev["is_portamento"] = 1 if (ev["is_legato"] == 1 and prev_scale != scale) else 0
+            ev["is_vibrato"] = 1 if (ev["is_legato"] == 1 and ev["is_portamento"] == 0 and prev_fnum != fnum) else 0
+            ev["is_envelope"] = 1 if (ev["is_legato"] == 1 and prev_vol != vol) else 0
 
             prev_keyon = keyon
+            prev_fnum  = fnum
+            prev_vol   = vol
+            prev_scale = scale
 
     # ------------------------------------------------------------
     # 3. 全 ch を結合して返す

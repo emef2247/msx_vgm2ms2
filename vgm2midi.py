@@ -238,6 +238,7 @@ def process_vgm_to_midi(
         include_rhythm=True,
         rhythm_reg_timeline=rhythm_timeline,
         ticks_per_step_override=ticks_per_step_override,
+        debug=debug,
     )
 
     if debug:
