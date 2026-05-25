@@ -14,7 +14,7 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(__file__))
 from mml_utils import (
     estimate_mml_used, estimate_alloc, track_id_to_mgsdrv,
-    compress_mml_text, get_mgs_note_token_pct, ticks_to_mml_length, get_octave, get_scale,get_ticks
+    compress_mml_text, get_mgs_note_token_pct, ticks_to_mml_length, get_ticks
 )
 
 from segment_utils import (

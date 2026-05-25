@@ -5,10 +5,26 @@ import csv
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(__file__))
-from mml_utils import (
-    estimate_mml_used, estimate_alloc, track_id_to_mgsdrv,
-    compress_mml_text, get_mgs_note_token_pct, ticks_to_mml_length, get_octave, get_scale,get_ticks
-)
+from mml_utils import get_ticks
+
+# ---------------------------------------------------------------------------
+# OPLL-specific helpers (independent of PSG mml_utils.get_scale)
+# ---------------------------------------------------------------------------
+_OPLL_SCALE_NAMES = ['c', 'c+', 'd', 'd+', 'e', 'f', 'f+', 'g', 'g+', 'a', 'a+', 'b']
+
+def _opll_scale(fnum: int, block: int) -> str:
+    """Return scale name (e.g. 'c', 'c+', 'g') for an OPLL F-Number + Block pair.
+
+    Uses the same formula as opll_mml._opll_note() to avoid a circular import.
+    Returns 'r' for fnum==0 or out-of-range frequencies.
+    """
+    if fnum == 0:
+        return 'r'
+    freq = 49716.0 * fnum * (1 << block) / (1 << 19)
+    if freq < 16.0:
+        return 'r'
+    midi_int = round(69.0 + 12.0 * math.log2(freq / 440.0))
+    return _OPLL_SCALE_NAMES[midi_int % 12]
 
 
 def _int(ev, key, default=0):
@@ -405,7 +421,8 @@ def pass2_compute_onsets_and_ioi(events):
     for ev in events:
 
         fnum = _ival(ev.get("fnum"))
-        ev["scale"] = get_scale(fnum)
+        block = _ival(ev.get("block"))
+        ev["scale"] = _opll_scale(fnum, block)
 
     # ------------------------------------------------------------
     # 2. melody onset / ioi
@@ -1469,7 +1486,7 @@ def pass3_merge_pitch_volume_wobble(events):
             _ival(a["keyon"]) == 1 and _ival(b["keyon"]) == 1 and
             _ival(a["vol"]) != 15 and _ival(b["vol"]) != 15 and
             _ival(a["block"]) == _ival(b["block"]) and
-            get_scale(_ival(a["fnum"])) == get_scale(_ival(b["fnum"])) and
+            _opll_scale(_ival(a["fnum"]), _ival(a["block"])) == _opll_scale(_ival(b["fnum"]), _ival(b["block"])) and
             _ival(a["inst"]) == _ival(b["inst"]) and
             _ival(a["sus"])  == _ival(b["sus"]) and
             a["tick_end"] == b["tick_start"]
@@ -2032,4 +2049,3 @@ def estimate_bpm_from_segments(segments_by_ch, vgm_rate):
 
     bpm = 60 * vgm_rate / ticks_per_beat
     return round(bpm)
-
