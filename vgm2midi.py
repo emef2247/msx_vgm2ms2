@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import sys
 import os
+import json
 import argparse
 import struct
 from dataclasses import dataclass
@@ -24,8 +25,19 @@ from opll import (
 
 DEFAULT_PPQ = 480
 
+# Path to the user voice mapping file (next to this script).
+# patch_hex (16 chars) -> GM program number (0-indexed, 0=Acoustic Grand Piano).
+USER_VOICE_MAP_PATH = os.path.join(_SCRIPT_DIR, "user_voice.json")
+
+# User patches are assigned GM programs starting from this value (0-indexed).
+# Programs 0-14 correspond to OPLL presets 1-15 via OPLL_TO_GM_PROGRAM.
+# Programs 15-19 are reserved for rhythm channels (bd/sd/tom/tc/hh) in MS2
+# convention (INST 16-20).  User patches therefore start at program 20
+# (= GM program 21 in 1-indexed / musician notation).
+_USER_VOICE_FIRST_GM_PROGRAM = 20
+
 OPLL_TO_GM_PROGRAM = {
-    0: 81,
+    0: 81,   # fallback for inst=0 without user-patch info
     1: 40,
     2: 25,
     3: 0,
@@ -73,6 +85,97 @@ class MidiEvent:
     order: int
     data: bytes
 
+
+# ---------------------------------------------------------------------------
+# User voice map helpers
+# ---------------------------------------------------------------------------
+
+def _load_user_voice_map(path: str) -> dict[str, int]:
+    """Load patch_hex -> GM program (0-indexed) mapping from JSON.
+
+    Returns an empty dict if the file does not exist or cannot be parsed.
+    Keys are lower-case 16-character hex strings.
+    Values are 0-indexed GM program numbers (0-127).
+    """
+    if not os.path.isfile(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        result: dict[str, int] = {}
+        for k, v in data.items():
+            if k.startswith("_"):          # skip comment keys
+                continue
+            if isinstance(k, str) and isinstance(v, int):
+                result[k.lower()] = max(0, min(127, v))
+        return result
+    except Exception:
+        return {}
+
+
+def _save_user_voice_map(path: str, mapping: dict[str, int]) -> None:
+    """Save patch_hex -> GM program (0-indexed) mapping to JSON.
+
+    A leading ``_comment`` key explains the format to the user.
+    """
+    out: dict = {
+        "_comment": (
+            "OPLL user-patch to GM program mapping for vgm2midi.py. "
+            "Keys are 8-byte OPLL patch data in hex (16 chars). "
+            "Values are 0-indexed GM program numbers "
+            "(0=Acoustic Grand Piano ... 127=Gunshot; "
+            "i.e. subtract 1 from the 1-indexed program number shown in most DAWs). "
+            "Edit values to remap user patches to any GM instrument. "
+            "New patches discovered on the next run are appended automatically."
+        ),
+    }
+    out.update(mapping)
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(out, fh, indent=2)
+        fh.write("\n")
+
+
+def _build_user_voice_gm_map(
+    user_patches: dict[int, bytes],
+    existing_map: dict[str, int],
+) -> tuple[dict[int, int], dict[str, int]]:
+    """Build at_v_num -> GM program (0-indexed) for all user patches.
+
+    For patches already present in *existing_map* the stored program is used.
+    New patches are assigned the next free program >= ``_USER_VOICE_FIRST_GM_PROGRAM``
+    in encounter order.
+
+    Returns:
+        at_v_to_gm   : dict mapping at_v_num (int) -> GM program (0-indexed int)
+        updated_map  : updated patch_hex -> GM program dict (superset of existing_map)
+    """
+    at_v_to_gm: dict[int, int] = {}
+    updated = dict(existing_map)
+
+    used_programs: set[int] = set(existing_map.values())
+
+    def _next_free() -> int:
+        p = _USER_VOICE_FIRST_GM_PROGRAM
+        while p in used_programs:
+            p += 1
+        used_programs.add(p)
+        return p
+
+    for at_v_num, patch_bytes in user_patches.items():
+        patch_hex = patch_bytes.hex()
+        if patch_hex in updated:
+            at_v_to_gm[at_v_num] = updated[patch_hex]
+        else:
+            gm_prog = _next_free()
+            updated[patch_hex] = gm_prog
+            at_v_to_gm[at_v_num] = gm_prog
+
+    return at_v_to_gm, updated
+
+
+# ---------------------------------------------------------------------------
+# MIDI helpers
+# ---------------------------------------------------------------------------
 
 def _clamp_midi_note(note: int) -> int:
     return max(0, min(127, int(note)))
@@ -149,12 +252,35 @@ def _segment_to_midi_note(seg) -> int | None:
     return _clamp_midi_note((int(octave) + 1) * 12 + semitone)
 
 
+def _at_token_to_user_v_num(at_token: str) -> int | None:
+    """Parse ``'@v15'`` -> ``15``.  Returns None for preset tokens like ``'@5'``."""
+    if at_token and at_token.startswith("@v"):
+        try:
+            return int(at_token[2:])
+        except ValueError:
+            pass
+    return None
+
+
 def convert_opll_segments_to_midi(
     segments_by_ch: dict,
     bpm: int,
     ppq: int = DEFAULT_PPQ,
     track_name: str = "vgm2midi",
+    user_voice_gm_map: dict[int, int] | None = None,
 ) -> MidiBuilder:
+    """Convert OPLL segments to a MidiBuilder.
+
+    Args:
+        segments_by_ch   : channel -> list[_Segment]
+        bpm              : detected BPM
+        ppq              : MIDI ticks per quarter note
+        track_name       : MIDI track name metadata
+        user_voice_gm_map: at_v_num -> GM program (0-indexed).
+                           When provided, inst=0 segments with ``@vN`` tokens
+                           are mapped to the corresponding GM program instead of
+                           the generic OPLL_TO_GM_PROGRAM[0] fallback.
+    """
     builder = MidiBuilder(ppq=ppq)
     builder.add_event(0, _tempo_meta_event(bpm), order=0)
     builder.add_event(0, _track_name_meta_event(track_name), order=1)
@@ -192,7 +318,19 @@ def convert_opll_segments_to_midi(
 
             if 0 <= ch <= 8:
                 midi_ch = ch
-                program = OPLL_TO_GM_PROGRAM.get(int(getattr(seg, "inst", 0)), 81)
+                inst = int(getattr(seg, "inst", 0))
+
+                # ── Resolve GM program ──────────────────────────────────────
+                if inst == 0 and user_voice_gm_map:
+                    at_token = getattr(seg, "at_token", "") or ""
+                    at_v_num = _at_token_to_user_v_num(at_token)
+                    if at_v_num is not None and at_v_num in user_voice_gm_map:
+                        program = user_voice_gm_map[at_v_num]
+                    else:
+                        program = OPLL_TO_GM_PROGRAM.get(0, 81)
+                else:
+                    program = OPLL_TO_GM_PROGRAM.get(inst, 81)
+
                 if last_program_by_ch.get(midi_ch) != program:
                     builder.add_event(start_tick, bytes([0xC0 | midi_ch, program]), order=10)
                     last_program_by_ch[midi_ch] = program
@@ -262,13 +400,28 @@ def process_vgm_to_midi(
     if debug:
         print(f"[vgm2midi] bpm={bpm_detected}")
 
-    _assign_voice_ids(segments_by_ch, opll_voice_csv)
+    # ── Assign voice IDs (captures user patches) ──────────────────────────
+    _voice_table, user_patches, _warnings = _assign_voice_ids(segments_by_ch, opll_voice_csv)
+
+    # ── Resolve user-patch GM program mapping ─────────────────────────────
+    user_voice_gm_map: dict[int, int] | None = None
+    if user_patches:
+        existing_map = _load_user_voice_map(USER_VOICE_MAP_PATH)
+        user_voice_gm_map, updated_map = _build_user_voice_gm_map(user_patches, existing_map)
+        _save_user_voice_map(USER_VOICE_MAP_PATH, updated_map)
+        if debug:
+            print(f"[vgm2midi] user_voice.json written: {USER_VOICE_MAP_PATH}")
+            for at_v_num, gm_prog in user_voice_gm_map.items():
+                patch_hex = user_patches[at_v_num].hex()
+                print(f"  @v{at_v_num} patch={patch_hex} -> GM program {gm_prog} "
+                      f"(1-indexed: {gm_prog + 1})")
 
     builder = convert_opll_segments_to_midi(
         segments_by_ch,
         bpm=bpm_detected,
         ppq=ppq,
         track_name=base_name,
+        user_voice_gm_map=user_voice_gm_map,
     )
     midi_bytes = builder.build()
 
