@@ -591,7 +591,7 @@ class _OpllState:
         BdSdTomTcHH = f"0x{(regval & 0x1F):02X}"
         is_ryt, bd, sd, tom, tc, hh = self._decode_rhythm_bits(regval)
         cols = [
-            type_, repr(t), '-1', str(ticks),'','','', '', '', '', '', '', '','','','','','','','','','','','','','',
+            type_, repr(t), '-1', str(ticks),'','','', '', '', '', '', '', '','','','','','','','','','','','','','','',
             str(is_ryt),'','','','','',BdSdTomTcHH,
             str(bd), str(sd), str(tom), str(tc), str(hh),
             str(self._bd_vol()), str(self._sd_vol()), str(self._tom_vol()), str(self._tc_vol()), str(self._hh_vol()),
