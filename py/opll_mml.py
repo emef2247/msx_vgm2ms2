@@ -20,7 +20,7 @@ from mml_utils import (
 from segment_utils import (
     _int, _float, _Segment,pass0_read_csv,
     dump_segments, pass1_compute_l, pass1_compute_l_from_time, pass1_dump_csv,
-	pass2_compute_onsets_and_ioi,pass2_mark_legato_vibrato_envelope,pass2_expand_rhythm,pass2_filter_l0,pass2_compute_fl_kl_vl,pass2_filter_and_recalc_l,pass2_dump_csv,
+	pass2_compute_onsets_and_ioi,pass2_mark_legato_vibrato_portamento_envelope,pass2_expand_rhythm,pass2_filter_l0,pass2_compute_fl_kl_vl,pass2_filter_and_recalc_l,pass2_dump_csv,
 	pass3_merge_silent_rests,pass3_merge_same_note,pass3_merge_retrigger_note,pass3_merge_pitch_volume_wobble,pass3_dump_csv,
 	compute_min_l,compute_min_l_from_one_l_cluster,compute_min_l_from_two_l_clusters,pass4_compute_beats,pass4_dump_csv,
 	estimate_bpm_from_segments,pass5_dump_csv,
@@ -200,7 +200,7 @@ def _build_segments(trace_csv_path,
     #events = pass2_filter_l0(events)
 
     # l=0を削除した後、fl,kl,blからlegato, vibrate, volume envelopeを判定
-    events = pass2_mark_legato_vibrato_envelope(events)
+    events = pass2_mark_legato_vibrato_portamento_envelope(events)
     if debug:
         pass2_dump_csv(events, trace_csv_path)
 

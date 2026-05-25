@@ -675,7 +675,7 @@ def pass2_compute_onsets_and_ioi(events):
 
     return events
     
-def pass2_mark_legato_vibrato_envelope(events):
+def pass2_mark_legato_vibrato_portamento_envelope(events):
 
     def _ival(v, default=0):
         try:
