@@ -20,6 +20,7 @@ from opll import (
     _assign_voice_ids,
     _build_segments,
     _opll_note,
+    _ym2413_patch_to_mgsdrv,
     parse_opll_regs_for_rhythm,
 )
 
@@ -90,6 +91,33 @@ class MidiEvent:
 # User voice map helpers
 # ---------------------------------------------------------------------------
 
+def _format_user_patch_lines(at_v_num: int, patch_bytes: bytes, gm_prog: int) -> list[str]:
+    """Return human-readable description lines for a single user patch.
+
+    Format::
+
+        User patch Inst 20 (1-indexed:21) -> GM program 20
+        Inst 20: 'User patch v15' regs = 21 1B C2 F0 01 14 74 11
+            TL=27 FB=4
+            MO: AR= 2 DR= 1 SL=12 RR= 2 KL= 0 MT= 1 AM= 0 VB= 0 EG= 1 KR= 0 DT= 0
+            CA: AR=15 DR= 4 SL= 0 RR= 5 KL= 0 MT= 1 AM= 0 VB= 1 EG= 0 KR= 1 DT= 0
+    """
+    d = _ym2413_patch_to_mgsdrv(patch_bytes)
+    tl, fb = d['tl'], d['fb']
+    m = d['mod']   # (ar, dr, sl, rr, kl, mt, am, vb, eg, kr, dt)
+    c = d['car']
+    regs_str = ' '.join(f'{b:02X}' for b in patch_bytes)
+    return [
+        f"User patch Inst {gm_prog} (1-indexed:{gm_prog + 1}) -> GM program {gm_prog}",
+        f"Inst {gm_prog}: 'User patch v{at_v_num}' regs = {regs_str}",
+        f"\tTL={tl:2d} FB={fb}",
+        f"\tMO: AR={m[0]:2d} DR={m[1]:2d} SL={m[2]:2d} RR={m[3]:2d} "
+        f"KL={m[4]} MT={m[5]:2d} AM={m[6]} VB={m[7]} EG={m[8]} KR={m[9]} DT={m[10]}",
+        f"\tCA: AR={c[0]:2d} DR={c[1]:2d} SL={c[2]:2d} RR={c[3]:2d} "
+        f"KL={c[4]} MT={c[5]:2d} AM={c[6]} VB={c[7]} EG={c[8]} KR={c[9]} DT={c[10]}",
+    ]
+
+
 def _load_user_voice_map(path: str) -> dict[str, int]:
     """Load patch_hex -> GM program (0-indexed) mapping from JSON.
 
@@ -104,7 +132,7 @@ def _load_user_voice_map(path: str) -> dict[str, int]:
             data = json.load(fh)
         result: dict[str, int] = {}
         for k, v in data.items():
-            if k.startswith("_"):          # skip comment keys
+            if k.startswith("_"):          # skip comment/info keys
                 continue
             if isinstance(k, str) and isinstance(v, int):
                 result[k.lower()] = max(0, min(127, v))
@@ -113,10 +141,18 @@ def _load_user_voice_map(path: str) -> dict[str, int]:
         return {}
 
 
-def _save_user_voice_map(path: str, mapping: dict[str, int]) -> None:
+def _save_user_voice_map(
+    path: str,
+    mapping: dict[str, int],
+    user_patches: dict[int, bytes],
+    at_v_to_gm: dict[int, int],
+) -> None:
     """Save patch_hex -> GM program (0-indexed) mapping to JSON.
 
-    A leading ``_comment`` key explains the format to the user.
+    Adds:
+    - ``_comment``: format explanation for the user.
+    - ``_voice_info``: dict of patch_hex -> list[str] with decoded OPLL register
+      details for each user patch (at the end of the file for reference).
     """
     out: dict = {
         "_comment": (
@@ -130,6 +166,17 @@ def _save_user_voice_map(path: str, mapping: dict[str, int]) -> None:
         ),
     }
     out.update(mapping)
+
+    # Build _voice_info: patch_hex -> decoded register lines (for reference / editing)
+    # Keyed by patch_hex so it matches the mapping entries above.
+    voice_info: dict[str, list[str]] = {}
+    for at_v_num, patch_bytes in sorted(user_patches.items()):
+        patch_hex = patch_bytes.hex()
+        gm_prog = at_v_to_gm.get(at_v_num, mapping.get(patch_hex, _USER_VOICE_FIRST_GM_PROGRAM))
+        voice_info[patch_hex] = _format_user_patch_lines(at_v_num, patch_bytes, gm_prog)
+    if voice_info:
+        out["_voice_info"] = voice_info
+
     with open(path, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(out, fh, indent=2)
         fh.write("\n")
@@ -408,13 +455,15 @@ def process_vgm_to_midi(
     if user_patches:
         existing_map = _load_user_voice_map(USER_VOICE_MAP_PATH)
         user_voice_gm_map, updated_map = _build_user_voice_gm_map(user_patches, existing_map)
-        _save_user_voice_map(USER_VOICE_MAP_PATH, updated_map)
-        if debug:
-            print(f"[vgm2midi] user_voice.json written: {USER_VOICE_MAP_PATH}")
-            for at_v_num, gm_prog in user_voice_gm_map.items():
-                patch_hex = user_patches[at_v_num].hex()
-                print(f"  @v{at_v_num} patch={patch_hex} -> GM program {gm_prog} "
-                      f"(1-indexed: {gm_prog + 1})")
+        _save_user_voice_map(USER_VOICE_MAP_PATH, updated_map, user_patches, user_voice_gm_map)
+
+        # Always print user patch info to stdout
+        print(f"User patches ({len(user_patches)}) -> {USER_VOICE_MAP_PATH}")
+        for at_v_num in sorted(user_voice_gm_map):
+            patch_bytes = user_patches[at_v_num]
+            gm_prog = user_voice_gm_map[at_v_num]
+            for line in _format_user_patch_lines(at_v_num, patch_bytes, gm_prog):
+                print(line)
 
     builder = convert_opll_segments_to_midi(
         segments_by_ch,
