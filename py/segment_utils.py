@@ -7,6 +7,8 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(__file__))
 from mml_utils import get_ticks
 
+_FREQ_NTSC: float = 59.988527908187
+
 # ---------------------------------------------------------------------------
 # OPLL-specific helpers (independent of PSG mml_utils.get_scale)
 # ---------------------------------------------------------------------------
@@ -1892,12 +1894,13 @@ def pass4_compute_beats(events):
         # 完全 fallback
         min_ioi = 1
         mode_ioi = 1
-        bpm_clamped = 120.0
+        ticks_per_step = 2  # fallback
+        bpm_ntsc = max(1, round(_FREQ_NTSC * 15 / ticks_per_step))
 
         for ev in events:
-            ev["tempo"] = bpm_clamped
+            ev["tempo"] = bpm_ntsc
 
-        return events, min_l, min_ioi, mode_ioi, bpm_clamped
+        return events, min_l, min_ioi, mode_ioi, bpm_ntsc, ticks_per_step
 
     # ------------------------------------------------------------
     # mode が最も安定（最頻値）
@@ -1914,47 +1917,24 @@ def pass4_compute_beats(events):
     # ------------------------------------------------------------
     # 6. tempo（BPM）を IOI ベースで計算
     # ------------------------------------------------------------
-    # tick = 1/60 sec
-    # BPM = 3600 / ioi
-    bpm_per_grid = 3600.0 / mode_ioi
+    # ticks_per_step を mode_ioi から Nyquist 条件で決定
+    ticks_per_step = max(2, int(mode_ioi // 2))
 
-    beat_pos_all = sorted(set(
-        ev["beat_pos"]
-        for ev in events
-        if _ival(ev.get("beat")) > 0
-    ))
-
-    intervals = [
-        b - a
-        for a, b in zip(beat_pos_all, beat_pos_all[1:])
-        if (b - a) > 0
-    ]
-
-    if intervals:
-        try:
-            grid_per_beat = mode(intervals)
-        except:
-            grid_per_beat = int(round(median(intervals)))
-    else:
-        grid_per_beat = 4
-
-    bpm_raw = bpm_per_grid / grid_per_beat
-
-    bpm_clamped = max(30.0, min(225.0, bpm_raw))
+    # NTSC クロックベースの正確な BPM
+    bpm_ntsc = max(1, round(_FREQ_NTSC * 15 / ticks_per_step))
 
     print(
         f"[PASS4 BPM] "
         f"mode_ioi={mode_ioi}, "
-        f"grid_per_beat={grid_per_beat}, "
-        f"bpm_raw={bpm_raw:.3f}, "
-        f"bpm={bpm_clamped:.3f}"
+        f"ticks_per_step={ticks_per_step}, "
+        f"bpm_ntsc={bpm_ntsc}"
     )
 
     # ------------------------------------------------------------
     # 7. tempo を ev に書き込む
     # ------------------------------------------------------------
     for ev in events:
-        ev["tempo"] = bpm_clamped
+        ev["tempo"] = bpm_ntsc
 
     # ------------------------------------------------------------
     # 8. rhythm の beat_pos を melody に同期
@@ -1977,7 +1957,7 @@ def pass4_compute_beats(events):
         else:
             ev["beat_pos"] = last_melody_beat_pos
 
-    return events, min_l, min_ioi, mode_ioi, bpm_clamped
+    return events, min_l, min_ioi, mode_ioi, bpm_ntsc, ticks_per_step
 
 def pass4_dump_csv(events, trace_csv_path):
 

@@ -28,6 +28,8 @@ from segment_utils import (
 
 CH_OFFSET = 9        # OPLL ch0 → MGSDRV track 9
 _MML_MELODY_CHS = list(range(0, 6))       # ch 0-5 -> MGSDRV track 9-e
+
+_FREQ_NTSC: float = 59.988527908187
 _MML_RHYTHM_CHS = {9, 10, 11, 12, 13}     # RHYTHM_CH_MAP values
 _MML_RHYTHM_TRACK = 15                     # MGSDRV track 'f'
 
@@ -217,15 +219,15 @@ def _build_segments(trace_csv_path,
     # beat, beat_posを算出
     # beatは最小の音価 (min_l)で正規化した単位。grid幅を示す
     # beat_pos は前のeventのbeatの累計。そのeventのスタート地点を表す
-    events, min_l, min_ioi, mode_ioi, bpm = pass4_compute_beats(events)
+    events, min_l, min_ioi, mode_ioi, bpm, ticks_per_step = pass4_compute_beats(events)
     if debug:
         pass4_dump_csv(events, trace_csv_path)
         
     if ticks_per_step_override is not None:
         ticks_per_step = max(2, int(ticks_per_step_override))
+        bpm = max(1, round(_FREQ_NTSC * 15 / ticks_per_step))
         print(f"[SEGMENT] ticks_per_step:{ticks_per_step} (override) min_ioi:{min_ioi} mode_ioi:{mode_ioi}")
     else:
-        ticks_per_step = max(2, int(mode_ioi // 2))
         print(f"[SEGMENT] ticks_per_step:{ticks_per_step} (auto, Nyquist) min_ioi:{min_ioi} mode_ioi:{mode_ioi}")
 
     # ------------------------------------------------------
