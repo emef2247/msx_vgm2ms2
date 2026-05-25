@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from ms2_writer import NUM_CH, build_mgsdrvmml_file
+from vgm2mml_grid import NUM_CH, build_mgsdrvmml_file
 
 
 def _empty_segments() -> dict:

@@ -3,16 +3,19 @@
 
 from __future__ import annotations
 
-import argparse
+import sys
 import os
+import argparse
 import struct
 from dataclasses import dataclass
+
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(_SCRIPT_DIR, 'py'))
 
 from vgm_reader import parse_vgm
 from opll_mml import (
     NUM_CH,
     RHYTHM_CH_MAP,
-    RHYTHM_VOICE_ID_MAP,
     _assign_voice_ids,
     _build_segments,
     _opll_note,
@@ -80,12 +83,10 @@ def _clamp_velocity(vel: int) -> int:
 
 
 def _opll_vol_to_velocity(vol_opll: int) -> int:
-    # OPLL vol: 0=max, 15=mute -> MIDI velocity: 127=max, 0=mute
     return _clamp_velocity(int(round((15 - max(0, min(15, int(vol_opll)))) * 127 / 15)))
 
 
 def _vgm_tick_to_midi_tick(vgm_tick: int, bpm: int, ppq: int) -> int:
-    # midi_tick = vgm_tick * BPM * PPQ / 3600 (VGM tick is 60 FPS)
     return int(round(int(vgm_tick) * int(bpm) * int(ppq) / 3600.0))
 
 
