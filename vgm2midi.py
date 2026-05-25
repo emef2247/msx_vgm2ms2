@@ -228,7 +228,6 @@ def convert_opll_segments_to_midi(
 def process_vgm_to_midi(
     vgm_path: str,
     output_dir: str | None = None,
-    ticks_per_step_override: int | None = None,
     ppq: int = DEFAULT_PPQ,
     debug: bool = False,
 ) -> str:
@@ -257,7 +256,6 @@ def process_vgm_to_midi(
         opll_trace_csv,
         include_rhythm=True,
         rhythm_reg_timeline=rhythm_timeline,
-        ticks_per_step_override=ticks_per_step_override,
         debug=debug,
     )
 
@@ -293,13 +291,9 @@ def process_vgm_to_midi(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Convert VGM (YM2413) to MIDI (SMF format 0)")
     parser.add_argument("vgm_file", help="Input VGM file path")
-    parser.add_argument("output_dir", nargs="?", default=None, help="Output directory")
     parser.add_argument(
-        "--ticks-per-step",
-        type=int,
-        default=None,
-        metavar="N",
-        help="Override ticks-per-step for segment building",
+        "--outdir", default=None,
+        help="Output directory (default: same directory as VGM file)",
     )
     parser.add_argument(
         "--ppq",
@@ -317,16 +311,13 @@ def main() -> None:
 
     if args.ppq <= 0:
         parser.error("--ppq must be >= 1")
-    if args.ticks_per_step is not None and args.ticks_per_step < 2:
-        parser.error("--ticks-per-step must be >= 2")
 
     if not os.path.isfile(args.vgm_file):
         parser.error(f"vgm_file not found: {args.vgm_file}")
 
     out_path = process_vgm_to_midi(
         args.vgm_file,
-        output_dir=args.output_dir,
-        ticks_per_step_override=args.ticks_per_step,
+        output_dir=args.outdir,
         ppq=args.ppq,
         debug=args.debug,
     )
