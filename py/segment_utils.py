@@ -1936,7 +1936,7 @@ def pass4_compute_beats(events):
     ticks_per_step = max(2, int(mode_ioi // 2))
 
     # NTSC クロックベースの正確な BPM
-    bpm_ntsc = max(1, round(_FREQ_NTSC * 15 / ticks_per_step))
+    bpm_ntsc = max(1, round(_FREQ_NTSC * 15 / max(1, mode_ioi)))  # BPMはmode_ioiから直接
 
     print(
         f"[PASS4 BPM] "

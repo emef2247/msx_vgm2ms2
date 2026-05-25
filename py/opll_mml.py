@@ -225,7 +225,10 @@ def _build_segments(trace_csv_path,
         
     if ticks_per_step_override is not None:
         ticks_per_step = max(2, int(ticks_per_step_override))
-        bpm = max(1, round(_FREQ_NTSC * 15 / ticks_per_step))
+        # override 時は ticks_per_step が16分音符長の代わりになるので
+        # mode_ioi = ticks_per_step * 2 と見なして計算
+        bpm = max(1, round(_FREQ_NTSC * 15 / (ticks_per_step * 2)))
+
         print(f"[SEGMENT] ticks_per_step:{ticks_per_step} (override) min_ioi:{min_ioi} mode_ioi:{mode_ioi}")
     else:
         print(f"[SEGMENT] ticks_per_step:{ticks_per_step} (auto, Nyquist) min_ioi:{min_ioi} mode_ioi:{mode_ioi}")
