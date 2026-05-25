@@ -421,9 +421,7 @@ def main():
         output_dir = args.outdir
     else:
         output_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            'outputs',
-            base_name,
+            os.path.dirname(os.path.abspath(vgm_path)),
         )
     os.makedirs(output_dir, exist_ok=True)
 

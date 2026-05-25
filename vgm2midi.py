@@ -234,9 +234,10 @@ def process_vgm_to_midi(
 ) -> str:
     base_name = os.path.splitext(os.path.basename(vgm_path))[0]
     if output_dir is None:
-        output_dir = os.path.dirname(os.path.abspath(vgm_path))
+        output_dir = os.path.join(
+            os.path.dirname(os.path.abspath(vgm_path)),
+        )
     os.makedirs(output_dir, exist_ok=True)
-
     (
         psg_log_csv,
         scc_log_csv,
