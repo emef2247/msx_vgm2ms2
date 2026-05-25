@@ -62,6 +62,62 @@ def test_convert_segments_program_change_and_rhythm(monkeypatch):
     assert track_data.endswith(b"\x00\xff\x2f\x00")
 
 
+def test_convert_segments_adds_portamento_ccs_for_marked_melody_segment(monkeypatch):
+    monkeypatch.setattr(
+        vgm2midi,
+        "_opll_note",
+        lambda fnum, _block: (4, "c") if fnum == 1 else (4, "d"),
+    )
+
+    segs = {ch: [] for ch in range(vgm2midi.NUM_CH)}
+    segs[0].append(_make_seg(ch=0, tick_start=0, tick_end=60, inst=1, vol=0, fnum=1))
+    segs[0].append(
+        _make_seg(
+            ch=0,
+            tick_start=60,
+            tick_end=120,
+            inst=1,
+            vol=0,
+            fnum=2,
+            is_portamento=1,
+            l=4,
+            mode_ioi=8,
+        )
+    )
+
+    builder = vgm2midi.convert_opll_segments_to_midi(segs, bpm=120, ppq=480, track_name="demo")
+    events = sorted(builder._events, key=lambda e: (e.tick, e.order))
+    portamento_events = [(ev.tick, ev.order, ev.data) for ev in events if ev.data[:2] == b"\xB0T" or ev.data[:2] == b"\xB0A" or ev.data[:2] == b"\xB0\x05"]
+
+    assert portamento_events == [
+        (960, 15, bytes([0xB0, 84, 60])),
+        (960, 16, bytes([0xB0, 65, 127])),
+        (960, 17, bytes([0xB0, 5, 32])),
+        (1920, 35, bytes([0xB0, 65, 0])),
+    ]
+
+
+def test_convert_segments_does_not_add_portamento_ccs_for_rhythm(monkeypatch):
+    monkeypatch.setattr(vgm2midi, "_opll_note", lambda _f, _b: (4, "c"))
+
+    segs = {ch: [] for ch in range(vgm2midi.NUM_CH)}
+    segs[vgm2midi.RHYTHM_CH_MAP["bd"]].append(
+        _make_seg(
+            ch=vgm2midi.RHYTHM_CH_MAP["bd"],
+            tick_start=0,
+            tick_end=60,
+            vol=4,
+            bd=1,
+            is_portamento=1,
+        )
+    )
+
+    builder = vgm2midi.convert_opll_segments_to_midi(segs, bpm=120, ppq=480, track_name="demo")
+    events = sorted(builder._events, key=lambda e: (e.tick, e.order))
+
+    assert not any(ev.data and (ev.data[0] & 0xF0) == 0xB0 for ev in events)
+
+
 def test_process_vgm_to_midi_pipeline(tmp_path, monkeypatch):
     vgm_path = tmp_path / "song.vgm"
     vgm_path.write_bytes(b"Vgm ")

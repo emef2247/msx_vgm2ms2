@@ -160,6 +160,7 @@ def convert_opll_segments_to_midi(
     builder.add_event(0, _track_name_meta_event(track_name), order=1)
 
     last_program_by_ch: dict[int, int] = {}
+    last_note_by_ch: dict[int, int] = {}
     rhythm_channels = set(RHYTHM_CH_MAP.values())
 
     for ch in range(NUM_CH):
@@ -200,8 +201,26 @@ def convert_opll_segments_to_midi(
                 if midi_note is None:
                     continue
                 vel = _opll_vol_to_velocity(getattr(seg, "vol", 15))
+                is_portamento = int(getattr(seg, "is_portamento", 0))
+                if is_portamento == 1 and midi_ch in last_note_by_ch:
+                    prev_note = last_note_by_ch[midi_ch]
+                    try:
+                        mode_ioi = int(getattr(seg, "mode_ioi", 2))
+                    except (TypeError, ValueError):
+                        mode_ioi = 2
+                    try:
+                        seg_l = int(getattr(seg, "l", 2))
+                    except (TypeError, ValueError):
+                        seg_l = 2
+                    portamento_time = min(127, max(1, seg_l * 64 // max(1, mode_ioi)))
+
+                    builder.add_event(start_tick, bytes([0xB0 | midi_ch, 84, prev_note]), order=15)
+                    builder.add_event(start_tick, bytes([0xB0 | midi_ch, 65, 127]), order=16)
+                    builder.add_event(start_tick, bytes([0xB0 | midi_ch, 5, portamento_time]), order=17)
+                    builder.add_event(end_tick, bytes([0xB0 | midi_ch, 65, 0]), order=35)
                 builder.add_event(start_tick, bytes([0x90 | midi_ch, midi_note, vel]), order=20)
                 builder.add_event(end_tick, bytes([0x80 | midi_ch, midi_note, 0]), order=40)
+                last_note_by_ch[midi_ch] = midi_note
 
     return builder
 
