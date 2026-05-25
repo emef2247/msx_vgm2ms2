@@ -13,7 +13,7 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(_SCRIPT_DIR, 'py'))
 
 from vgm_reader import parse_vgm
-from opll_mml import (
+from opll import (
     NUM_CH,
     RHYTHM_CH_MAP,
     _assign_voice_ids,

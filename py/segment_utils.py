@@ -39,18 +39,6 @@ def _int(ev, key, default=0):
     except (ValueError, TypeError):
         return default
 
-
-def _float(ev, key, default=0.0):
-    """空文字列や欠損値を安全に float に変換するヘルパー"""
-    v = ev.get(key, default)
-    if v == '' or v is None:
-        return default
-    try:
-        return float(v)
-    except (ValueError, TypeError):
-        return default
-
-
 # -----------------------------------------------------------------------------
 # Segment representation (with extended fields)
 # -----------------------------------------------------------------------------
@@ -255,30 +243,6 @@ class _Segment:
     def mml_vol(self):
         return 15 - self.vol
 
-def dump_segments(segments):
-    print("\n================ SEGMENT DUMP (ONE LINE CSV) ================")
-
-    # --- ヘッダ行を出力 ---
-    # すべての __slots__ をカンマ区切りで表示
-    header = ",".join(_Segment.__slots__)
-    print("HEADER,ch," + header)
-
-    for ch in sorted(segments.keys()):
-        segs = sorted(segments[ch], key=lambda s: s.beat_start)
-
-        for i, seg in enumerate(segs):
-            values = []
-            for attr in _Segment.__slots__:
-                try:
-                    val = getattr(seg, attr)
-                except AttributeError:
-                    val = "(missing)"
-                values.append(str(val))
-
-            # 1 行 CSV
-            line = f"[{i}],{ch}," + ",".join(values)
-            print(line)
-
 def pass0_read_csv(trace_csv_path):
     """
     PASS 0:
@@ -339,57 +303,6 @@ def pass1_compute_l(events):
             # fl, kl はとりあえず 0 に固定
             ev["fl"] = _ival(ev.get("fl"), 0)
             ev["kl"] = _ival(ev.get("kl"), 0)
-
-    return events
-
-def pass1_compute_l_from_time(events):
-    """
-    PASS 1 (l: timeの差分から導出): 
-      - l = get_ticks(next_time) - get_ticks(current_time)
-      - time の丸め誤差による l=1 の発生を防ぐ
-    """
-
-    def _fval(v, default=0.0):
-        if v is None or v == "":
-            return default
-        try:
-            return float(v)
-        except:
-            return default
-
-    def _ival(v, default=0):
-        if v is None or v == "":
-            return default
-        try:
-            return int(v)
-        except:
-            return default
-
-    # ch ごとにグループ化
-    from collections import defaultdict
-    ch_events = defaultdict(list)
-    for ev in events:
-        ch = _ival(ev.get("ch"), -1)
-        ch_events[ch].append(ev)
-
-    for ch, buf in ch_events.items():
-        buf.sort(key=lambda e: _fval(e.get("time")))
-
-        n = len(buf)
-        for i, ev in enumerate(buf):
-            t = _fval(ev.get("time"))
-
-            if i + 1 < n:
-                t_next = _fval(buf[i+1].get("time"))
-                l = get_ticks(t_next) - get_ticks(t)
-                ev["l"] = max(l, 0)
-            else:
-                ev["l"] = 0
-
-            # fl/kl/vl はまだ 0 のまま
-            ev["fl"] = 0
-            ev["kl"] = 0
-            ev["vl"] = 0
 
     return events
 
@@ -898,71 +811,6 @@ def pass2_expand_rhythm(events, RHYTHM_CH_MAP, RHYTHM_VOICE_ID_MAP):
 
     return new_events
 
-def pass2_filter_l0(events):
-    """
-    PASS 2:
-      l=0 の event を削除する。
-      ただし、l=0 かつ keyon の立ち上がり (prev keyon=0, cur keyon=1) の場合は、
-      その event 自体は削除しつつ、
-      「次に残る同じ ch の event」に ioi=1 / onset=1 を引き継ぐ。
-    """
-
-    def _ival(v, default=0):
-        if v is None or v == "":
-            return default
-        try:
-            return int(v)
-        except:
-            return default
-
-    # ch ごとにまとめて ticks でソート
-    events_by_ch = {}
-    for ev in events:
-        ch = _ival(ev.get("ch"), -999)
-        events_by_ch.setdefault(ch, []).append(ev)
-
-    for ch, lst in events_by_ch.items():
-        lst.sort(key=lambda e: _ival(e.get("ticks")))
-
-    filtered_all = []
-
-    for ch, lst in events_by_ch.items():
-        prev_keyon = 0
-        # 「直前に削除した l=0 posedge のぶん、次の event に ioi=1/onset=1 を付ける」フラグ
-        pending_ioi_onset = False
-
-        for ev in lst:
-            l      = _ival(ev.get("l"))
-            keyon  = _ival(ev.get("keyon"))
-            ioi    = _ival(ev.get("ioi"))
-            onset  = _ival(ev.get("onset"))
-
-            is_posedge = (prev_keyon == 0 and keyon == 1)
-
-            if l == 0:
-                # 削除対象。ただし keyon posedge の場合は「次の event に ioi=1/onset=1 を付ける」予約をする
-                if is_posedge:
-                    pending_ioi_onset = True
-                # この ev 自体は残さない
-                prev_keyon = keyon
-                continue
-
-            # ここに来るのは l>0 で残す event
-            if pending_ioi_onset:
-                # すでに ioi/onset が計算されている場合は壊さない前提だが、
-                # 今回のケースでは 0 なので上書きで問題ない
-                ev["ioi"]   = 1
-                ev["onset"] = 1
-                pending_ioi_onset = False
-
-            filtered_all.append(ev)
-            prev_keyon = keyon
-
-    # ch の順序は元のままでもよいが、全体を time/ticks で並べたいならここでソートしてもよい
-    filtered_all.sort(key=lambda e: (_ival(e.get("ch")), _ival(e.get("ticks"))))
-
-    return filtered_all
-
 def pass2_compute_fl_kl_vl(events):
     """
     PASS2（レガート完全対応版）
@@ -1072,43 +920,6 @@ def pass2_compute_fl_kl_vl(events):
             vol_prev   = vol
 
     return events
-
-def pass2_filter_and_recalc_l(events):
-    """
-    PASS 2:
-      1. l=0 のイベントを削除
-      2. 削除後のイベント列で l を再計算する
-    """
-
-    def _ival(v, default=0):
-        if v is None or v == "":
-            return default
-        try:
-            return int(v)
-        except:
-            return default
-
-    def _fval(v, default=0.0):
-        if v is None or v == "":
-            return default
-        try:
-            return float(v)
-        except:
-            return default
-
-    # --- 1. l=0 を削除 ---
-    filtered = [ev for ev in events if _ival(ev.get("l")) > 0]
-
-    # --- 2. l を再計算 ---
-    for i, ev in enumerate(filtered):
-        if i + 1 < len(filtered):
-            t  = _fval(ev.get("time"))
-            t2 = _fval(filtered[i+1].get("time"))
-            ev["l"] = get_ticks(t2) - get_ticks(t)
-        else:
-            ev["l"] = 0
-
-    return filtered
 
 def pass2_dump_csv(events, trace_csv_path):
     """
@@ -1244,70 +1055,6 @@ def pass3_merge_silent_rests(events):
             stage2.append(ev)
 
         merged_all.extend(stage2)
-
-    return merged_all
-
-def pass3_merge_same_note(events):
-    """
-    PASS3(3):
-      同じ NOTE_ON（keyon=1, vol!=15, fnum/block/inst/vol/sus が同じ）の
-      連続イベントを 1 つにマージする。
-    """
-
-    from collections import defaultdict
-
-    def _ival(v, default=0):
-        if v is None or v == "":
-            return default
-        try:
-            return int(v)
-        except:
-            return default
-
-    # tick_start / tick_end は pass3_merge_silent_rests で付与済み
-    # 念のため再計算
-    for ev in events:
-        ev["ticks"] = _ival(ev.get("ticks"))
-        ev["l"]     = _ival(ev.get("l"))
-        ev["tick_start"] = ev["ticks"]
-        ev["tick_end"]   = ev["ticks"] + ev["l"]
-
-    # マージ条件
-    def can_merge(a, b):
-        return (
-            _ival(a["keyon"]) == 1 and _ival(b["keyon"]) == 1 and
-            _ival(a["vol"]) != 15 and _ival(b["vol"]) != 15 and
-            _ival(a["fnum"])  == _ival(b["fnum"])  and
-            _ival(a["block"]) == _ival(b["block"]) and
-            _ival(a["inst"])  == _ival(b["inst"])  and
-            _ival(a["vol"])   == _ival(b["vol"])   and
-            _ival(a["sus"])   == _ival(b["sus"])   and
-            a["tick_end"] == b["tick_start"]
-        )
-
-    ch_events = defaultdict(list)
-    for ev in events:
-        ch_events[_ival(ev.get("ch"), -1)].append(ev)
-
-    merged_all = []
-
-    for ch, buf in ch_events.items():
-        buf.sort(key=lambda e: e["tick_start"])
-
-        merged = []
-        for ev in buf:
-            if merged:
-                prev = merged[-1]
-
-                if can_merge(prev, ev):
-                    # マージ
-                    prev["tick_end"] = ev["tick_end"]
-                    prev["l"] = prev["tick_end"] - prev["tick_start"]
-                    continue
-
-            merged.append(ev)
-
-        merged_all.extend(merged)
 
     return merged_all
 
@@ -1476,65 +1223,6 @@ def pass3_merge_retrigger_note(events):
 
     return merged_all
 
-def pass3_merge_pitch_volume_wobble(events):
-    """
-    PASS3(5):
-      block + scale が同じ範囲での fnum/vol の微揺れをマージする。
-      （ソフトウェアエンベロープや微ピッチ揺れの除去）
-    """
-
-    from collections import defaultdict
-
-    def _ival(v, default=0):
-        if v is None or v == "":
-            return default
-        try:
-            return int(v)
-        except:
-            return default
-
-    # tick_start / tick_end は PASS3 で付与済み
-    for ev in events:
-        ev["tick_start"] = _ival(ev["ticks"])
-        ev["tick_end"]   = ev["tick_start"] + _ival(ev["l"])
-
-    def can_merge(a, b):
-        return (
-            _ival(a["keyon"]) == 1 and _ival(b["keyon"]) == 1 and
-            _ival(a["vol"]) != 15 and _ival(b["vol"]) != 15 and
-            _ival(a["block"]) == _ival(b["block"]) and
-            _opll_scale(_ival(a["fnum"]), _ival(a["block"])) == _opll_scale(_ival(b["fnum"]), _ival(b["block"])) and
-            _ival(a["inst"]) == _ival(b["inst"]) and
-            _ival(a["sus"])  == _ival(b["sus"]) and
-            a["tick_end"] == b["tick_start"]
-        )
-
-    ch_events = defaultdict(list)
-    for ev in events:
-        ch_events[_ival(ev.get("ch"), -1)].append(ev)
-
-    merged_all = []
-
-    for ch, buf in ch_events.items():
-        buf.sort(key=lambda e: e["tick_start"])
-
-        merged = []
-        for ev in buf:
-            if merged:
-                prev = merged[-1]
-
-                if can_merge(prev, ev):
-                    # マージ：prev の終端を ev に伸ばす
-                    prev["tick_end"] = ev["tick_end"]
-                    prev["l"] = prev["tick_end"] - prev["tick_start"]
-                    continue
-
-            merged.append(ev)
-
-        merged_all.extend(merged)
-
-    return merged_all
-
 def pass3_dump_csv(events, trace_csv_path):
     """
     PASS 2:
@@ -1614,143 +1302,6 @@ def compute_min_l(events):
     # min_l補正 + 0.4
     min_l = int(min_l_base) + 0.4
     print(f"       min_l={min_l}, min_l_base={min_l_base}, base={base}, cluster={cluster[:40]}")
-
-    return base, min_l
-
-def compute_min_l_from_one_l_cluster(events):
-    # ------------------------------------------------------------
-    # [EXP2] min_l を「最小クラスタ」から決定
-    # ------------------------------------------------------------
-
-    def _ival(v, default=0):
-        try:
-            return int(v)
-        except:
-            return default
-
-    # --- l 値を収集 ---
-    l_vals = []
-    for ev in events:
-        ch      = _ival(ev.get("ch"))
-        l       = _ival(ev.get("l"))
-        vol     = _ival(ev.get("vol"))
-        ev_type = ev.get("#type")
-
-        # 無音は除外
-        if vol == 15:
-            continue
-
-        # rhythm は除外
-        if ev_type == "rhythm":
-            continue
-
-        # l>0 のみ対象
-        if l > 0:
-            l_vals.append(l)
-
-    if not l_vals:
-        return None, None, None, None
-
-    ls_sorted = sorted(l_vals)
-
-    ls = [
-        _ival(ev.get("l")) for ev in events
-        if _ival(ev.get("keyon")) == 1
-        and _ival(ev.get("l")) > 0
-        and ev.get("#type") != "rhythm"
-    ]
-
-    if not ls:
-        return events, None, None
-
-    ls_sorted = sorted(ls)
-
-    # base は 2 以上の最小値（l=1 の誤差を除外）
-    for v in ls_sorted:
-        if v >= 2:
-            base = v
-            break
-
-    cluster = [l for l in ls_sorted if l == base or l == base + 1]
-    min_l_base_exp2 = sum(cluster) / len(cluster)
-    # min_lを小数切り捨てにして、+0.4 補正
-    min_l = int(min_l_base_exp2) + 0.4
-
-    print(f"       min_l={min_l}, min_l_base={min_l_base_exp2},base={base}, cluster={cluster[:40]}")
-    return base, min_l
-
-def compute_min_l_from_two_l_clusters(events):
-    # ------------------------------------------------------------
-    # [EXP3]  最小音価クラスタ(min_l)及び最小次点音価クラスタから推定
-    # ------------------------------------------------------------
-    def _ival(v, default=0):
-        try:
-            return int(v)
-        except:
-            return default
-
-    # --- l 値を収集 ---
-    l_vals = []
-    for ev in events:
-        ch      = _ival(ev.get("ch"))
-        l       = _ival(ev.get("l"))
-        vol     = _ival(ev.get("vol"))
-        ev_type = ev.get("#type")
-
-        # 無音は除外
-        if vol == 15:
-            continue
-
-        # rhythm は除外
-        if ev_type == "rhythm":
-            continue
-
-        # l>0 のみ対象
-        if l > 0:
-            l_vals.append(l)
-
-    if not l_vals:
-        return None, None, None, None
-
-    ls_sorted = sorted(l_vals)
-
-    # --- base（最小クラスタの基準） ---
-    base = None
-    for v in ls_sorted:
-        if v >= 2:
-            base = v
-            break
-
-    if base is None:
-        return None, None, None, None
-
-    # --- クラスタ1（base/base+1） ---
-    cluster1 = [l for l in ls_sorted if l == base or l == base + 1]
-    avg1_base = sum(cluster1) / len(cluster1) if cluster1 else float(base)
-
-    # --- base2（次点クラスタの基準） ---
-    base2 = None
-    for v in ls_sorted:
-        if v > base:
-            base2 = v
-            break
-
-    if base2 is None:
-        return base, avg1, None, None
-
-    # --- クラスタ2（base2/base2+1） ---
-    cluster2 = [l for l in ls_sorted if l == base2 or l == base2 + 1]
-    avg2_base = sum(cluster2) / len(cluster2) if cluster2 else float(base2)
-
-
-    avg1 = int(avg1_base) + 0.4
-    avg2 = int(avg2_base) + 0.4
-
-    min_l_base = (avg1_base + avg2_base) /2
-    min_l = int(min_l_base) + 0.4
-    print(f"       avg1={avg1}, avg1_base={avg1_base},base={base}, cluster={cluster1[:40]}")
-    print(f"       avg2={avg2}, avg2_base={avg2_base},base={base2}, cluster={cluster2[:40]}")
-    print(f"       min_l={min_l}, min_l_base={min_l_base},avg1={avg1},avg2={avg2}")
 
     return base, min_l
 
@@ -1993,54 +1544,3 @@ def pass4_dump_csv(events, trace_csv_path):
             writer.writerow(ev)
 
     print(f"[PASS4] Debug CSV written: {out_csv_path}")
-
-def pass5_dump_csv(events, trace_csv_path):
-
-    if not events:
-        return
-
-    # 元ファイル名: <stem>_trace.opll.csv
-    base, ext = os.path.splitext(trace_csv_path)
-    # 出力ファイル名: <stem>_trace.opll.pass4.csv
-    out_csv_path = base + ".pass5.csv"
-
-    fieldnames = list(events[0].keys())
-
-    with open(out_csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for ev in events:
-            writer.writerow(ev)
-
-    print(f"[PASS5] Debug CSV written: {out_csv_path}")
-
-def estimate_bpm_from_segments(segments_by_ch, vgm_rate):
-    """
-    segments_by_ch: {ch: [Segment, ...]}
-    vgm_rate: VGM の tick/sec（vgm header の rate）
-    """
-    beat_durations = []
-
-    for ch, segs in segments_by_ch.items():
-        for seg in segs:
-            if seg.l <= 0:
-                continue
-            if seg.fnum == 0:
-                continue  # 休符は除外
-
-            ticks = seg.beat_end - seg.beat_start
-            if ticks <= 0:
-                continue
-
-            ticks_per_beat = ticks / seg.l
-            beat_durations.append(ticks_per_beat)
-
-    if not beat_durations:
-        return None
-
-    # 中央値で外れ値除去
-    beat_durations.sort()
-    ticks_per_beat = beat_durations[len(beat_durations)//2]
-
-    bpm = 60 * vgm_rate / ticks_per_beat
-    return round(bpm)
