@@ -24,8 +24,6 @@ from opll_mml import (
 
 DEFAULT_PPQ = 480
 
-_FREQ_NTSC: float = 59.988527908187
-
 OPLL_TO_GM_PROGRAM = {
     0: 81,
     1: 40,
@@ -242,25 +240,14 @@ def process_vgm_to_midi(
         ticks_per_step_override=ticks_per_step_override,
     )
 
-    # Determine ticks_per_step using the same logic as _build_segments internally
-    if ticks_per_step_override is not None:
-        ticks_per_step = max(2, int(ticks_per_step_override))
-    else:
-        # Back-calculate mode_ioi from bpm_detected and apply the Nyquist condition
-        mode_ioi = 3600.0 / bpm_detected if bpm_detected > 0 else 60.0
-        ticks_per_step = max(2, int(mode_ioi // 2))
-
-    # Derive accurate MIDI BPM from ticks_per_step using exact NTSC frequency
-    midi_bpm = max(1, round(_FREQ_NTSC * 15 / ticks_per_step))
-
     if debug:
-        print(f"[vgm2midi] bpm_detected={bpm_detected}, ticks_per_step={ticks_per_step}, midi_bpm={midi_bpm}")
+        print(f"[vgm2midi] bpm={bpm_detected}")
 
     _assign_voice_ids(segments_by_ch, opll_voice_csv)
 
     builder = convert_opll_segments_to_midi(
         segments_by_ch,
-        bpm=midi_bpm,
+        bpm=bpm_detected,
         ppq=ppq,
         track_name=base_name,
     )

@@ -95,10 +95,10 @@ def test_process_vgm_to_midi_pipeline(tmp_path, monkeypatch):
 
 
 def test_midi_bpm_derived_from_ticks_per_step(tmp_path, monkeypatch):
-    """midi_bpm は bpm_detected ではなく ticks_per_step から逆算した値になること。
+    """midi_bpm は _build_segments() が返す NTSC ベースの bpm をそのまま使うこと。
 
-    ticks_per_step=2 のとき: round(59.988... * 15 / 2) = round(449.9) = 450
-    bpm_detected=499 が返されても midi_bpm=450 になること。
+    ticks_per_step_override=2 のとき _build_segments() が 450 を返せば、
+    convert_opll_segments_to_midi にも 450 が渡されること。
     """
     vgm_path = tmp_path / "song.vgm"
     vgm_path.write_bytes(b"Vgm ")
@@ -116,8 +116,17 @@ def test_midi_bpm_derived_from_ticks_per_step(tmp_path, monkeypatch):
         return ("a", "b", "c", "d", "e", str(trace), str(voice), str(regs))
 
     def fake_build_segments(_trace_csv, **kwargs):
-        # Returns a wrongly estimated bpm_detected=499 instead of the true 450
-        return ({ch: [] for ch in range(vgm2midi.NUM_CH)}, 499)
+        # _build_segments() now returns the NTSC-based BPM directly.
+        # With ticks_per_step_override=2: round(59.988... * 15 / 2) = round(449.9) = 450
+        tps_override = kwargs.get("ticks_per_step_override")
+        if tps_override is not None:
+            import math as _math
+            _FREQ_NTSC = 59.988527908187
+            tps = max(2, int(tps_override))
+            bpm = max(1, round(_FREQ_NTSC * 15 / tps))
+        else:
+            bpm = 450
+        return ({ch: [] for ch in range(vgm2midi.NUM_CH)}, bpm)
 
     def fake_convert_to_midi(segs, bpm, ppq=480, track_name=""):
         bpm_used["bpm"] = bpm
@@ -130,7 +139,7 @@ def test_midi_bpm_derived_from_ticks_per_step(tmp_path, monkeypatch):
     monkeypatch.setattr(vgm2midi, "_assign_voice_ids", lambda _s, _v: ({}, {}, []))
     monkeypatch.setattr(vgm2midi, "convert_opll_segments_to_midi", fake_convert_to_midi)
 
-    # With ticks_per_step_override=2, midi_bpm must be 450 regardless of bpm_detected
+    # With ticks_per_step_override=2, _build_segments returns 450, which must be passed through
     vgm2midi.process_vgm_to_midi(str(vgm_path), str(tmp_path), ticks_per_step_override=2, ppq=480)
     assert bpm_used["bpm"] == 450, (
         f"Expected midi_bpm=450 (from ticks_per_step=2), got {bpm_used['bpm']}"
