@@ -4,10 +4,10 @@ Usage:
     python vgm2midi.py <vgm_file> [--outdir <dir>] [--debug]
 
 Default output (no --debug):
-    Generate <stem>.mid file
+    Generate <stem>.mid and <stem>.user_voice.json (if user patches exist)
 
 With --debug:
-    The  <stem>.mid file  and the raw log/trace CSV files.
+    The <stem>.mid file and the raw log/trace CSV files.
 
 Example:
     python vgm2midi.py test.vgm
@@ -37,10 +37,6 @@ from opll import (
 )
 
 DEFAULT_PPQ = 480
-
-# Path to the user voice mapping file (next to this script).
-# patch_hex (16 chars) -> GM program number (0-indexed, 0=Acoustic Grand Piano).
-USER_VOICE_MAP_PATH = os.path.join(_SCRIPT_DIR, "user_voice.json")
 
 # User patches are assigned GM programs starting from this value (0-indexed).
 # Programs 0-14 correspond to OPLL presets 1-15 via OPLL_TO_GM_PROGRAM.
@@ -102,6 +98,11 @@ class MidiEvent:
 # ---------------------------------------------------------------------------
 # User voice map helpers
 # ---------------------------------------------------------------------------
+
+def _user_voice_map_path(output_dir: str, stem: str) -> str:
+    """Return the path for <stem>.user_voice.json beside the .mid output."""
+    return os.path.join(output_dir, f"{stem}.user_voice.json")
+
 
 def _format_user_patch_lines(at_v_num: int, patch_bytes: bytes, gm_prog: int) -> list[str]:
     """Return human-readable description lines for a single user patch.
@@ -465,12 +466,14 @@ def process_vgm_to_midi(
     # ── Resolve user-patch GM program mapping ─────────────────────────────
     user_voice_gm_map: dict[int, int] | None = None
     if user_patches:
-        existing_map = _load_user_voice_map(USER_VOICE_MAP_PATH)
+        # <stem>.user_voice.json lives beside <stem>.mid
+        uv_path = _user_voice_map_path(output_dir, base_name)
+        existing_map = _load_user_voice_map(uv_path)
         user_voice_gm_map, updated_map = _build_user_voice_gm_map(user_patches, existing_map)
-        _save_user_voice_map(USER_VOICE_MAP_PATH, updated_map, user_patches, user_voice_gm_map)
+        _save_user_voice_map(uv_path, updated_map, user_patches, user_voice_gm_map)
 
         # Always print user patch info to stdout
-        print(f"User patches ({len(user_patches)}) -> {USER_VOICE_MAP_PATH}")
+        print(f"User patches ({len(user_patches)}) -> {uv_path}")
         for at_v_num in sorted(user_voice_gm_map):
             patch_bytes = user_patches[at_v_num]
             gm_prog = user_voice_gm_map[at_v_num]
