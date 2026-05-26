@@ -45,6 +45,11 @@ DEFAULT_PPQ = 480
 # (= GM program 21 in 1-indexed / musician notation).
 _USER_VOICE_FIRST_GM_PROGRAM = 20
 
+# All-zero patch sentinel: inst=0 with no register writes.
+# Fixed to GM 127 (Gunshot) to make it clearly audible / obviously wrong.
+_ZERO_PATCH = bytes(8)
+_GM_PROGRAM_UNUSED = 127   # GM 127 = Gunshot (0-indexed)
+
 OPLL_TO_GM_PROGRAM = {
     0: 81,   # fallback for inst=0 without user-patch info
     1: 40,
@@ -104,22 +109,41 @@ def _user_voice_map_path(output_dir: str, stem: str) -> str:
     return os.path.join(output_dir, f"{stem}.user_voice.json")
 
 
+def _is_zero_patch(patch_bytes: bytes) -> bool:
+    """Return True if the patch is all-zero (no register writes occurred)."""
+    return patch_bytes == _ZERO_PATCH
+
+
 def _format_user_patch_lines(at_v_num: int, patch_bytes: bytes, gm_prog: int) -> list[str]:
     """Return human-readable description lines for a single user patch.
 
-    Format::
+    All-zero patches (no register written) are flagged as unused with a
+    single summary line instead of the full register decode.
+
+    Normal format::
 
         User patch Inst 20 (1-indexed:21) -> GM program 20
         Inst 20: 'User patch v15' regs = 21 1B C2 F0 01 14 74 11
             TL=27 FB=4
             MO: AR= 2 DR= 1 SL=12 RR= 2 KL= 0 MT= 1 AM= 0 VB= 0 EG= 1 KR= 0 DT= 0
             CA: AR=15 DR= 4 SL= 0 RR= 5 KL= 0 MT= 1 AM= 0 VB= 1 EG= 0 KR= 1 DT= 0
+
+    All-zero format::
+
+        User patch Inst 127 (1-indexed:128) -> GM program 127  (unused - no register written)
+        Inst 127: 'User patch v15' regs = 00 00 00 00 00 00 00 00  [all zero]
     """
+    regs_str = ' '.join(f'{b:02X}' for b in patch_bytes)
+    if _is_zero_patch(patch_bytes):
+        return [
+            f"User patch Inst {gm_prog} (1-indexed:{gm_prog + 1}) -> GM program {gm_prog}"
+            f"  (unused - no register written)",
+            f"Inst {gm_prog}: 'User patch v{at_v_num}' regs = {regs_str}  [all zero]",
+        ]
     d = _ym2413_patch_to_mgsdrv(patch_bytes)
     tl, fb = d['tl'], d['fb']
     m = d['mod']   # (ar, dr, sl, rr, kl, mt, am, vb, eg, kr, dt)
     c = d['car']
-    regs_str = ' '.join(f'{b:02X}' for b in patch_bytes)
     return [
         f"User patch Inst {gm_prog} (1-indexed:{gm_prog + 1}) -> GM program {gm_prog}",
         f"Inst {gm_prog}: 'User patch v{at_v_num}' regs = {regs_str}",
@@ -175,7 +199,9 @@ def _save_user_voice_map(
             "(0=Acoustic Grand Piano ... 127=Gunshot; "
             "i.e. subtract 1 from the 1-indexed program number shown in most DAWs). "
             "Edit values to remap user patches to any GM instrument. "
-            "New patches discovered on the next run are appended automatically."
+            "New patches discovered on the next run are appended automatically. "
+            "All-zero patches (no register written) are fixed to GM 127 (Gunshot) "
+            "and marked as unused."
         ),
     }
     out.update(mapping)
@@ -201,8 +227,12 @@ def _build_user_voice_gm_map(
 ) -> tuple[dict[int, int], dict[str, int]]:
     """Build at_v_num -> GM program (0-indexed) for all user patches.
 
-    For patches already present in *existing_map* the stored program is used.
-    New patches are assigned the next free program >= ``_USER_VOICE_FIRST_GM_PROGRAM``
+    Special cases:
+    - All-zero patch (no register writes): always mapped to GM 127 (Gunshot),
+      regardless of ``existing_map``.  This is a sentinel for "unused" patches.
+
+    For other patches already present in *existing_map* the stored program is used.
+    New non-zero patches are assigned the next free program >= ``_USER_VOICE_FIRST_GM_PROGRAM``
     in encounter order.
 
     Returns:
@@ -213,6 +243,8 @@ def _build_user_voice_gm_map(
     updated = dict(existing_map)
 
     used_programs: set[int] = set(existing_map.values())
+    # Reserve GM 127 for zero patches; exclude from free-assignment pool
+    used_programs.add(_GM_PROGRAM_UNUSED)
 
     def _next_free() -> int:
         p = _USER_VOICE_FIRST_GM_PROGRAM
@@ -223,6 +255,11 @@ def _build_user_voice_gm_map(
 
     for at_v_num, patch_bytes in user_patches.items():
         patch_hex = patch_bytes.hex()
+        # All-zero patch is always GM 127 (unused sentinel), not editable
+        if _is_zero_patch(patch_bytes):
+            at_v_to_gm[at_v_num] = _GM_PROGRAM_UNUSED
+            updated[patch_hex] = _GM_PROGRAM_UNUSED
+            continue
         if patch_hex in updated:
             at_v_to_gm[at_v_num] = updated[patch_hex]
         else:
@@ -472,13 +509,23 @@ def process_vgm_to_midi(
         user_voice_gm_map, updated_map = _build_user_voice_gm_map(user_patches, existing_map)
         _save_user_voice_map(uv_path, updated_map, user_patches, user_voice_gm_map)
 
-        # Always print user patch info to stdout
-        print(f"User patches ({len(user_patches)}) -> {uv_path}")
-        for at_v_num in sorted(user_voice_gm_map):
-            patch_bytes = user_patches[at_v_num]
+        # Print user patch info to stdout.
+        # All-zero patches are shown as a brief unused notice; real patches get full decode.
+        real_patches = {k: v for k, v in user_patches.items() if not _is_zero_patch(v)}
+        zero_patches = {k: v for k, v in user_patches.items() if _is_zero_patch(v)}
+        total = len(user_patches)
+        print(f"User patches ({total}) -> {uv_path}")
+        for at_v_num in sorted(real_patches):
+            patch_bytes = real_patches[at_v_num]
             gm_prog = user_voice_gm_map[at_v_num]
             for line in _format_user_patch_lines(at_v_num, patch_bytes, gm_prog):
                 print(line)
+        for at_v_num in sorted(zero_patches):
+            gm_prog = user_voice_gm_map[at_v_num]
+            print(
+                f"User patch v{at_v_num}: all-zero (no register written) -> "
+                f"GM program {gm_prog} (1-indexed:{gm_prog + 1}, unused)"
+            )
 
     builder = convert_opll_segments_to_midi(
         segments_by_ch,
