@@ -193,10 +193,6 @@ def _build_segments(trace_csv_path,
 
     # onsetの検出とIOI(Inter‑Onset Interval:IOIの間隔)の算出, tempoの導出
     events = pass2_compute_onsets_and_ioi(events)
-    
-    # pass2 (2): fl,kl,vlを計算した後にl=0のeventを削除
-    # ここで l=0 の keyon 0->1 (retrigger)のeventは削除される。(fl,kl,vlにはリセットとして反映済み)
-    #events = pass2_filter_l0(events)
 
     # l=0を削除した後、fl,kl,blからlegato, vibrate, volume envelopeを判定
     events = pass2_mark_legato_vibrato_portamento_envelope(events)
@@ -205,12 +201,9 @@ def _build_segments(trace_csv_path,
 
     # 無音状態(v=15 又は keyon=0) の連続したeventをマージ
     events = pass3_merge_silent_rests(events)
-    # fnum, vol, keyon状態が続くNOTEをマージ
-    #events = pass3_merge_same_note(events)
+
     # retriggerのためのkeyoffを一つのeventにマージ
     events = pass3_merge_retrigger_note(events) 
-    # fnumの揺れ(vibrato / pitch envelope ), software envelopをマージ
-    #events = pass3_merge_pitch_volume_wobble(events)
 
     if debug:
         pass3_dump_csv(events, trace_csv_path)
@@ -227,10 +220,11 @@ def _build_segments(trace_csv_path,
         # override 時は ticks_per_step が16分音符長の代わりになるので
         # mode_ioi = ticks_per_step * 2 と見なして計算
         bpm = max(1, round(_FREQ_NTSC * 15 / (ticks_per_step * 2)))
-
-        print(f"[SEGMENT] ticks_per_step:{ticks_per_step} (override) min_ioi:{min_ioi} mode_ioi:{mode_ioi}")
+        if debug:
+            print(f"  bpm:{bpm} ticks_per_step:{ticks_per_step} (override) min_ioi:{min_ioi} mode_ioi:{mode_ioi}")
     else:
-        print(f"[SEGMENT] ticks_per_step:{ticks_per_step} (auto, Nyquist) min_ioi:{min_ioi} mode_ioi:{mode_ioi}")
+        if debug:
+            print(f"  bpm:{bpm} ticks_per_step:{ticks_per_step} (auto, Nyquist) min_ioi:{min_ioi} mode_ioi:{mode_ioi}")
 
     # ------------------------------------------------------
     # pass4まで処理されたeventsをベースに_Segmentを生成する

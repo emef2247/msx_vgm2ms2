@@ -219,9 +219,6 @@ def main():
                 except OSError:
                     pass
 
-    print(f"  OPLL trace CSV: {opll_trace_csv}")
-    print(f"  OPLL voice CSV: {opll_voice_csv}")
-
     # ── Build OPLL segments ───────────────────────────────────────────────
     print("Building OPLL segments …")
     num_ch = 18

@@ -433,9 +433,6 @@ def main():
         opll_voice_csv, opll_regs_csv,
     ) = parse_vgm(vgm_path, output_dir)
 
-    print(f"  OPLL trace CSV: {opll_trace_csv}")
-    print(f"  OPLL voice CSV: {opll_voice_csv}")
-
     print("Building OPLL segments …")
     num_ch = 18
     segments, bpm_detected = _build_segments(

@@ -1301,8 +1301,6 @@ def compute_min_l(events):
             min_l_base = float(base)
     # min_l補正 + 0.4
     min_l = int(min_l_base) + 0.4
-    print(f"       min_l={min_l}, min_l_base={min_l_base}, base={base}, cluster={cluster[:40]}")
-
     return base, min_l
 
 def pass4_compute_beats(events):
@@ -1349,8 +1347,6 @@ def pass4_compute_beats(events):
 
     min_l = min_l_exp1
     base  = base_exp1
-
-    print(f"[PASS4]        min_l={min_l} base={base}")
 
     # ------------------------------------------------------------
     # 2. beat（音価）を min_l から計算（切り捨て）
@@ -1455,8 +1451,6 @@ def pass4_compute_beats(events):
     ]
 
     if not ioi_list:
-        print("[PASS4] No IOI found even with r_ioi fallback")
-
         # 完全 fallback
         min_ioi = 1
         mode_ioi = 1
@@ -1478,8 +1472,6 @@ def pass4_compute_beats(events):
 
     min_ioi = min(ioi_list)
 
-    print(f"[PASS4] min_ioi={min_ioi}, mode_ioi={mode_ioi}")
-
     # ------------------------------------------------------------
     # 6. tempo（BPM）を IOI ベースで計算
     # ------------------------------------------------------------
@@ -1487,14 +1479,7 @@ def pass4_compute_beats(events):
     ticks_per_step = max(2, int(mode_ioi // 2))
 
     # NTSC クロックベースの正確な BPM
-    bpm_ntsc = max(1, round(_FREQ_NTSC * 15 / max(1, mode_ioi)))  # BPMはmode_ioiから直接
-
-    print(
-        f"[PASS4 BPM] "
-        f"mode_ioi={mode_ioi}, "
-        f"ticks_per_step={ticks_per_step}, "
-        f"bpm_ntsc={bpm_ntsc}"
-    )
+    bpm_ntsc = max(1, round(_FREQ_NTSC * 15 / max(1, mode_ioi)))  
 
     # ------------------------------------------------------------
     # 7. tempo を ev に書き込む
