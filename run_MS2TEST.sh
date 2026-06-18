@@ -45,7 +45,7 @@ python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII02.MS2 > MS2TEST/OPLL/GFIISMS/GF
 python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII03.vgm
 python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII03.MS2 > MS2TEST/OPLL/GFIISMS/GFII03.MS2.dump
 
-python3 vgm2ms2.py ---debug -outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII04.vgm
+python3 vgm2ms2.py -outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII04.vgm
 python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII04.MS2 > MS2TEST/OPLL/GFIISMS/GFII04.MS2.dump
 
 python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII05.vgm
@@ -75,7 +75,7 @@ python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest205.MS2 >  MS2TEST/OPLL/Aleste
 python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC01.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/FMPAC/FMPAC01.MS2 >  MS2TEST/OPLL/FMPAC/FMPAC01.MS2.dump
 
-python3 vgm2ms2.py ---debug -outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC02.vgm
+python3 vgm2ms2.py -outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC02.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/FMPAC/FMPAC02.MS2 >  MS2TEST/OPLL/FMPAC/FMPAC02.MS2.dump
 
 python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC03.vgm

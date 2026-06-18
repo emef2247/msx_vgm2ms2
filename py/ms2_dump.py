@@ -8,6 +8,8 @@ Usage:
 import struct
 import sys
 import os
+import csv
+import io
 
 # ---------------------------------------------------------------------------
 # Chunk-type labels
@@ -115,12 +117,158 @@ def _decode_tunings(data: bytes) -> list[str]:
     return lines
 
 
-def _decode_2op_instruments(data: bytes) -> list[str]:
+# -------------------------- FM detail helpers -------------------------------
+
+def _op20_fields(v: int) -> dict:
+    return {
+        'AM':    (v >> 7) & 0x01,
+        'VIB':   (v >> 6) & 0x01,
+        'EGT':   (v >> 5) & 0x01,   # EG type / sustain
+        'KSR':   (v >> 4) & 0x01,
+        'MULTI':  v       & 0x0F,
+    }
+
+def _op40_fields(v: int) -> dict:
+    return {
+        'KSL': (v >> 6) & 0x03,
+        'TL':   v       & 0x3F,
+    }
+
+def _op60_fields(v: int) -> dict:
+    return {
+        'AR': (v >> 4) & 0x0F,
+        'DR':  v       & 0x0F,
+    }
+
+def _op80_fields(v: int) -> dict:
+    return {
+        'SL': (v >> 4) & 0x0F,
+        'RR':  v       & 0x0F,
+    }
+
+def _ope0_fields(v: int) -> dict:
+    return {
+        'WS': v & 0x07,  # waveform select
+    }
+
+def _c0_fields(v: int) -> dict:
+    return {
+        'FB':  (v >> 1) & 0x07,
+        'ALG':  v       & 0x01,  # 2OP: 0/1, 4OPはC0/C3両方持つ
+    }
+
+def _inst2op_detail_rows(inst_index: int, name: str, tuning: int, regs: bytes) -> list[dict]:
+    # regs layout from chunk type 3:
+    # 20,21,40,41,60,61,80,81,E0,E1,C0
+    r20_1, r20_2 = regs[0], regs[1]
+    r40_1, r40_2 = regs[2], regs[3]
+    r60_1, r60_2 = regs[4], regs[5]
+    r80_1, r80_2 = regs[6], regs[7]
+    re0_1, re0_2 = regs[8], regs[9]
+    rc0 = regs[10]
+
+    row_common = {
+        'voice': inst_index,
+        'name': name,
+        'type': '2OP',
+        'tuning': tuning,
+        'FB': _c0_fields(rc0)['FB'],
+        'ALG': _c0_fields(rc0)['ALG'],
+    }
+
+    op1 = {}
+    op1.update(_op20_fields(r20_1))
+    op1.update(_op40_fields(r40_1))
+    op1.update(_op60_fields(r60_1))
+    op1.update(_op80_fields(r80_1))
+    op1.update(_ope0_fields(re0_1))
+
+    op2 = {}
+    op2.update(_op20_fields(r20_2))
+    op2.update(_op40_fields(r40_2))
+    op2.update(_op60_fields(r60_2))
+    op2.update(_op80_fields(r80_2))
+    op2.update(_ope0_fields(re0_2))
+
+    row = dict(row_common)
+    for k, v in op1.items():
+        row[f'OP1_{k}'] = v
+    for k, v in op2.items():
+        row[f'OP2_{k}'] = v
+    return [row]
+
+def _inst4op_detail_rows(inst_index: int, name: str, tuning: int, regs: bytes) -> list[dict]:
+    # regs layout from chunk type 4:
+    # 20,21,40,41,60,61,80,81,E0,E1,23,24,43,44,63,64,83,84,E3,E4,C0,C3
+    # OP1/2 from *0/*1 pair, OP3/4 from *3/*4 pair
+    r20_1, r20_2 = regs[0], regs[1]
+    r40_1, r40_2 = regs[2], regs[3]
+    r60_1, r60_2 = regs[4], regs[5]
+    r80_1, r80_2 = regs[6], regs[7]
+    re0_1, re0_2 = regs[8], regs[9]
+
+    r20_3, r20_4 = regs[10], regs[11]
+    r40_3, r40_4 = regs[12], regs[13]
+    r60_3, r60_4 = regs[14], regs[15]
+    r80_3, r80_4 = regs[16], regs[17]
+    re0_3, re0_4 = regs[18], regs[19]
+
+    rc0, rc3 = regs[20], regs[21]
+
+    row = {
+        'voice': inst_index,
+        'name': name,
+        'type': '4OP',
+        'tuning': tuning,
+        'FB_C0': _c0_fields(rc0)['FB'],
+        'ALG_C0': _c0_fields(rc0)['ALG'],
+        'FB_C3': _c0_fields(rc3)['FB'],
+        'ALG_C3': _c0_fields(rc3)['ALG'],
+    }
+
+    op1 = {}
+    op1.update(_op20_fields(r20_1)); op1.update(_op40_fields(r40_1)); op1.update(_op60_fields(r60_1)); op1.update(_op80_fields(r80_1)); op1.update(_ope0_fields(re0_1))
+    op2 = {}
+    op2.update(_op20_fields(r20_2)); op2.update(_op40_fields(r40_2)); op2.update(_op60_fields(r60_2)); op2.update(_op80_fields(r80_2)); op2.update(_ope0_fields(re0_2))
+    op3 = {}
+    op3.update(_op20_fields(r20_3)); op3.update(_op40_fields(r40_3)); op3.update(_op60_fields(r60_3)); op3.update(_op80_fields(r80_3)); op3.update(_ope0_fields(re0_3))
+    op4 = {}
+    op4.update(_op20_fields(r20_4)); op4.update(_op40_fields(r40_4)); op4.update(_op60_fields(r60_4)); op4.update(_op80_fields(r80_4)); op4.update(_ope0_fields(re0_4))
+
+    for i, op in enumerate([op1, op2, op3, op4], start=1):
+        for k, v in op.items():
+            row[f'OP{i}_{k}'] = v
+
+    return [row]
+
+def _csv_from_rows(rows: list[dict], field_order: list[str] | None = None) -> str:
+    if not rows:
+        return ""
+    if field_order is None:
+        # gather stable order
+        keys = set()
+        for r in rows:
+            keys.update(r.keys())
+        # first fixed head
+        head = ['voice', 'name', 'type', 'tuning']
+        rest = sorted(k for k in keys if k not in head)
+        field_order = head + rest
+
+    sio = io.StringIO()
+    w = csv.DictWriter(sio, fieldnames=field_order, extrasaction='ignore')
+    w.writeheader()
+    for r in rows:
+        w.writerow(r)
+    return sio.getvalue().rstrip('\n')
+
+
+def _decode_2op_instruments(data: bytes, fm_detail: bool = False, csv_output: bool = False) -> list[str]:
     if len(data) < 2:
         return ["  (too short)"]
     count = struct.unpack_from('<H', data, 0)[0]
     lines = [f"  Count: {count}"]
     pos = 2
+    detail_rows = []
     for i in range(count):
         if pos + 30 > len(data):
             lines.append(f"  Instrument {i}: (truncated)")
@@ -130,7 +278,73 @@ def _decode_2op_instruments(data: bytes) -> list[str]:
         name = data[pos + 14: pos + 30].rstrip(b'\x00 ').decode('ascii', errors='replace')
         reg_str = ' '.join(f'{b:02X}' for b in regs)
         lines.append(f"  Inst {i:2d}: '{name:<16}' tuning={tuning}  regs={reg_str}")
+
+        if fm_detail:
+            rows = _inst2op_detail_rows(i, name, tuning, regs)
+            detail_rows.extend(rows)
+            r = rows[0]
+            lines.append(
+                f"       CH: FB={r['FB']} ALG={r['ALG']} | "
+                f"OP1(AM={r['OP1_AM']} VIB={r['OP1_VIB']} EGT={r['OP1_EGT']} KSR={r['OP1_KSR']} MUL={r['OP1_MULTI']} "
+                f"KSL={r['OP1_KSL']} TL={r['OP1_TL']} AR={r['OP1_AR']} DR={r['OP1_DR']} SL={r['OP1_SL']} RR={r['OP1_RR']} WS={r['OP1_WS']}) | "
+                f"OP2(AM={r['OP2_AM']} VIB={r['OP2_VIB']} EGT={r['OP2_EGT']} KSR={r['OP2_KSR']} MUL={r['OP2_MULTI']} "
+                f"KSL={r['OP2_KSL']} TL={r['OP2_TL']} AR={r['OP2_AR']} DR={r['OP2_DR']} SL={r['OP2_SL']} RR={r['OP2_RR']} WS={r['OP2_WS']})"
+            )
         pos += 30
+
+    if fm_detail and csv_output and detail_rows:
+        lines.append("  --- 2OP FM DETAIL CSV ---")
+        order = [
+            'voice','name','type','tuning','FB','ALG',
+            'OP1_AM','OP1_VIB','OP1_EGT','OP1_KSR','OP1_MULTI','OP1_KSL','OP1_TL','OP1_AR','OP1_DR','OP1_SL','OP1_RR','OP1_WS',
+            'OP2_AM','OP2_VIB','OP2_EGT','OP2_KSR','OP2_MULTI','OP2_KSL','OP2_TL','OP2_AR','OP2_DR','OP2_SL','OP2_RR','OP2_WS',
+        ]
+        csv_text = _csv_from_rows(detail_rows, order)
+        for ln in csv_text.splitlines():
+            lines.append("  " + ln)
+
+    return lines
+
+
+def _decode_4op_instruments(data: bytes, fm_detail: bool = False, csv_output: bool = False) -> list[str]:
+    if len(data) < 2:
+        return ["  (too short)"]
+    count = struct.unpack_from('<H', data, 0)[0]
+    lines = [f"  Count: {count}"]
+    pos = 2
+    detail_rows = []
+
+    for i in range(count):
+        if pos + 41 > len(data):
+            lines.append(f"  Instrument {i}: (truncated)")
+            break
+        tuning = data[pos]
+        regs = data[pos + 3: pos + 25]  # 22 bytes
+        name = data[pos + 25: pos + 41].rstrip(b'\x00 ').decode('ascii', errors='replace')
+        reg_str = ' '.join(f'{b:02X}' for b in regs)
+        lines.append(f"  Inst {i:2d}: '{name:<16}' tuning={tuning}  regs={reg_str}")
+
+        if fm_detail:
+            rows = _inst4op_detail_rows(i, name, tuning, regs)
+            detail_rows.extend(rows)
+            r = rows[0]
+            lines.append(
+                f"       CH: C0(FB={r['FB_C0']} ALG={r['ALG_C0']}), C3(FB={r['FB_C3']} ALG={r['ALG_C3']})"
+            )
+        pos += 41
+
+    if fm_detail and csv_output and detail_rows:
+        lines.append("  --- 4OP FM DETAIL CSV ---")
+        order = ['voice','name','type','tuning','FB_C0','ALG_C0','FB_C3','ALG_C3']
+        for op in (1,2,3,4):
+            order += [
+                f'OP{op}_AM', f'OP{op}_VIB', f'OP{op}_EGT', f'OP{op}_KSR', f'OP{op}_MULTI',
+                f'OP{op}_KSL', f'OP{op}_TL', f'OP{op}_AR', f'OP{op}_DR', f'OP{op}_SL', f'OP{op}_RR', f'OP{op}_WS'
+            ]
+        csv_text = _csv_from_rows(detail_rows, order)
+        for ln in csv_text.splitlines():
+            lines.append("  " + ln)
+
     return lines
 
 
@@ -213,7 +427,11 @@ def _decode_patterns(data: bytes, n_channels: int, show_bytes: bool = True) -> l
 # Main dump function
 # ---------------------------------------------------------------------------
 
-def dump_ms2(path: str, show_pattern_bytes: bool = True, max_patterns: int = 3) -> None:
+def dump_ms2(path: str,
+             show_pattern_bytes: bool = True,
+             max_patterns: int = 3,
+             fm_detail: bool = False,
+             fm_csv: bool = False) -> None:
     """Parse and print the structure of an MS2 file."""
     with open(path, 'rb') as f:
         data = f.read()
@@ -239,10 +457,13 @@ def dump_ms2(path: str, show_pattern_bytes: bool = True, max_patterns: int = 3) 
             for line in _decode_tunings(cdata):
                 print(line)
         elif ctype == 3:
-            for line in _decode_2op_instruments(cdata):
+            for line in _decode_2op_instruments(cdata, fm_detail=fm_detail, csv_output=fm_csv):
+                print(line)
+        elif ctype == 4:
+            for line in _decode_4op_instruments(cdata, fm_detail=fm_detail, csv_output=fm_csv):
                 print(line)
         elif ctype == 6 and n_channels > 0:
-            # Only dump up to max_patterns
+            # NOTE: existing behavior kept (currently not trimming by max_patterns)
             trimmed = cdata
             for line in _decode_patterns(trimmed, n_channels,
                                          show_bytes=show_pattern_bytes):
@@ -290,6 +511,10 @@ def main():
                         help='Compare signature+structure with another MS2 file')
     parser.add_argument('--max-patterns', type=int, default=3,
                         help='Maximum patterns to dump (default: 3)')
+    parser.add_argument('--fm-detail', action='store_true',
+                        help='Decode FM(2OP/4OP) register bytes into per-parameter fields')
+    parser.add_argument('--fm-csv', action='store_true',
+                        help='With --fm-detail, also print CSV tables (voice x parameters)')
     args = parser.parse_args()
 
     if args.compare:
@@ -297,7 +522,9 @@ def main():
     else:
         dump_ms2(args.file,
                  show_pattern_bytes=not args.no_bytes,
-                 max_patterns=args.max_patterns)
+                 max_patterns=args.max_patterns,
+                 fm_detail=args.fm_detail,
+                 fm_csv=args.fm_csv)
 
 
 if __name__ == '__main__':
