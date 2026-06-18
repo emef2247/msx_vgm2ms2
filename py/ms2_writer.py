@@ -128,6 +128,7 @@ STEPS_PER_PATTERN = 16      # MS2 whole-note = 16 steps (16th-note granularity)
 TICKS_PER_STEP_75BPM = 12   # at 60 fps, 75 BPM: 1/16 note = 12 ticks
 DEFAULT_RHYTHM_NOTE = 36    # Default MS2 note (C3) for rhythm hits with no explicit fnum
 MAX_PATTERN_CHUNK_SIZE = 16384  # MS2 tool hangs if a Patterns chunk exceeds this
+MS2_MAX_PATTERNS = 255
 
 def build_tunings_chunk_data_from_list(tuning_defs):
     """
@@ -1061,6 +1062,12 @@ def build_ms2_file(
             for seg in segments.get(ch, []):
                 last_note_end_tick = max(last_note_end_tick, seg.tick_end)
     n_patterns = max(1, math.ceil(last_note_end_tick / (ticks_per_step * STEPS_PER_PATTERN)))
+    if n_patterns > MS2_MAX_PATTERNS:
+        print(
+            f"[build_ms2_file] WARNING: n_patterns={n_patterns} exceeds MS2 max "
+            f"({MS2_MAX_PATTERNS}). Patterns beyond {MS2_MAX_PATTERNS} will be ignored."
+        )
+        n_patterns = MS2_MAX_PATTERNS
 
     # ==== starting_instruments配列生成 ====
     starting_instruments = _get_starting_instruments(
@@ -1584,6 +1591,12 @@ def build_mgsdrvmml_file(
             for seg in segments.get(ch, []):
                 last_note_end_tick = max(last_note_end_tick, seg.tick_end)
     n_patterns = max(1, math.ceil(last_note_end_tick / (ticks_per_step * STEPS_PER_PATTERN)))
+    if n_patterns > MS2_MAX_PATTERNS:
+        print(
+            f"[build_mgsdrvmml_file] WARNING: n_patterns={n_patterns} exceeds MS2 max "
+            f"({MS2_MAX_PATTERNS}). Patterns beyond {MS2_MAX_PATTERNS} will be ignored."
+        )
+        n_patterns = MS2_MAX_PATTERNS
     total_steps = n_patterns * STEPS_PER_PATTERN
     grid = _build_step_grid(segments, ticks_per_step, total_steps)
     return _grid_to_mml_text(grid, n_patterns, stem, mgs_bpm, user_patches, warnings)
