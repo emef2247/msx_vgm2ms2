@@ -30,8 +30,26 @@ Output: `out/mysong.MS2`
 | `--bpm BPM` | Song tempo in BPM (default: 120) |
 | `--timer 0\|1` | Timer source: `0` = VDP timer (default), `1` = 50 Hz fixed |
 | `--video ntsc\|pal` | Video system: `ntsc` (default) or `pal`. Only used when `--timer 0` |
+| `--force_stereo` | Pan active channels alternately Left/Right to create pseudo-stereo output |
 | `--debug` | Print timing diagnostics (freq_hz, timer divider, quantization, implied BPM) |
 | `--no-validate` | Skip post-build validation of the Patterns chunk |
+
+### `--force_stereo`
+
+When specified, channels that contain notes are sorted by channel number and
+assigned Left (−7) and Right (+7) stereo pan values alternately.  Channels
+without any notes remain at center (0).  Without this flag all channels use
+the default center panning (backward compatible).
+
+```bash
+python vgm2ms2.py mysong.vgm --force_stereo
+```
+
+Examples:
+- Active channels ch2, ch5 → ch2 = L, ch5 = R
+- Active channels ch0, ch3, ch7 → ch0 = L, ch3 = R, ch7 = L
+
+MS² FM channel pan values: −7 to −3 = Left, −2 to +2 = Center, +3 to +7 = Right.
 
 ### `--timer` and `--video` details
 
