@@ -30,6 +30,7 @@ python vgm2ms2.py --outdir out/ mysong.vgm
 | `--bpm BPM` | テンポを BPM で指定（デフォルト: 120） |
 | `--timer 0\|1` | タイマー選択: `0` = VDP タイマー（デフォルト）、`1` = 50 Hz 固定 |
 | `--video ntsc\|pal` | ビデオシステム: `ntsc`（デフォルト）または `pal`。`--timer 0` のときのみ有効 |
+| `--vol-map legacy\|db` | VGM→MS2 の音量マッピングモード（デフォルト: `legacy`）。`legacy` は従来の線形スケーリング（0–40 範囲）。`db` は dB 精度マッピングで音圧感をより忠実に再現（0–60 範囲） |
 | `--force_stereo` | 使用中のチャンネルを左右交互（L, R, L, R…）にパンしてステレオ化 |
 | `--debug` | デバッグ情報（周波数・タイマ除数・量子化）を表示 |
 | `--no-validate` | 生成後の Patterns チャンク検証をスキップ |
@@ -49,6 +50,23 @@ python vgm2ms2.py mysong.vgm --force_stereo
 - 未指定時は全チャンネルがセンター（既存挙動を完全維持）
 
 MS² の FM チャンネルにおけるパン値: −7〜−3 = 左、−2〜+2 = 中央、+3〜+7 = 右。
+
+### `--vol-map` の説明
+
+VGM→MS2 変換時の OPLL 音量（0–15）→ MS2 TL（0–63）マッピングモードを選択します。
+
+| モード | 説明 |
+|--------|------|
+| `legacy`（デフォルト） | 従来の線形スケーリング `round(v × 8/3)`。出力範囲は 0–40。既存動作を完全維持。 |
+| `db` | 物理的に正確な dB マッピング。OPLL 1 ステップ = 3 dB = OPL4 TL 4 ステップ。出力範囲は 0–60 で音圧感をより忠実に再現。 |
+
+```bash
+# デフォルト（従来動作）
+python vgm2ms2.py mysong.vgm
+
+# dB マッピングを使用
+python vgm2ms2.py mysong.vgm --vol-map db
+```
 
 ### `--timer` と `--video` の説明
 

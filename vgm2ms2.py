@@ -173,6 +173,18 @@ def main():
         ),
     )
     parser.add_argument(
+        '--vol-map', choices=['legacy', 'db'], default='db',
+        metavar='{legacy,db}',
+        help=(
+            'Volume mapping mode for VGM→MS2 export (default: legacy). '
+            'Only affects the VGM→MS2 conversion path. '
+            '"legacy" reproduces the original linear scaling (OPLL 0–15 → MS2 0–40). '
+            '"db" uses a physically-accurate dB mapping (each OPLL step = 3 dB = '
+            '4 OPL4 TL steps), yielding a wider 0–60 range with better loudness '
+            'preservation.'
+        ),
+    )
+    parser.add_argument(
         '--force_stereo', action='store_true',
         help=(
             'Assign alternating L/R stereo panning to active channels. '
@@ -265,6 +277,7 @@ def main():
         debug          = args.debug,
         ticks_per_step_override = args.ticks_per_step,
         force_stereo   = args.force_stereo,
+        vol_map        = args.vol_map,
     )
 
     # ── Write output file ─────────────────────────────────────────────────

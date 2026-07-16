@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# vgm2ms2.pyでVGMをMS2に変換
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/T01ALL MS2TEST/OPLL/T01ALL/reference/T01ALL.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/T01P01 MS2TEST/OPLL/T01P01/reference/T01P01.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/T01P02 MS2TEST/OPLL/T01P02/reference/T01P02.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/T01P03 MS2TEST/OPLL/T01P03/reference/T01P03.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/T01P04 MS2TEST/OPLL/T01P04/reference/T01P04.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/T01P05 MS2TEST/OPLL/T01P05/reference/T01P05.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/T01P06 MS2TEST/OPLL/T01P06/reference/T01P06.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/T02P01 MS2TEST/OPLL/T02P01/reference/T02P01.vgm
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/T03P01 MS2TEST/OPLL/T03P01/reference/T03P01.vgm
+# vgm2ms2.py --force_stereoでVGMをMS2に変換
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/T01ALL MS2TEST/OPLL/T01ALL/reference/T01ALL.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/T01P01 MS2TEST/OPLL/T01P01/reference/T01P01.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/T01P02 MS2TEST/OPLL/T01P02/reference/T01P02.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/T01P03 MS2TEST/OPLL/T01P03/reference/T01P03.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/T01P04 MS2TEST/OPLL/T01P04/reference/T01P04.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/T01P05 MS2TEST/OPLL/T01P05/reference/T01P05.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/T01P06 MS2TEST/OPLL/T01P06/reference/T01P06.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/T02P01 MS2TEST/OPLL/T02P01/reference/T02P01.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/T03P01 MS2TEST/OPLL/T03P01/reference/T03P01.vgm
 
 # py/ms2_dump.pyで変換したMS2の内容を.dump(テキスト)としてダンプ // MS2のファイル内容確認用
 python3 py/ms2_dump.py MS2TEST/OPLL/T01ALL/T01ALL.MS2 > MS2TEST/OPLL/T01ALL/T01ALL.MS2.dump
@@ -32,92 +32,92 @@ python3 py/ms2_dump.py MS2TEST/OPLL/T03P01/T03P01.MS2 > MS2TEST/OPLL/T02301/T03P
  python3 py/ms2_dump.py MS2TEST/OPLL/T01ALL/reference/T01ALLEX.MS2 > MS2TEST/OPLL/T01ALL/reference/T01ALLEX.MS2.dump
 
 # MSXPlayのサンプル grider.vgmのテスト
-python3 vgm2ms2.py  --debug --outdir MS2TEST/OPLL/GRIDER MS2TEST/OPLL/GRIDER/reference/grider.vgm
+python3 vgm2ms2.py --force_stereo  --debug --outdir MS2TEST/OPLL/GRIDER MS2TEST/OPLL/GRIDER/reference/grider.vgm
 python3 py/ms2_dump.py MS2TEST/OPLL/GRIDER/grider.MS2 > MS2TEST/OPLL/GRIDER/grider.MS2.dump
 
 #　もう一つのサンプル
-python3 vgm2ms2.py  --debug --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII01.vgm
+python3 vgm2ms2.py --force_stereo  --debug --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII01.vgm
 python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII01.MS2 > MS2TEST/OPLL/GFIISMS/GFII01.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII02.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII02.vgm
 python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII02.MS2 > MS2TEST/OPLL/GFIISMS/GFII02.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII03.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII03.vgm
 python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII03.MS2 > MS2TEST/OPLL/GFIISMS/GFII03.MS2.dump
 
-python3 vgm2ms2.py -outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII04.vgm
+python3 vgm2ms2.py --force_stereo -outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII04.vgm
 python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII04.MS2 > MS2TEST/OPLL/GFIISMS/GFII04.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII05.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII05.vgm
 python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII05.MS2 > MS2TEST/OPLL/GFIISMS/GFII05.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII06.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII06.vgm
 python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII06.MS2 > MS2TEST/OPLL/GFIISMS/GFII06.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII07.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/GFIISMS MS2TEST/OPLL/GFIISMS/reference/GFII07.vgm
 python3 py/ms2_dump.py MS2TEST/OPLL/GFIISMS/GFII07.MS2 > MS2TEST/OPLL/GFIISMS/GFII07.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest201.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest201.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest201.MS2 >  MS2TEST/OPLL/Aleste2/Alest201.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest202.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest202.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest202.MS2 >  MS2TEST/OPLL/Aleste2/Alest202.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest203.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest203.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest203.MS2 >  MS2TEST/OPLL/Aleste2/Alest203.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest204.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest204.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest204.MS2 >  MS2TEST/OPLL/Aleste2/Alest204.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest205.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/Aleste2 MS2TEST/OPLL/Aleste2/reference/Alest205.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/Aleste2/Alest205.MS2 >  MS2TEST/OPLL/Aleste2/Alest205.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC01.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC01.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/FMPAC/FMPAC01.MS2 >  MS2TEST/OPLL/FMPAC/FMPAC01.MS2.dump
 
-python3 vgm2ms2.py -outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC02.vgm
+python3 vgm2ms2.py --force_stereo -outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC02.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/FMPAC/FMPAC02.MS2 >  MS2TEST/OPLL/FMPAC/FMPAC02.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC03.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC03.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/FMPAC/FMPAC03.MS2 >  MS2TEST/OPLL/FMPAC/FMPAC03.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC04.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC04.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/FMPAC/FMPAC04.MS2 >  MS2TEST/OPLL/FMPAC/FMPAC04.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC05.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/FMPAC MS2TEST/OPLL/FMPAC/reference/FMPAC05.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/FMPAC/FMPAC05.MS2 >  MS2TEST/OPLL/FMPAC/FMPAC05.MS2.dump
 
-python3 vgm2ms2.py --debug --debug --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D01.vgm
+python3 vgm2ms2.py --force_stereo --debug --debug --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D01.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D01.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D01.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D02.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D02.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D02.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D02.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D03.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D03.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D03.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D03.MS2.dump
 
-python3 vgm2ms2.py --debug --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D04.vgm
+python3 vgm2ms2.py --force_stereo --debug --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D04.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D04.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D04.MS2.dump
 
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D05.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D05.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D05.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D05.MS2.dump
 
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D06.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D06.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D06.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D06.MS2.dump
 
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D07.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D07.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D07.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D07.MS2.dump
 
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D08.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D08.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D08.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D08.MS2.dump
 
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D09.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D09.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D09.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D09.MS2.dump
 
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D10.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D10.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D10.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D10.MS2.dump
 
-python3 vgm2ms2.py --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D11.vgm
+python3 vgm2ms2.py --force_stereo --outdir MS2TEST/OPLL/F1SP3D MS2TEST/OPLL/F1SP3D/reference/F1SP3D11.vgm
 python3 py/ms2_dump.py  MS2TEST/OPLL/F1SP3D/F1SP3D11.MS2 >  MS2TEST/OPLL/F1SP3D/F1SP3D11.MS2.dump
 
 
