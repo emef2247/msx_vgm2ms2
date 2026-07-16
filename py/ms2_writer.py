@@ -263,8 +263,22 @@ def fnum_block_to_ms2_note(fnum: int, block: int) -> int | None:
     return ms2_note
 
 
-def opll_vol_to_ms2_vol(opll_vol: int) -> int:
+def opll_vol_to_ms2_vol(opll_vol: int, mode: str = 'legacy') -> int:
+    """Convert OPLL 4-bit volume (0=quiet .. 15=loud) to MS2 TL (0=quiet .. 63=loud).
+
+    Args:
+        opll_vol: OPLL volume nibble, 0–15.
+        mode: Mapping mode.
+            ``'legacy'`` (default) – original linear scaling (0..40 range),
+                bit-identical to the previous implementation.
+            ``'db'`` – physically-accurate dB mapping: each OPLL step is 3 dB
+                (0.75 dB per OPL4 TL step → 4 TL steps per OPLL step),
+                yielding a 0..60 range with better loudness preservation.
+    """
     v = max(0, min(15, opll_vol))
+    if mode == 'db':
+        return min(63, int(round(v * 4)))
+    # 'legacy': original round(v * 8/3) scaling
     return min(63, int(round(v * (2.0 / 0.75))))
 
 
@@ -759,6 +773,7 @@ def segments_to_patterns(
     n_instruments: int,
     user_patches: dict | None = None,
     ref_count: int = 0,
+    vol_map: str = 'legacy',
 ) -> list[list]:
     if user_patches is None:
         user_patches = {}
@@ -778,7 +793,7 @@ def segments_to_patterns(
             keyon, ms2_note, inst, vol_opll, retrigger, at_token, is_legato = state
             prev_keyon = prev_state[0]
             prev_note  = prev_state[1]
-            vol_ms2 = opll_vol_to_ms2_vol(vol_opll)
+            vol_ms2 = opll_vol_to_ms2_vol(vol_opll, mode=vol_map)
             evts_here: list[bytes] = []
             # instrument index
             if inst == 0 and user_patches:
@@ -947,6 +962,7 @@ def build_ms2_file(
     rhythm_instruments: dict | None = None,
     ticks_per_step_override: int | None = None,
     force_stereo: bool = False,
+    vol_map: str = 'legacy',
 ) -> bytes:
     """
     MS2ファイル生成: メロディはbase_ms2優先(1～15、index 0～14)、16～はリズム etc.
@@ -1086,7 +1102,7 @@ def build_ms2_file(
     # ==== パターン(ノート)格納 ====
     channel_event_lists = segments_to_patterns(
         segments, ticks_per_step, n_patterns, NUM_CH, n_2op_inst,
-        user_patches=user_patches, ref_count=ref_count
+        user_patches=user_patches, ref_count=ref_count, vol_map=vol_map
     )
 
     # ==== --force_stereo: 使用CHを左右交互にパン ====
