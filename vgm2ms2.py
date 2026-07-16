@@ -173,7 +173,7 @@ def main():
         ),
     )
     parser.add_argument(
-        '--vol-map', choices=['legacy', 'db'], default='legacy',
+        '--vol-map', choices=['legacy', 'db'], default='db',
         metavar='{legacy,db}',
         help=(
             'Volume mapping mode for VGM→MS2 export (default: legacy). '

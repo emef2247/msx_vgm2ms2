@@ -277,7 +277,8 @@ def opll_vol_to_ms2_vol(opll_vol: int, mode: str = 'legacy') -> int:
     """
     v = max(0, min(15, opll_vol))
     if mode == 'db':
-        return min(63, int(round(v * 4)))
+        v = max(0, min(15, int(v)))
+        return int(round(v * 63.0 / 15.0))   # 0..63
     # 'legacy': original round(v * 8/3) scaling
     return min(63, int(round(v * (2.0 / 0.75))))
 
