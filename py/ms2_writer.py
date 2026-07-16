@@ -816,40 +816,36 @@ def segments_to_patterns(
                 emit_vol  = vol_changed
                 emit_inst = inst_changed or force_inst
 
-                # -------------------------
-                # LEGATO / NOTE_ON
-                # -------------------------
                 if emit_note:
                     if is_legato == 1:
-                        evts_here.append(bytes([0x02, ms2_note & 0xFF]))  # LEGATO
                         # LEGATO のときは INST/VOL を emit しない
                         emit_inst = False
                         emit_vol  = False
+                        evts_here.append(bytes([0x02, ms2_note & 0xFF]))  # LEGATO
                     else:
+                        if emit_inst:
+                            evts_here.append(bytes([0x04, inst_idx & 0xFF]))
+                            prev_inst_idx = inst_idx
                         evts_here.append(bytes([0x00, ms2_note & 0xFF]))  # NOTE_ON
+                elif emit_inst:
+                    evts_here.append(bytes([0x04, inst_idx & 0xFF]))
+                    prev_inst_idx = inst_idx
 
-                # -------------------------
-                # VOL / INST
-                # -------------------------
                 if emit_vol:
                     evts_here.append(bytes([0x05, vol_ms2 & 0xFF]))
                     prev_vol_ms2 = vol_ms2
-
-                if emit_inst:
-                    evts_here.append(bytes([0x04, inst_idx & 0xFF]))
-                    prev_inst_idx = inst_idx
             else:
                 inst_changed_off = (inst_idx != prev_inst_idx)
                 vol_changed_off  = (vol_ms2 != prev_vol_ms2)
 
                 if prev_keyon or inst_changed_off or vol_changed_off:
                     evts_here.append(bytes([0x01]))
-                    if vol_changed_off:
-                        evts_here.append(bytes([0x05, vol_ms2 & 0xFF]))
-                        prev_vol_ms2 = vol_ms2
                     if inst_changed_off:
                         evts_here.append(bytes([0x04, inst_idx & 0xFF]))
                         prev_inst_idx = inst_idx
+                    if vol_changed_off:
+                        evts_here.append(bytes([0x05, vol_ms2 & 0xFF]))
+                        prev_vol_ms2 = vol_ms2
             if evts_here:
                 channel_event_lists[pat][ch].append((step_in_pat, evts_here))
             prev_state = state
