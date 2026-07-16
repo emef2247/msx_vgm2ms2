@@ -794,6 +794,20 @@ def _get_ms2_inst_idx(
 # ---------------------------------------------------------------------------
 # High-level: segments → MS2 patterns
 # ---------------------------------------------------------------------------
+def _event_priority(evt: bytes) -> tuple[int, int]:
+    op = evt[0]
+    pri = {
+        0x01: 0,  # NOTE_OFF
+        0x04: 1,  # INST
+        0x00: 2,  # NOTE_ON
+        0x02: 2,  # LEGATO
+        0x05: 3,  # VOL
+    }.get(op, 9)
+    return (pri, op)
+
+def _normalize_same_step_events(evts_here: list[bytes]) -> list[bytes]:
+    # Python sort is stable: 同priority内は元順維持
+    return sorted(evts_here, key=_event_priority)
 
 def segments_to_patterns(
     segments: dict,
@@ -876,6 +890,7 @@ def segments_to_patterns(
                         evts_here.append(bytes([0x05, vol_ms2 & 0xFF]))
                         prev_vol_ms2 = vol_ms2
             if evts_here:
+                evts_here = _normalize_same_step_events(evts_here)
                 channel_event_lists[pat][ch].append((step_in_pat, evts_here))
             prev_state = state
     return channel_event_lists
