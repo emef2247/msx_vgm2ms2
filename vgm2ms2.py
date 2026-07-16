@@ -176,12 +176,13 @@ def main():
         '--vol-map', choices=['legacy', 'db'], default='db',
         metavar='{legacy,db}',
         help=(
-            'Volume mapping mode for VGM→MS2 export (default: legacy). '
+            'Volume mapping mode for VGM→MS2 export (default: db). '
             'Only affects the VGM→MS2 conversion path. '
-            '"legacy" reproduces the original linear scaling (OPLL 0–15 → MS2 0–40). '
-            '"db" uses a physically-accurate dB mapping (each OPLL step = 3 dB = '
-            '4 OPL4 TL steps), yielding a wider 0–60 range with better loudness '
-            'preservation.'
+            '"db" uses a physically-accurate dB mapping with equal-loudness '
+            'compensation (curve A: low +2, mid 0, high +3), yielding a 0–63 '
+            'range with better perceptual loudness. '
+            '"legacy" reproduces the original linear scaling (OPLL 0–15 → MS2 0–40) '
+            'with no compensation, for backward compatibility.'
         ),
     )
     parser.add_argument(

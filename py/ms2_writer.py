@@ -263,7 +263,28 @@ def fnum_block_to_ms2_note(fnum: int, block: int) -> int | None:
     return ms2_note
 
 
-def opll_vol_to_ms2_vol(opll_vol: int, mode: str = 'legacy') -> int:
+def loudness_comp_db(ms2_note: int) -> int:
+    """Return the equal-loudness compensation offset for the given MS2 note (0..95).
+
+    Applied only in 'db' vol-map mode as a post-processing step on the encoded
+    MS2 volume value (0x05 domain).  Implements curve A:
+
+    - low  band (ms2_note <  36, below C3,  < ~131 Hz): +2
+    - mid  band (ms2_note < 72,  C3–B5, ~131–988 Hz):    0
+    - high band (ms2_note >= 72, C6 and above, ≥ ~1047 Hz): +3
+    """
+    if ms2_note < 36:
+        return 2   # low band
+    if ms2_note < 72:
+        return 0   # mid band
+    return 3       # high band
+
+
+def opll_vol_to_ms2_vol(
+    opll_vol: int,
+    mode: str = 'legacy',
+    ms2_note: int | None = None,
+) -> int:
     """Convert OPLL 4-bit volume (0=quiet .. 15=loud) to MS2 TL (0=quiet .. 63=loud).
 
     Args:
@@ -273,12 +294,20 @@ def opll_vol_to_ms2_vol(opll_vol: int, mode: str = 'legacy') -> int:
                 bit-identical to the previous implementation.
             ``'db'`` – physically-accurate dB mapping: each OPLL step is 3 dB
                 (0.75 dB per OPL4 TL step → 4 TL steps per OPLL step),
-                yielding a 0..60 range with better loudness preservation.
+                yielding a 0..63 range with better loudness preservation.
+                When ``ms2_note`` is provided, applies equal-loudness compensation
+                (curve A) as a post-step.
+        ms2_note: MS2 note number (0..95).  When provided and *mode* is ``'db'``,
+            :func:`loudness_comp_db` is called and the result is added to the
+            base volume before clamping to 0..63.  Ignored in ``'legacy'`` mode.
     """
     v = max(0, min(15, opll_vol))
     if mode == 'db':
         v = max(0, min(15, int(v)))
-        return int(round(v * 63.0 / 15.0))   # 0..63
+        base = int(round(v * 63.0 / 15.0))   # 0..63
+        if ms2_note is not None:
+            base = max(0, min(63, base + loudness_comp_db(int(ms2_note))))
+        return base
     # 'legacy': original round(v * 8/3) scaling
     return min(63, int(round(v * (2.0 / 0.75))))
 
@@ -794,7 +823,7 @@ def segments_to_patterns(
             keyon, ms2_note, inst, vol_opll, retrigger, at_token, is_legato = state
             prev_keyon = prev_state[0]
             prev_note  = prev_state[1]
-            vol_ms2 = opll_vol_to_ms2_vol(vol_opll, mode=vol_map)
+            vol_ms2 = opll_vol_to_ms2_vol(vol_opll, mode=vol_map, ms2_note=ms2_note)
             evts_here: list[bytes] = []
             # instrument index
             if inst == 0 and user_patches:
