@@ -299,6 +299,7 @@ def build_song_settings_data(
     timer_divider: int = 0x0C00,
     modulation_depth: int = 0xC0,
     starting_instruments: list | None = None,
+    channel_pan: list | None = None,
 ) -> bytes:
     data = bytearray(291)
     desc_b = description.encode('ascii', errors='replace')
@@ -318,6 +319,10 @@ def build_song_settings_data(
     if starting_instruments:
         for i, idx in enumerate(starting_instruments[:min(42, n_channels)]):
             data[117 + i] = idx & 0xFF
+    if channel_pan:
+        for i, pan in enumerate(channel_pan[:min(42, n_channels)]):
+            # Store as signed byte; clamp to -7..+7 per MS2 spec
+            data[159 + i] = max(-7, min(7, int(pan))) & 0xFF
     def _write_count(offset: int, value: int):
         struct.pack_into('<H', data, offset, max(1, value))
     _write_count(243, n_tunings)
@@ -941,6 +946,7 @@ def build_ms2_file(
     debug: bool = False,
     rhythm_instruments: dict | None = None,
     ticks_per_step_override: int | None = None,
+    force_stereo: bool = False,
 ) -> bytes:
     """
     MS2ファイル生成: メロディはbase_ms2優先(1～15、index 0～14)、16～はリズム etc.
@@ -1083,6 +1089,24 @@ def build_ms2_file(
         user_patches=user_patches, ref_count=ref_count
     )
 
+    # ==== --force_stereo: 使用CHを左右交互にパン ====
+    channel_pan: list | None = None
+    if force_stereo:
+        # 実際にノート/イベントが存在するCHを昇順にソート
+        active_channels = sorted(
+            ch for ch in range(NUM_CH) if segments.get(ch)
+        )
+        if debug:
+            print(f"[force_stereo] active channels: {active_channels}")
+        # CH番号順に L(-7), R(+7) を交互割当
+        pan_map: dict[int, int] = {}
+        for rank, ch in enumerate(active_channels):
+            pan_map[ch] = -7 if rank % 2 == 0 else 7
+        # 全チャンネル分のリスト生成（未使用CHはセンター=0）
+        channel_pan = [pan_map.get(ch, 0) for ch in range(NUM_CH)]
+        if debug:
+            print(f"[force_stereo] pan assignments: {channel_pan}")
+
     # ==== チャンクまとめ ====
     song_settings = build_song_settings_data(
         description=stem[:65],
@@ -1093,6 +1117,7 @@ def build_ms2_file(
         starting_instruments=starting_instruments,
         timer=timer,
         timer_divider=timer_divider,
+        channel_pan=channel_pan,
     )
     patterns_chunks = build_patterns_chunks(channel_event_lists, n_patterns, NUM_CH)
     four_op_data    = build_4op_instruments_chunk_data(1)

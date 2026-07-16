@@ -24,6 +24,13 @@ Arguments:
                                 instruments from this file map to OPLL presets
                                 1..16.  Instruments beyond index 15 are
                                 ignored; user patches are appended after them.
+    --force_stereo              Assign alternating L/R panning to active
+                                channels.  Channels that contain notes are
+                                sorted by channel number and panned Left,
+                                Right, Left, Right... (L=-7, R=+7 in the MS2
+                                4-bit signed pan format).  Unused channels
+                                remain at center (0).  When not specified, all
+                                channels use the default center panning.
     --debug                     Print extra info and dump the generated MS2
                                 structure.
     --compare                   Also run ms2_dump.py --compare against
@@ -48,6 +55,7 @@ Arguments:
 Example:
     python vgm2ms2.py "inputs/ym2413/Ys-SMS-FM/Ys (FM) - 01 - Feena.vgm" --debug
     python vgm2ms2.py "song.vgm" --base-ms2 ms2_reference/OP2/YMVOPLL.MS2
+    python vgm2ms2.py "song.vgm" --force_stereo
     python vgm2ms2.py --export-inst-libraries out/inst_libraries/
     python vgm2ms2.py --export-inst-libraries out/raw/ --inst-lib-mode raw
 """
@@ -164,6 +172,15 @@ def main():
             'scaling — useful for experimentation.'
         ),
     )
+    parser.add_argument(
+        '--force_stereo', action='store_true',
+        help=(
+            'Assign alternating L/R stereo panning to active channels. '
+            'Channels that have notes are sorted by channel number and assigned '
+            'Left, Right, Left, Right... (L=-7, R=+7). '
+            'When not specified, all channels use the default center panning.'
+        ),
+    )
     args = parser.parse_args()
     if args.ticks_per_step is not None and args.ticks_per_step < 2:
         parser.error('--ticks-per-step must be >= 2')
@@ -247,6 +264,7 @@ def main():
         video          = args.video,
         debug          = args.debug,
         ticks_per_step_override = args.ticks_per_step,
+        force_stereo   = args.force_stereo,
     )
 
     # ── Write output file ─────────────────────────────────────────────────
