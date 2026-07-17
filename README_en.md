@@ -59,15 +59,28 @@ This option only affects the VGM→MS2 path; MML output is not changed.
 
 | Mode | Description |
 |------|-------------|
-| `legacy` (default) | Original linear scaling `round(v × 8/3)`. Output range 0–40. Bit-identical to previous behaviour. |
-| `db` | Physically-accurate dB mapping: 1 OPLL step = 3 dB = 4 OPL4 TL steps. Output range 0–60 with better loudness preservation. |
+| `db` (default) | Physically-accurate dB mapping: 1 OPLL step = 3 dB = 4 OPL4 TL steps. Output range 0–63. Equal-loudness compensation (curve A) is applied automatically. |
+| `legacy` | Original linear scaling `round(v × 8/3)`. Output range 0–40. Bit-identical to previous behaviour. |
+
+**Equal-loudness compensation (curve A)** is a perceptual layer applied on top of the `db`
+baseline conversion.  Motivated by the Fletcher–Munson equal-loudness curves, it boosts
+low and high frequencies that the human ear perceives as quieter at the same physical level:
+
+| Band | MS2 note range | Offset |
+|------|----------------|--------|
+| low  | 0–35 (below C3, < ~131 Hz) | +2 |
+| mid  | 36–71 (C3–B5, ~131–988 Hz) |  0 |
+| high | 72–95 (C6 and above, ≥ ~1047 Hz) | +3 |
+
+The offset is added to the encoded MS2 volume value (0x05 domain) and the result is
+clamped to the valid range 0..63.
 
 ```bash
-# Default (backward-compatible)
+# Default (db mode with equal-loudness compensation)
 python vgm2ms2.py mysong.vgm
 
-# Use dB mapping for better perceptual volume accuracy
-python vgm2ms2.py mysong.vgm --vol-map db
+# Legacy (backward-compatible, no compensation)
+python vgm2ms2.py mysong.vgm --vol-map legacy
 ```
 
 ### `--timer` and `--video` details

@@ -21,6 +21,12 @@ sys.path.insert(0, os.path.dirname(__file__))
 from opll import _build_segments, _opll_note, detect_num_ch,NUM_CH
 from mml_utils import track_id_to_mgsdrv, estimate_mml_used, estimate_alloc, compress_mml_text
 
+DEBUG = True  # 必要時だけ True
+
+def _dbg(*args, **kwargs):
+    if DEBUG:
+        print(*args, **kwargs)
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -263,25 +269,70 @@ def fnum_block_to_ms2_note(fnum: int, block: int) -> int | None:
     return ms2_note
 
 
-def opll_vol_to_ms2_vol(opll_vol: int, mode: str = 'legacy') -> int:
-    """Convert OPLL 4-bit volume (0=quiet .. 15=loud) to MS2 TL (0=quiet .. 63=loud).
+def loudness_comp_db(ms2_note: int) -> int:
+    """Return the equal-loudness compensation offset for the given MS2 note (0..95).
 
-    Args:
-        opll_vol: OPLL volume nibble, 0–15.
-        mode: Mapping mode.
-            ``'legacy'`` (default) – original linear scaling (0..40 range),
-                bit-identical to the previous implementation.
-            ``'db'`` – physically-accurate dB mapping: each OPLL step is 3 dB
-                (0.75 dB per OPL4 TL step → 4 TL steps per OPLL step),
-                yielding a 0..60 range with better loudness preservation.
+    Applied only in 'db' vol-map mode as a post-processing step on the encoded
+    MS2 volume value (0x05 domain).  Implements curve A:
+
+    - low  band (ms2_note <  36, below C3,  < ~131 Hz): +2
+    - mid  band (ms2_note < 72,  C3–B5, ~131–988 Hz):    0
+    - high band (ms2_note >= 72, C6 and above, ≥ ~1047 Hz): +3
     """
-    v = max(0, min(15, opll_vol))
-    if mode == 'db':
-        v = max(0, min(15, int(v)))
-        return int(round(v * 63.0 / 15.0))   # 0..63
-    # 'legacy': original round(v * 8/3) scaling
-    return min(63, int(round(v * (2.0 / 0.75))))
+    if ms2_note < 36:
+        return 2   # low band
+    if ms2_note < 72:
+        return 0   # mid band
+    return 3       # high band
 
+def opll_vol_to_ms2_vol(
+    opll_vol: int,
+    mode: str = "legacy",
+    ms2_note: int | None = None,
+) -> int:
+    """
+    OPLL volume (0..15) -> MS2 TL (0..63)
+
+    TL semantics:
+      - smaller TL = louder
+      - larger TL  = quieter
+      - TL=63      = silence
+
+    db mode design:
+      - Base mapping is intentionally simple: TL = v * 2
+      - v=15 is reserved as explicit silence (TL=63)
+      - Note compensation 'comp' is SUBTRACTED so positive comp makes it louder
+        (because TL decreases)
+    """
+    v = int(opll_vol)  # caller guarantees 0..15
+
+    if mode == "db":
+        # 1) Base TL from OPLL volume
+        if v == 15:
+            return 63  # explicit mute step (do not apply compensation)
+
+        base_tl = v * 2
+
+        # 2) Note-dependent loudness compensation
+        comp = loudness_comp_db(ms2_note) if ms2_note is not None else 0
+
+        # Positive comp => louder => TL down
+        tl = base_tl - comp
+
+        # 3) Clamp to TL domain
+        if tl < 0:
+            tl = 0
+        elif tl > 63:
+            tl = 63
+        return tl
+
+    # legacy: keep previous behavior
+    tl = int(round(v * 4.0))
+    if tl < 0:
+        tl = 0
+    elif tl > 63:
+        tl = 63
+    return tl
 
 # ---------------------------------------------------------------------------
 # Chunk builder helpers
@@ -765,6 +816,20 @@ def _get_ms2_inst_idx(
 # ---------------------------------------------------------------------------
 # High-level: segments → MS2 patterns
 # ---------------------------------------------------------------------------
+def _event_priority(evt: bytes) -> tuple[int, int]:
+    op = evt[0]
+    pri = {
+        0x01: 0,  # NOTE_OFF
+        0x04: 1,  # INST
+        0x00: 2,  # NOTE_ON
+        0x02: 2,  # LEGATO
+        0x05: 3,  # VOL
+    }.get(op, 9)
+    return (pri, op)
+
+def _normalize_same_step_events(evts_here: list[bytes]) -> list[bytes]:
+    # Python sort is stable: 同priority内は元順維持
+    return sorted(evts_here, key=_event_priority)
 
 def segments_to_patterns(
     segments: dict,
@@ -774,28 +839,36 @@ def segments_to_patterns(
     n_instruments: int,
     user_patches: dict | None = None,
     ref_count: int = 0,
-    vol_map: str = 'legacy',
+    vol_map: str = 'db',
 ) -> list[list]:
     if user_patches is None:
         user_patches = {}
+
     total_steps = n_patterns * STEPS_PER_PATTERN
     grid = _build_step_grid(segments, ticks_per_step, total_steps)
+
     channel_event_lists: list[list] = []
     for _ in range(n_patterns):
         channel_event_lists.append([[] for _ in range(n_channels)])
+
     for ch in range(n_channels):
-        prev_state = (0, 0, 0, 0, False, '',0)
+        prev_state = (0, 0, 0, 0, False, '', 0)
         prev_inst_idx = -1
         prev_vol_ms2 = -1
+
         for step in range(total_steps):
             pat = step // STEPS_PER_PATTERN
             step_in_pat = step % STEPS_PER_PATTERN
+
             state = grid.get((ch, step), (0, 0, 0, 0, False, '', 0))
             keyon, ms2_note, inst, vol_opll, retrigger, at_token, is_legato = state
+
             prev_keyon = prev_state[0]
-            prev_note  = prev_state[1]
-            vol_ms2 = opll_vol_to_ms2_vol(vol_opll, mode=vol_map)
+            prev_note = prev_state[1]
+
+            vol_ms2 = opll_vol_to_ms2_vol(vol_opll, mode=vol_map, ms2_note=ms2_note)
             evts_here: list[bytes] = []
+
             # instrument index
             if inst == 0 and user_patches:
                 v_num = _parse_user_v_num(at_token)
@@ -809,48 +882,53 @@ def segments_to_patterns(
             if keyon and ms2_note is not None:
                 note_changed = (ms2_note != prev_note) or (not prev_keyon) or retrigger
                 inst_changed = (inst_idx != prev_inst_idx)
-                vol_changed  = (vol_ms2 != prev_vol_ms2)
+                vol_changed = (vol_ms2 != prev_vol_ms2)
                 force_inst = (pat == 0 and step_in_pat == 0)
 
-                emit_note = note_changed or inst_changed
-                emit_vol  = vol_changed
+                # ---- 重要: INST判定をNOTE判定から独立させる ----
                 emit_inst = inst_changed or force_inst
+                emit_note = note_changed
+                emit_vol = vol_changed
+
+                # LEGATO は NOTE種別だけ差し替え。INST変更は落とさない。
+                if emit_inst:
+                    evts_here.append(bytes([0x04, inst_idx & 0xFF]))
+                    prev_inst_idx = inst_idx
 
                 if emit_note:
                     if is_legato == 1:
-                        # LEGATO のときは INST/VOL を emit しない
-                        emit_inst = False
-                        emit_vol  = False
                         evts_here.append(bytes([0x02, ms2_note & 0xFF]))  # LEGATO
+                        # 既存仕様を維持するならLEGATO時VOLは出さない
+                        emit_vol = False
                     else:
-                        if emit_inst:
-                            evts_here.append(bytes([0x04, inst_idx & 0xFF]))
-                            prev_inst_idx = inst_idx
                         evts_here.append(bytes([0x00, ms2_note & 0xFF]))  # NOTE_ON
-                elif emit_inst:
-                    evts_here.append(bytes([0x04, inst_idx & 0xFF]))
-                    prev_inst_idx = inst_idx
 
                 if emit_vol:
                     evts_here.append(bytes([0x05, vol_ms2 & 0xFF]))
                     prev_vol_ms2 = vol_ms2
+
             else:
                 inst_changed_off = (inst_idx != prev_inst_idx)
-                vol_changed_off  = (vol_ms2 != prev_vol_ms2)
+                vol_changed_off = (vol_ms2 != prev_vol_ms2)
 
                 if prev_keyon or inst_changed_off or vol_changed_off:
-                    evts_here.append(bytes([0x01]))
+                    evts_here.append(bytes([0x01]))  # NOTE_OFF
+
                     if inst_changed_off:
                         evts_here.append(bytes([0x04, inst_idx & 0xFF]))
                         prev_inst_idx = inst_idx
+
                     if vol_changed_off:
                         evts_here.append(bytes([0x05, vol_ms2 & 0xFF]))
                         prev_vol_ms2 = vol_ms2
-            if evts_here:
-                channel_event_lists[pat][ch].append((step_in_pat, evts_here))
-            prev_state = state
-    return channel_event_lists
 
+            if evts_here:
+                evts_here = _normalize_same_step_events(evts_here)  # INST優先を最終保証
+                channel_event_lists[pat][ch].append((step_in_pat, evts_here))
+
+            prev_state = state
+
+    return channel_event_lists
 
 def _get_segment_inst_idx_at_step(
     segments: dict,

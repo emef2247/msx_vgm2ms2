@@ -7,6 +7,10 @@ Tests cover:
 - 'db' mode is monotonic (non-decreasing)
 - Direction consistency: both modes map 0→0 and have the same ordering
 - CLI parsing: --vol-map accepts 'legacy' and 'db'; unknown values are rejected
+- loudness_comp_db: correct band offsets (+2 low, 0 mid, +3 high)
+- Compensation is active in db mode and inactive in legacy mode
+- Clamp behaviour at volume boundaries
+- No regression to unrelated event-ordering logic
 """
 
 from __future__ import annotations
@@ -17,7 +21,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from ms2_writer import opll_vol_to_ms2_vol
+from ms2_writer import loudness_comp_db, opll_vol_to_ms2_vol
 
 
 # ---------------------------------------------------------------------------
@@ -220,3 +224,117 @@ def test_cli_vol_map_invalid_rejected():
     assert 'invalid choice' in result.stderr or 'bogus' in result.stderr, (
         f"Expected 'invalid choice' in stderr:\n{result.stderr}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Tests: loudness_comp_db – band offsets
+# ---------------------------------------------------------------------------
+
+def test_loudness_comp_low_band():
+    """Notes below ms2_note=36 (below C3) should return +2."""
+    for note in [0, 1, 20, 35]:
+        assert loudness_comp_db(note) == 2, (
+            f"low band: ms2_note={note} → expected +2, got {loudness_comp_db(note)}"
+        )
+
+
+def test_loudness_comp_mid_band():
+    """Notes in 36..71 (C3–B5) should return 0."""
+    for note in [36, 48, 60, 71]:
+        assert loudness_comp_db(note) == 0, (
+            f"mid band: ms2_note={note} → expected 0, got {loudness_comp_db(note)}"
+        )
+
+
+def test_loudness_comp_high_band():
+    """Notes at ms2_note>=72 (C6 and above) should return +3."""
+    for note in [72, 84, 86, 95]:
+        assert loudness_comp_db(note) == 3, (
+            f"high band: ms2_note={note} → expected +3, got {loudness_comp_db(note)}"
+        )
+
+
+def test_loudness_comp_band_boundaries():
+    """Check the exact boundary values between bands."""
+    assert loudness_comp_db(35) == 2, "35 is last of low band"
+    assert loudness_comp_db(36) == 0, "36 is first of mid band"
+    assert loudness_comp_db(71) == 0, "71 is last of mid band"
+    assert loudness_comp_db(72) == 3, "72 is first of high band"
+
+
+# ---------------------------------------------------------------------------
+# Tests: compensation active in db mode, inactive in legacy mode
+# ---------------------------------------------------------------------------
+
+def test_db_with_note_applies_compensation():
+    """In db mode, passing ms2_note should change the result vs. no note."""
+    # Low band: +2
+    base = opll_vol_to_ms2_vol(8, mode='db')
+    with_comp = opll_vol_to_ms2_vol(8, mode='db', ms2_note=10)  # low band
+    assert with_comp == min(63, base + 2), (
+        f"db low band compensation: base={base}, with_comp={with_comp}"
+    )
+    # Mid band: 0
+    with_mid = opll_vol_to_ms2_vol(8, mode='db', ms2_note=48)
+    assert with_mid == base, (
+        f"db mid band should not change value: base={base}, with_mid={with_mid}"
+    )
+    # High band: +3
+    with_high = opll_vol_to_ms2_vol(8, mode='db', ms2_note=80)
+    assert with_high == min(63, base + 3), (
+        f"db high band compensation: base={base}, with_high={with_high}"
+    )
+
+
+def test_legacy_with_note_ignores_compensation():
+    """In legacy mode, ms2_note should have no effect."""
+    base = opll_vol_to_ms2_vol(8, mode='legacy')
+    with_note = opll_vol_to_ms2_vol(8, mode='legacy', ms2_note=10)
+    assert with_note == base, (
+        f"legacy mode should ignore ms2_note: base={base}, with_note={with_note}"
+    )
+    with_note_high = opll_vol_to_ms2_vol(8, mode='legacy', ms2_note=80)
+    assert with_note_high == base, (
+        f"legacy mode should ignore ms2_note high: base={base}, with_note={with_note_high}"
+    )
+
+
+def test_db_no_note_no_compensation():
+    """In db mode without ms2_note, no compensation is applied."""
+    # Mid band note gives same result as no note
+    base_no_note = opll_vol_to_ms2_vol(8, mode='db')
+    base_mid     = opll_vol_to_ms2_vol(8, mode='db', ms2_note=48)
+    assert base_no_note == base_mid, (
+        f"db no-note vs mid-band: {base_no_note} vs {base_mid}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Tests: clamp behaviour at volume boundaries
+# ---------------------------------------------------------------------------
+
+def test_db_high_note_clamp_at_max():
+    """db + high-band note at max opll_vol should clamp to 63."""
+    # opll_vol=15 → base=63, +3 → 66 → clamped to 63
+    result = opll_vol_to_ms2_vol(15, mode='db', ms2_note=80)
+    assert result == 63, (
+        f"Clamp at max: expected 63, got {result}"
+    )
+
+
+def test_db_low_note_no_underflow():
+    """db + low-band note at opll_vol=0 should not go below 0."""
+    # opll_vol=0 → base=0, +2 → 2 (positive, no clamp needed)
+    result = opll_vol_to_ms2_vol(0, mode='db', ms2_note=10)
+    assert result == 2, f"low-band boost at zero: expected 2, got {result}"
+    assert result >= 0
+
+
+def test_db_compensation_stays_in_range():
+    """db mode with ms2_note must always produce values in 0..63."""
+    for opll_vol in range(16):
+        for ms2_note in [0, 35, 36, 71, 72, 95]:
+            result = opll_vol_to_ms2_vol(opll_vol, mode='db', ms2_note=ms2_note)
+            assert 0 <= result <= 63, (
+                f"out of range: opll_vol={opll_vol} ms2_note={ms2_note} → {result}"
+            )
