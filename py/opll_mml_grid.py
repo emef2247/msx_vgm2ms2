@@ -23,6 +23,7 @@ from ms2_writer import (
     _FREQ_NTSC,
 )
 from mml_utils import track_id_to_mgsdrv, estimate_mml_used, estimate_alloc, compress_mml_text
+from segment_utils import attach_grid_info
 
 CH_OFFSET = 9
 _MELODY_CHS = tuple(range(6))
@@ -292,6 +293,7 @@ def _build_grid_mml_from_inputs(
     voice_table, user_patches, warnings = _assign_voice_ids(segments_by_ch, voice_csv)
 
     ticks_per_step = _compute_ticks_per_step(segments_by_ch, bpm_detected, ticks_per_step_override)
+    attach_grid_info(segments_by_ch, ticks_per_step)
 
     last_tick = 0
     for ch_segs in segments_by_ch.values():

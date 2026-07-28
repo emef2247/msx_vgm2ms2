@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.join(_SCRIPT_DIR, 'py'))
 from vgm_reader import parse_vgm
 from mml_utils import track_id_to_mgsdrv, estimate_mml_used, estimate_alloc, compress_mml_text
 from opll import NUM_CH, _assign_voice_ids, _build_segments, _user_patch_mml_defs
+from segment_utils import attach_grid_info
 
 _FREQ_NTSC: float = 59.988527908187
 _FREQ_PAL: float = 50.214039335288
@@ -340,6 +341,8 @@ def build_mgsdrvmml_file(
         ticks_per_step = max(2, int(ticks_per_step_override))
         if debug:
             print(f"[ticks_per_step] override={ticks_per_step_override} → using ticks_per_step={ticks_per_step}")
+
+    attach_grid_info(segments, ticks_per_step)
 
     mgs_bpm = max(1, round(freq_hz * 15 / ticks_per_step))
     if debug:

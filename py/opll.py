@@ -1090,13 +1090,22 @@ def process_opll_csv(trace_path, output_dir, stem=None,
         # Emit a simple segment dump for debugging
         seg_path = os.path.join(output_dir, f'{stem}.opll.pass0.csv')
         with open(seg_path, 'w', newline='\n') as fh:
-            fh.write('#ch,beat_start,beat_end,keyon,fnum,block,inst,vol,voice_id,at_token\n')
+            fh.write(
+                '#ch,beat_start,beat_end,keyon,fnum,block,inst,vol,voice_id,at_token,'
+                'grid_index,grid_start_tick,grid_end_tick,grid_offset_start,grid_offset_end,ticks_per_grid\n'
+            )
             # Dump all channels (melody 0-5 and rhythm 9-13) for full debug visibility.
             for ch in sorted(segments_by_ch):
                 for seg in segments_by_ch[ch]:
+                    grid_index = getattr(seg, 'grid_index', '')
+                    if grid_index is None:
+                        grid_index = ''
                     fh.write(f'{ch},{seg.beat_start},{seg.beat_end},'
                              f'{seg.keyon},{seg.fnum},{seg.block},'
-                             f'{seg.inst},{seg.vol},{seg.voice_id},{seg.at_token}\n')
+                             f'{seg.inst},{seg.vol},{seg.voice_id},{seg.at_token},'
+                             f'{grid_index},{getattr(seg, "grid_start_tick", "")},'
+                             f'{getattr(seg, "grid_end_tick", "")},{getattr(seg, "grid_offset_start", "")},'
+                             f'{getattr(seg, "grid_offset_end", "")},{getattr(seg, "ticks_per_grid", "")}\n')
 
     # ---- pass3.compress.MGS_pct.mml – always produced (merge source + non-debug output) ----
     simple_mgs_pct_text = _generate_mml_mgs_pct(segments_by_ch, stem,

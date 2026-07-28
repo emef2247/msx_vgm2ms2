@@ -1,7 +1,10 @@
 import os
+import sys
 from types import SimpleNamespace
 
-import opll_mml
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+import opll as opll_mml
 
 
 def test_process_opll_csv_uses_new_build_segments_api_and_global_num_ch(tmp_path, monkeypatch):
@@ -53,4 +56,5 @@ def test_process_opll_csv_uses_new_build_segments_api_and_global_num_ch(tmp_path
 
     pass0_path = os.path.join(output_dir, "dummy.opll.pass0.csv")
     dumped = open(pass0_path, "r", encoding="utf-8").read()
+    assert "grid_index,grid_start_tick,grid_end_tick,grid_offset_start,grid_offset_end,ticks_per_grid" in dumped
     assert "2,0,1,1,440,4,1,8,0,@0" in dumped

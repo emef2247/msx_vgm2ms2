@@ -113,6 +113,12 @@ class _Segment:
         'ms2_len',      # MS2 の 1 グリッド（grid_sz beat）を何個並べるか
         'beat_sz',      # beatは何ticksか (== min_l)
         'grid_sz',      # 何分音符にするか
+        'grid_index',   # step-grid index derived from tick_start
+        'grid_start_tick',   # inclusive grid start tick
+        'grid_end_tick',     # exclusive grid end tick
+        'grid_offset_start', # tick_start offset inside the grid
+        'grid_offset_end',   # tick_end offset from the same grid start
+        'ticks_per_grid',    # grid width used for the mapping
         'at_token',
     )
 
@@ -238,10 +244,36 @@ class _Segment:
         self.ms2_len       = 0
         self.beat_sz       = 0
         self.grid_sz       = 0
+        self.grid_index    = None
+        self.grid_start_tick = 0
+        self.grid_end_tick = 0
+        self.grid_offset_start = 0
+        self.grid_offset_end = 0
+        self.ticks_per_grid = 0
         self.at_token      = ''
 
     def mml_vol(self):
         return 15 - self.vol
+
+
+def attach_grid_info(segments_by_ch: dict, ticks_per_grid: int) -> None:
+    """Attach deterministic step-grid metadata to every segment in-place."""
+    tpg = max(1, int(ticks_per_grid))
+    for segs in segments_by_ch.values():
+        for seg in segs:
+            ts = int(getattr(seg, 'tick_start', 0) or 0)
+            te_raw = getattr(seg, 'tick_end', ts)
+            te = int(ts if te_raw is None else te_raw)
+            grid_index = ts // tpg
+            grid_start_tick = grid_index * tpg
+            grid_end_tick = grid_start_tick + tpg
+
+            seg.grid_index = grid_index
+            seg.grid_start_tick = grid_start_tick
+            seg.grid_end_tick = grid_end_tick
+            seg.grid_offset_start = ts - grid_start_tick
+            seg.grid_offset_end = te - grid_start_tick
+            seg.ticks_per_grid = tpg
 
 def pass0_read_csv(trace_csv_path):
     """

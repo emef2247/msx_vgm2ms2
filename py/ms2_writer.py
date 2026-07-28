@@ -20,6 +20,7 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(__file__))
 from opll import _build_segments, _opll_note, detect_num_ch,NUM_CH
 from mml_utils import track_id_to_mgsdrv, estimate_mml_used, estimate_alloc, compress_mml_text
+from segment_utils import attach_grid_info
 
 DEBUG = True  # 必要時だけ True
 
@@ -703,7 +704,8 @@ def _build_step_grid(
         segs = segments.get(ch, [])
         assignments: dict[int, tuple] = {}
         for seg in segs:
-            start_step = seg.tick_start // ticks_per_step
+            grid_index = getattr(seg, 'grid_index', None)
+            start_step = int(grid_index) if grid_index is not None else seg.tick_start // ticks_per_step
             if start_step >= total_steps:
                 continue
             at_token = getattr(seg, 'at_token', '')
@@ -1147,6 +1149,8 @@ def build_ms2_file(
                 f"[ticks_per_step] override={ticks_per_step_override} "
                 f"→ using ticks_per_step={ticks_per_step} timer_divider={timer_divider}"
             )
+
+    attach_grid_info(segments, ticks_per_step)
 
     # ==== パターン数自動推定 ====
     last_note_end_tick = 0
@@ -1691,6 +1695,8 @@ def build_mgsdrvmml_file(
         ticks_per_step = max(2, int(ticks_per_step_override))
         if debug:
             print(f"[ticks_per_step] override={ticks_per_step_override} → using ticks_per_step={ticks_per_step}")
+
+    attach_grid_info(segments, ticks_per_step)
 
     # #tempo はticks_per_stepから逆算した実効BPMを使う
     mgs_bpm = max(1, round(freq_hz * 15 / ticks_per_step))
